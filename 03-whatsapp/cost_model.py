@@ -26,12 +26,11 @@ SCENARIOS = ("low", "mid", "high")
 SCENARIO_ZH = {"low": "低", "mid": "中", "high": "高"}
 WEU_VERIFIED = ("DE", "NL", "GB")
 
-BOTMAKER_PLANS = (  # SOURCES S-B3
-    ("Standard", 149.0, 3000),
-    ("Scale", 249.0, 5000),
-    ("Pro", 499.0, 10000),
+BOTMAKER_PLANS = (  # (name, USD/month, included conversations, USD per extra conversation), SOURCES S-B3
+    ("Standard", 149.0, 3000, 0.07),  # overage from the prices page; the FAQ still says 0.025
+    ("Scale", 249.0, 5000, 0.06),
+    ("Pro", 499.0, 10000, 0.05),
 )
-BOTMAKER_OVERAGE_USD = 0.025  # per additional conversation/user beyond the plan, SOURCES S-B3
 BOTMAKER_SETUP_USD = 99.0     # one-time WhatsApp Business Platform account setup, SOURCES S-B3
 
 
@@ -130,8 +129,8 @@ def load_markets(path: Path) -> list[Market]:
 
 def pick_botmaker_plan(conversations: float) -> tuple[str, float]:
     best: tuple[str, float] | None = None
-    for name, price, included in BOTMAKER_PLANS:
-        cost = price + max(0.0, conversations - included) * BOTMAKER_OVERAGE_USD
+    for name, price, included, overage in BOTMAKER_PLANS:
+        cost = price + max(0.0, conversations - included) * overage
         if best is None or cost < best[1]:
             best = (name, cost)
     assert best is not None
@@ -205,9 +204,9 @@ def build_summary(results: dict[str, Breakdown], params: dict[str, Params]) -> d
             "route_b_model_usd": round_to(b.route_b_model_usd, 1),
             "hosting_usd": round_to(b.hosting_usd, 1),
             "total_route_a_usd": round_to(b.total_route_a_usd, 10),
-            "total_route_a_cny": round_to(b.total_route_a_usd * fx, 100),
+            "total_route_a_cny": round_to(b.total_route_a_usd * fx, 10),
             "total_route_b_usd": round_to(b.total_route_b_usd, 10),
-            "total_route_b_cny": round_to(b.total_route_b_usd * fx, 100),
+            "total_route_b_cny": round_to(b.total_route_b_usd * fx, 10),
         }
     return summary
 
@@ -233,7 +232,8 @@ def render_markdown(params: dict[str, Params], markets: list[Market], results: d
     out += [
         "",
         f"加权平均费率：{results['mid'].blended_rate_usd:.4f} USD/条（Meta 基础价，未含 BSP 加价）。"
-        "代理值 = 已复核市场的算术平均（西欧组：德、荷、英；全部组：所有已复核市场），仅用于量级估算。【待核实】",
+        "代理值 = 全部有官方费率的市场的算术平均（SOURCES S-M4），只用于国家构成未知的其他市场，仅作量级估算；"
+        "拿到真实国家分布后按实际国家填费率。【待客户确认】",
         "",
         "## 2. 月度费用（USD）",
         "",

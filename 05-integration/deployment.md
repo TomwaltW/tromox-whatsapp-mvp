@@ -22,6 +22,7 @@
 | 域名 | 0 | 用客户现有域名的一个子域名（如 `wa-hook.<客户域名>`） |
 | TLS 证书 | 0 | 反向代理自动签发与续期 |
 | 备份存储 | 约 0 至 1 USD | SQLite 文件很小；放客户自己的对象存储或第二台机器 |
+| Botmaker webhook 功能 | 单价未公开【待核实】 | 额外计费、默认关闭的功能，不开就收不到回调（SOURCES S-B5）；计在 Botmaker 账单里，不属于本机费用 |
 
 第三方费用由客户直付，账单在客户名下。
 
@@ -111,7 +112,7 @@ curl -s -X POST https://wa-hook.<客户域名>/webhooks/botmaker \
 
 ### 4.7 在 Botmaker 侧接上
 
-在 Settings > Integrations > Botmaker API 的 Webhooks 区域填回调地址 `https://<子域名>/webhooks/botmaker` 与同一个 Token，勾选项见 `botmaker-api-notes.md` 第 4 节。用测试号发一条消息，确认服务日志出现 `callback processed`。
+webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置里开通；同一渠道只能挂 1 个（SOURCES S-B5）。然后在 Settings > Integrations > Botmaker API 的 Webhooks 区域填回调地址 `https://<子域名>/webhooks/botmaker` 与同一个 Token，勾选项见 `botmaker-api-notes.md` 第 4 节。用测试号发一条消息，确认服务日志出现 `callback processed`。
 
 ## 5. 定时任务
 
@@ -122,6 +123,8 @@ curl -s -X POST https://wa-hook.<客户域名>/webhooks/botmaker \
 30 3 * * *  find /opt/tromox/backup -name 'leads-*.db' -mtime +30 -delete          # 备份保留 30 天
 */5 * * * * curl -fsS https://wa-hook.<客户域名>/health >/dev/null || echo "tromox webhook down" | logger -t tromox
 ```
+
+健康检查失败要能通知到人：上面的 `logger` 只写本机系统日志，上线时把 `echo ... | logger` 换成向运维群机器人或邮箱发一条消息。理由：Botmaker 的 webhook 在 10 分钟内失败超过 100 次会熔断，接下来 10 分钟停发，这段时间的消息丢失；单条失败是否重试也还不知道（SOURCES S-B5）。这些回调没有落盘，`app.replay` 补不回，只能按 `botmaker-api-notes.md` 第 7 节对账。所以服务停摆要在几分钟内发现，处理路径也保持"先落盘、尽快应答、通知放到响应之后"。`/health` 只查数据库：Token 未配置、Token 与 Botmaker 侧不一致或 `ALLOWED_IPS` 过期时它照样返回 200，回调却全被拒（503 / 401 / 403），同样收不到、同样没落盘；所以每次改配置或更新后，还要看一眼 Botmaker 后台 webhook 的错误与被拒计数（`botmaker-api-notes.md` 第 4 节）。
 
 ## 6. 备份与恢复
 
@@ -139,7 +142,7 @@ docker stop tromox-webhook && docker rm tromox-webhook
 # 再执行 4.4 的 docker run
 ```
 
-切换有数秒不可用。Botmaker 对回调失败是否重试尚不清楚【待核实】，所以更新放在咨询低谷（北京时间上午，欧美的深夜）进行；更新后看一眼 `/health` 与最近日志。表结构用 `CREATE TABLE IF NOT EXISTS` 建立，线索以 JSON 存放，升级字段不需要迁移脚本。
+切换有数秒不可用。Botmaker 对单条回调失败是否重试尚不清楚【待核实】；若不重试，这几秒里的回调会丢失，`app.replay` 也补不回（它只重放已落盘的事件）。数秒的切换一般碰不到熔断线（10 分钟内失败超过 100 次，SOURCES S-B5）。所以更新放在咨询低谷（北京时间上午，欧美的深夜）进行；更新后看一眼 `/health` 与最近日志。表结构用 `CREATE TABLE IF NOT EXISTS` 建立，线索以 JSON 存放，升级字段不需要迁移脚本。
 
 ## 8. 数据位置与隐私提示
 
@@ -167,6 +170,7 @@ docker exec tromox-webhook python -m app.replay --export
 | 6 | 备份与恢复演练 | 用前一日备份恢复成功 |
 | 7 | 权限 | `.env` 为 600；服务器无密码登录；我方子账号可随时回收 |
 | 8 | 测试数据 | 验证用的线索已删除，CSV 已重写 |
+| 9 | Botmaker 侧 webhook | 已开通并指向正式地址；联调结束后，后台错误日志里没有新增的错误或被拒记录 |
 
 ## 10. 待确认
 
@@ -175,5 +179,6 @@ docker exec tromox-webhook python -m app.replay --export
 | 云厂商、机房地区、由谁开账号 | 【待客户确认】 | 客户、张宝文 |
 | 子域名与 DNS 解析由谁操作 | 【待客户确认】 | 客户 |
 | 所选厂商的实际月费是否落在 6 至 12 USD | 【待核实】 | 集成工程师 |
-| Botmaker 回调失败的重试策略（决定更新窗口的宽严） | 【待核实】 | 集成工程师 |
+| Botmaker 单条回调失败的重试策略（决定更新窗口的宽严；熔断规则已知，SOURCES S-B5） | 【待核实】 | 集成工程师 |
+| Botmaker webhook 功能的单价 | 【待核实】 | 集成工程师 |
 | 通知渠道用飞书还是企业微信 | 【待客户确认】 | 客户销售 |

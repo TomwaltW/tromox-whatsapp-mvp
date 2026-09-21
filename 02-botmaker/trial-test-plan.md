@@ -16,35 +16,37 @@
 | 6 | Click-to-WhatsApp 广告的 referral 是否透传 | T-6 | 来源追踪能否记录广告维度 |
 | 7 | 2026-10-01 之后客服消息与 AI token 在账单里怎么体现 | T-7 | 成本模型的两个【待核实】输入 |
 | 8 | 转人工全链路是否如设计 | T-8 | 人工接管第一版就上 |
-| 9 | 变量名与标签名的字符限制、界面语言、大陆网络可达性 | T-9 | 配置细节与运维 |
+| 9 | 变量名与标签名的字符限制（下划线、大小写、长度、重名）、大陆网络可达性 | T-9 | 配置细节与运维 |
+| 10 | 账号属 3.0 版还是经典界面、实际用哪个模型、能否指定模型；Botmaker 的 AI 数据条款 | T-12 | 路线 A"离线评测与生产同一模型"的前提；模型选型的一票否决项（`01-design/adr/0006-model-selection.md`） |
 
 ## 2. 环境准备
 
 | 项 | 要求 |
 |---|---|
 | Botmaker 账号 | 客户企业邮箱开通的免费账号（附最多 300 个初始对话，SOURCES S-B3）；集成工程师为管理员 |
-| 测试号码 | 备用号码 1 个，走新号接入；另备 1 部装有 WhatsApp Business App（版本不低于 2.24.17）的手机与 1 个测试号，仅用于 T-1 |
+| 测试号码 | 备用号码 1 个，走新号接入；另备 1 部装有 WhatsApp Business App（版本不低于 2.24.17）的手机与 1 个测试号，仅用于 T-1。商家认证未通过时一个商务组合最多注册 2 个号码（SOURCES S-M8），测试号接在客户的商务组合下也占名额：这两个测试号正好占满，上线号码要等认证通过（或升到 2,000 档）才能注册。接测试号前先确认认证状态；届时仍未通过的，先给上线号码留出名额（例如走路径 a 时备用号码就用将来的上线号码，或 T-1 等认证通过后再做）【待客户确认】 |
 | 测试手机 | 至少 2 部，号码国家码不同为佳，用于充当客户 |
-| 配置 | 按 `setup-guide.md` 第 3、4 步搭最小流程：开场按钮、AI Agent（粘贴 `ai-agent-system-prompt.md` v1，路线 A 写法）、转人工节点；知识库放 3 至 5 条占位 FAQ |
-| 模型 | 选定拟用于生产的模型并记录名称与版本（SOURCES S-B8） |
-| 回调接收 | 集成服务的测试部署（`05-integration/deployment.md`），打开原始事件落盘；不使用第三方抓包网站，避免测试数据外流 |
+| 配置 | 按 `setup-guide.md` 第 3、4 步搭最小流程：开场按钮、AI Agent（粘贴 `ai-agent-system-prompt.md` v1，路线 A 写法）、转人工节点；知识库放 3 至 5 条占位 FAQ；每条测试线路（含 T-1 的 Coexistence 线路）接入后先关闭 WhatsApp→Central 转接并保存（2026-10-01 起默认开启，开着时机器人不在 WhatsApp 上回复，样例会全部白跑，SOURCES S-B16） |
+| 模型 | 第一天先做 T-12：确认账号界面代际与能否指定模型；能选时选定拟用于生产的模型，不能选时记录平台预设的模型；名称与版本都记下（SOURCES S-B8） |
+| 回调接收 | 集成服务的测试部署（`05-integration/deployment.md`），打开原始事件落盘；不使用第三方抓包网站，避免测试数据外流。webhook 是额外计费、默认关闭的功能，要先在账户设置里开通（SOURCES S-B5）；试用账号能否开通、是否收费【待核实】，开通前征得客户同意 |
 | 记录 | 本文件第 5、6 节的表格；截图存项目网盘 |
 
 ## 3. 平台验证项
 
 | 编号 | 验证内容 | 步骤要点 | 通过标准 | 结果回填到 |
 |---|---|---|---|---|
-| T-1 | Coexistence | 用测试 Business App 号按 `setup-guide.md` 2b 接入；从 App 回一条、从 Botmaker 回一条；观察人从 App 回复后机器人是否静默；记录所用号码的国家码与接入是否被拒 | 接入成功；两端消息互见；弄清机器人与人同时在线时的行为 | SOURCES S-B4、S-M7；ADR 0002 |
+| T-1 | Coexistence | 用测试 Business App 号按 `setup-guide.md` 2b 接入；从 App 回一条、从 Botmaker 回一条；观察人从 App 回复后机器人是否静默；国家限制已全部取消，只有中国大陆 +86 没有官方原文点名（SOURCES S-M7），客户拟走 Coexistence 的号码是 +86 时，用一个 +86 测试号接入并记录是否报错 3441042，其他国家码不再单测；记录历史同步是否在 24 小时内完成（未完成须断开重走，SOURCES S-M6） | 接入成功；两端消息互见；弄清机器人与人同时在线时的行为；+86 结论明确（如适用） | SOURCES S-B4、S-M6、S-M7；ADR 0002 |
 | T-2 | 字段写入变量（路线 A） | 跑第 4 节 20 条样例，逐条从会话详情或回调的 `variables` 读结果 | 见第 6 节决策门 | ADR 0003 |
 | T-3 | 固定 JSON 输出 | 临时让 Agent 把整个字段块写进一个试验变量，20 条里抽 10 条看能否被 JSON 解析 | 仅记录，不设门槛 | SOURCES S-B9 |
-| T-4 | Webhook 回调 | 分别触发：用户文本、按钮点击、Bot 消息、坐席消息、结束会话（带结束分类）、分配坐席；再让接收端先返回一次 500、再延迟 10 秒返回，观察是否重试与间隔 | 每类回调各存 1 份真实样本；弄清变量随哪类消息送达、有无重试 | `05-integration/webhook-service/fixtures/`；SOURCES S-B5、S-B6 |
+| T-4 | Webhook 回调 | 分别触发：用户文本、按钮点击、Bot 消息、坐席消息、结束会话（带结束分类）、分配坐席；再让接收端先返回一次 500、再延迟 10 秒返回，观察是否重试与间隔；故意失败的次数控制在个位数，10 分钟内失败超过 100 次会熔断 10 分钟、期间消息丢失（SOURCES S-B5）；核对消息 ID 的键名是 `_id` 还是 `_id_`（SOURCES S-B6） | 每类回调各存 1 份真实样本；弄清变量随哪类消息送达、有无重试 | `05-integration/webhook-service/fixtures/`；SOURCES S-B5、S-B6 |
 | T-5 | Code Action 外呼 | 建一个只调集成服务 `GET /health` 的 Code Action；连续触发 20 次记录耗时；核对来源 IP 是否在公布清单内 | 外呼成功，单次耗时远低于 90 秒上限；来源 IP 可识别 | SOURCES S-B10、S-B11 |
-| T-6 | CTWA referral 透传 | 客户有广告账户且同意时，投 1 条最小预算的 Click-to-WhatsApp 测试广告【待客户确认】；否则书面询问 Botmaker 支持。检查回调与变量里是否出现 source_id、source_url、headline 等 | 得到"透传 / 不透传 / 仅后台看板可见"三选一的明确结论 | SOURCES S-B12；`01-design/source-tracking.md` |
-| T-7 | 计费可见性 | 2026-10-01 之后，在 Settings > Account > "Products and consumption" 看客服消息与 AI token 如何列示；记录 20 条样例前后的 token 增量；向 Botmaker 销售书面确认客服消息加价与"对话"的定义 | 拿到每条 AI 回复的实测 token 数；拿到书面答复 | `03-whatsapp/cost-model-inputs.csv`；SOURCES S-B7、S-B13 |
+| T-6 | CTWA referral 透传 | 客户有广告账户且同意时，投 1 条最小预算的 Click-to-WhatsApp 测试广告【待客户确认】；否则书面询问 Botmaker 支持。检查回调 `messages[]` 里是否出现 `whatsappReferral` 及其子键 `sourceId`、`sourceURL`、`headline`、`body`（帮助中心字段表列有、JSON 示例里没有，SOURCES S-B6、S-B12），以及会话变量里有无对应值；有回调就存 1 份样本 | 得到"透传 / 不透传 / 仅后台看板可见"三选一的明确结论；透传时字段的真实形态有样本 | SOURCES S-B6、S-B12；`01-design/source-tracking.md`；`05-integration/webhook-service/fixtures/` |
+| T-7 | 计费可见性 | 先核对每条测试线路的 Central 转接为关闭（开着时每条邀请消息都按服务消息计费，SOURCES S-B16）；2026-10-01 之后，在 Settings > Account > "Products and consumption" 看客服消息、AI token 与 webhook 附加费如何列示；记录 20 条样例前后的 token 增量；向 Botmaker 销售书面确认：客服消息是否加价、是否计入套餐（服务条款按 DAILY USER 计）、超量单价以定价页（Standard 0.07 USD）还是 FAQ（0.025 USD）为准、webhook 单价、Meta 支付方式由 Botmaker 结算还是客户在 WhatsApp 商业账户上自绑（这一问不等试用，接入号码前就问） | 拿到每条 AI 回复的实测 token 数；拿到书面答复 | `03-whatsapp/cost-model-inputs.csv`；SOURCES S-B3、S-B5、S-B7、S-B13、S-B16、S-M9 |
 | T-8 | 转人工链路 | 触发一次 B 端交接：机器人静默、进入队列、工单建立、坐席用公司号回复、结束会话选分类、回调收到事件 | 全链路走通；销售群通知在 60 秒内到达（接好通知后） | `setup-guide.md` 第 10 节 |
-| T-9 | 平台细节 | 变量名、标签名带下划线能否保存；后台界面语言；用客户办公室网络访问后台与 API 的稳定性 | 逐项有结论 | SOURCES S-B14、S-B15；`01-design/tag-taxonomy.md` |
+| T-9 | 平台细节 | 已知变量 ID 不能含空格、连字符、星号（SOURCES S-B18），逐项试：建 `b2b_type`（带下划线）能否保存；再建 `Segment`，看是否与 `segment` 视为同名（大小写）；建最长的 `existing_dealer_relationship`（28 个字符）能否保存；18 个变量名是否与预定义变量（《Main variables》清单）或 Google Ads 集成写入的 `sourceId`、`gclid` 重名；标签名用 `intent_test_ride` 同样试；用客户办公室网络访问后台与 API 的稳定性。后台界面语言已知为英、西、葡、法，没有中文（SOURCES S-B14），不再测 | 逐项有结论；下划线不被接受时按 `setup-guide.md` 3.1 评估全仓字段名改动 | SOURCES S-B14、S-B15、S-B18；`01-design/tag-taxonomy.md` |
 | T-10 | 变量是否跨会话保留 | 走完一次 B 端交接并结束会话；同一测试号隔一段时间再发 `Hi`，看回调里的 `escalation_flag`、`escalation_reason` 是否还带着上次的值 | 弄清变量按联系人还是按会话保留；确认 S1 的变量复位生效，老客户再次来访不会重复通知销售 | `01-design/conversation-flow.md` S1；`setup-guide.md` 第 3 步 |
 | T-11 | 回调里没有号码的联系人 | 查看 `contactId` 是否总是号码；若测试中出现业务范围用户标识（以用户名联系的客户），保存 1 份样本【待核实】 | 确认集成服务按平台客户 ID 入库并照常通知，号码与号码国家留空 | `05-integration/botmaker-api-notes.md`；`01-design/lead-schema.md` |
+| T-12 | 模型与数据条款 | 第一天先做：看账号是 "Botmaker 3.0" 的 AI Agents 界面还是经典界面；记录 Bot 与 AI Agent 实际使用的模型名称（3.0 版帮助文章写默认 "Open AI 5.4"、不能换，其他帮助文章写默认 "GPT-4 Mini"、可切换，两种说法很可能分属两代界面）；试能否用 "Generative model" 或 "Use a different model" 指定模型；书面问 Botmaker：AI Agent 的对话是否用于训练、下游模型供应商是否训练、有无 DPA（SOURCES S-B17） | 得到"可指定 / 不可指定"的结论与模型名称，并确认公开接口上有无同名模型（对不上时在 ADR 0003 记下，路线 A 以平台内实测为准）；拿到书面答复 | SOURCES S-B8、S-B17；`01-design/adr/0003-ai-route-a-b.md`、`0006-model-selection.md` |
 
 ## 4. 20 条样例
 
@@ -134,11 +136,12 @@
 
 | 回填内容 | 文件 |
 |---|---|
-| 各平台事实的核实结论，去掉已解决的【待核实】 | `SOURCES.md`（S-B4 至 S-B15、S-M7） |
+| 各平台事实的核实结论，去掉已解决的【待核实】 | `SOURCES.md`（S-B3 至 S-B18、S-M6、S-M7、S-M9） |
 | 界面路径与节点名称 | `setup-guide.md` 第 10 节清单 |
 | 真实回调样本（脱敏后） | `05-integration/webhook-service/fixtures/` |
 | 每条 AI 回复的 token 数、AI 单价、客服消息加价 | `03-whatsapp/cost-model-inputs.csv`，改完重跑 `cost_model.py` |
 | 路线决策 | `01-design/adr/0003-ai-route-a-b.md` |
+| 账号界面代际、模型名称、能否指定模型；Botmaker 数据条款的书面答复 | `01-design/adr/0006-model-selection.md` |
 | 号码策略的补充结论 | `01-design/adr/0002-number-strategy.md` |
 | 仍未解决的问题 | 仓库的待决问题清单 |
 

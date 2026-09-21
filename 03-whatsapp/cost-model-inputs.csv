@@ -9,8 +9,8 @@ human_msgs_per_conv_b2c,3,4,6,条/对话,假设,人工介入的 C 端对话中�
 ctwa_share,0.00,0.20,0.30,比例,【待客户确认】,经 Click-to-WhatsApp 广告或 Facebook 主页按钮进入的对话占比（72 小时免费）
 template_followup_share_b2b,0.20,0.30,0.40,比例,假设,窗口关闭后需要用模板再触达的 B 端对话占比
 templates_per_followup,1,1,2,条,假设,每次再触达发送的 utility 模板条数
-free_service_msgs_per_month,1000,1000,1000,条/号码/月,【待核实】,SOURCES S-M3：仅 BSP 来源，官方页面未读到；敏感性分析含 0 条情景
-bsp_markup_service,0.20,0.20,0.20,比例,【待核实】,SOURCES S-B13：Botmaker 对客服消息的加价未公布，暂按通知类同为 20% 假设
+free_service_msgs_per_month,1000,1000,1000,条/号码/月,已复核,SOURCES S-M3：Meta 定价页 2026-09-10 版写明每号码每月 1000 条、按月重置不结转；敏感性分析保留 0 条情景作参考
+bsp_markup_service,0.20,0.20,0.20,比例,【待核实】,SOURCES S-B13：Botmaker 对客服消息的加价未公布（帮助中心只说请找客户经理），暂按通知类同为 20% 假设
 bsp_markup_template,0.20,0.20,0.20,比例,已复核,SOURCES S-B3：通知类为 WhatsApp 成本 + 20%
 ai_tokens_per_ai_msg,3000,4000,5000,token/条,假设,路线 A 每条 AI 回复消耗（指令 + 约 20 条上下文 + 知识库段落 + 输出），SOURCES S-B7
 botmaker_ai_usd_per_1m_tokens,1.0,2.5,5.0,USD/百万 token,【待核实】,SOURCES S-B7：单价未公开，此为占位区间

@@ -12,7 +12,7 @@
 | 文件 | 作用 | 是否手改 |
 |---|---|---|
 | `cost-model-inputs.csv` | 低/中/高三档的全部输入，含状态列（假设 / 【待核实】 / 【待客户确认】 / 已复核） | 是 |
-| `cost-model-rates.csv` | 各市场对话占比与费率；无官方数字的市场用代理值 | 是 |
+| `cost-model-rates.csv` | 各市场对话占比与费率（Meta 官方费率卡）；国家构成未知的"其他市场"用代理值 | 是 |
 | `cost_model.py` | 计算脚本 | 改逻辑时 |
 | `cost-model-results.md` | 结果表、敏感性分析、供引用的取整数字 | 否（生成） |
 | `cost-model-summary.json` | 同上，机器可读；`scripts/check_repo.py` 用它核对客户文档 | 否（生成） |
@@ -34,24 +34,24 @@ python 03-whatsapp/cost_model.py --check  # 输出过期则退出码 1
 3. 人工发出的消息（销售经 Botmaker 用公司号回复）：`M_h = N_b × human_msgs_per_conv_b2b + N_c × human_handoff_share_b2c × human_msgs_per_conv_b2c`。
 4. 窗口内消息总数：`M = M_ai + M_h`。
 5. 免费入口抵扣：`M_fep = M × ctwa_share`（经 Click-to-WhatsApp 广告或 Facebook 主页按钮进入的对话，72 小时内免费，SOURCES S-M1）。
-6. 月度免费额度抵扣：`M_free = min(M − M_fep, free_service_msgs_per_month)`（【待核实】，SOURCES S-M3）。
+6. 月度免费额度抵扣：`M_free = min(M − M_fep, free_service_msgs_per_month)`（每号码每月 1,000 条，Meta 官方已确认，SOURCES S-M3）。免费入口窗口内的消息不占额度是由官方计费类型推断的【待核实】；MVP 只用 1 个号码。
 7. 计费条数：`M_bill = M − M_fep − M_free`。
 8. 加权平均费率：`r̄ = Σ 市场占比 × 该市场费率`；客服消息费率与该市场 utility 费率相同（SOURCES S-M1）。
 9. Meta 客服消息费：`M_bill × r̄ × (1 + bsp_markup_service)`。
 10. 再触达模板费：`N_b × template_followup_share_b2b × templates_per_followup × r̄ × (1 + bsp_markup_template)`。
-11. Botmaker 套餐：在 Standard / Scale / Pro 中取"月费 + 超量 × 0.025 USD"最低者（SOURCES S-B3）。
+11. Botmaker 套餐：在 Standard / Scale / Pro 中取"月费 + 超量 × 该档超量单价"最低者，超量单价按定价页取 0.07 / 0.06 / 0.05 USD（SOURCES S-B3；FAQ 写 0.025，两页矛盾【待核实】）。
 12. Botmaker AI token 费：`M_ai × ai_tokens_per_ai_msg ÷ 1,000,000 × botmaker_ai_usd_per_1m_tokens`（路线 A、B 都有，因为对话与 FAQ 始终由内置 AI Agent 承担）。
 13. 外部模型费（仅路线 B 增量）：`N × route_b_calls_per_conv × (输入 token × 输入单价 + 输出 token × 输出单价) ÷ 1,000,000`。
 14. 合计：路线 A = 9 + 10 + 11 + 12 + 托管；路线 B = 路线 A + 13。人民币 = 美元 × `usd_to_cny`。
 
 ## 4. 口径与假设
 
-- **"对话"的定义**：Botmaker 套餐里的 conversation 未见官方定义，超量条款写的是 "per additional user"；模型按"一个月内一个客户算一个对话"处理。【待核实】
-- **套餐升档**：按公开单价，"Standard + 超量"在任何对话量下都不比升档贵；升 Scale / Pro 的理由是坐席数（10 / 20 / 50），不是对话量。超量是否允许长期不升档。【待核实】
-- **代理费率**：法、意、西和"其他市场"没有取得官方数字，用已复核市场的算术平均代替（西欧组取德、荷、英；全部组取所有已复核市场）。这只保证量级正确。拿到 Meta 费率卡后，把数字填进 `cost-model-rates.csv` 的 `rate_usd` 列即可替换代理值。【待核实】
+- **"对话"的定义**：Botmaker 服务条款按 DAILY USER 计数，即 24 小时内收发过消息的外部用户（SOURCES S-B3）；同一客户隔天再来会再算一次。模型按"一个新咨询算一个对话"处理，客户多日往返时会低估。【待核实】
+- **套餐升档**：按定价页的分档超量单价，月对话数超过约 4,430 时 Scale 比"Standard + 超量"便宜，超过约 9,170 时 Pro 比 Scale 便宜；坐席数（10 / 20 / 50）也可能决定档位。超量是否允许长期不升档【待核实】。
+- **费率**：各市场单价取自 Meta 官方费率卡（SOURCES S-M4，10/1 起服务消息单价等于 utility 单价）。只有国家构成未知的"其他市场"仍用代理值：全部有官方费率市场的算术平均，含德、荷等高价市场，偏保守。拿到真实国家分布后按实际国家填 `cost-model-rates.csv`（区域组单价见 S-M4，如西欧其他 0.0171、亚太其他 0.0113）。【待客户确认】
 - **免费额度先按总量抵扣**：实际按时间先后抵扣，不分国家；模型按比例近似，对月合计影响可忽略。
 - **Coexistence 下销售用手机 App 回复的消息免费**（SOURCES S-M6）；敏感性分析里单列了这一情景。
-- **不含**：广告投放费、号码月租、销售人力、我们的服务费。
+- **不含**：广告投放费、号码月租、销售人力、我们的服务费；Botmaker webhook 附加功能费（额外计费、单价未公开【待核实】，SOURCES S-B5），报价单里单列为"未公开"。
 - **汇率**：7.10 为假设，按开票当月实际汇率更新。
 
 ## 5. 怎么读结果

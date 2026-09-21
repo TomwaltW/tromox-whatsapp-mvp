@@ -20,7 +20,7 @@ flowchart LR
 | 步骤 | 产出 | 预计用时 | 依赖 |
 |---|---|---|---|
 | 1 开账号 | 客户名下的 Botmaker 账号 | 0.5 小时 | 客户提供企业邮箱 |
-| 2 接 WhatsApp 渠道 | 号码在 Botmaker 中为已连接状态 | 1 至 2 小时，另加 Meta 审核的日历时间 | Meta 商务账户管理员在场 |
+| 2 接 WhatsApp 渠道 | 号码在 Botmaker 中为已连接状态；Central 转接已关闭 | 1 至 2 小时，另加 Meta 审核的日历时间 | Meta 商务账户管理员在场 |
 | 3 建 Flow | 开场、按钮分流、转人工、夜间提示可走通 | 1 天 | `01-design/conversation-flow.md` |
 | 4 配 AI Agent | 限定用途的 AI Agent 挂到 Flow 上 | 0.5 天 | `ai-agent-system-prompt.md` |
 | 5 导入知识库 | 首版 FAQ 可被 AI 引用 | 0.5 天 | 客户填好的 `knowledge-base-template.md` |
@@ -34,8 +34,9 @@ flowchart LR
 
 1. 由客户用企业邮箱注册 Botmaker 账号（开账号免费，附最多 300 个初始对话额度，SOURCES S-B3）。注册邮箱用公共邮箱（如 `whatsapp-admin@客户域名`）而不是个人邮箱，避免人员变动后账号失联。【待客户确认】
 2. 客户把集成工程师加为管理员（见第 8 步）。集成工程师不代客户注册，不使用自己的邮箱作为所有者。
-3. 套餐先不付费，试用期验证完（`trial-test-plan.md`）再由客户绑卡开 Standard（149 USD/月，SOURCES S-B3）。开通 WhatsApp 商业平台账户另有一次性 99 USD。发票与合同主体【待核实】（SOURCES S-B14）。
-4. 账号内的时区、语言等全局设置：在 Botmaker 后台的账号设置功能中完成【待核实】；号码的时区在第 2 步接入时填写（SOURCES S-B4）。
+3. 套餐先不付费，试用期验证完（`trial-test-plan.md`）再由客户绑卡开 Standard（149 USD/月，按 DAILY USER 计数，SOURCES S-B3）。开通 WhatsApp 商业平台账户另有一次性 99 USD。超出套餐的单价两页不一致：定价页写 Standard 每个额外对话 0.07 USD，FAQ 写 0.025 USD【待核实】（SOURCES S-B3）。合同主体为 BOTMAKER INC 或其阿根廷、巴西关联公司；非拉美主体能否开票、发票抬头与税务处理【待核实】（SOURCES S-B14）。
+4. 账号内的时区、语言等全局设置：在 Botmaker 后台的账号设置功能中完成【待核实】；号码的时区在第 2 步接入时填写（SOURCES S-B4）。后台界面语言只有英、西、葡、法四种，没有中文（SOURCES S-B14），统一用英文。
+5. Meta 消息费的支付方式：Meta 要求 2026-09-30 前绑定支付方式，否则 10/1 起用完每号码每月 1,000 条免费额度后，服务消息停投（SOURCES S-M9、S-M3）。经 Botmaker 接入时是由 Botmaker 结算，还是要客户在 WhatsApp 商业账户上自绑【待核实】：接入号码（第 2 步）前由客户向 Botmaker 书面确认，答复存档。
 
 **验证方法**：客户管理员与集成工程师都能登录同一个项目；在 Botmaker 后台的成员管理功能中【待核实】能看到客户邮箱为所有者。截图存入交付记录（验收项 C5）。
 
@@ -48,7 +49,7 @@ flowchart LR
 | 适用 | 社媒上还没有公开过固定的 WhatsApp 号，或不想让机器人碰到老客户会话 | 现有号码已印在社媒主页、老客户都在这个号上 |
 | 历史会话 | 无 | 可同步近 6 个月（SOURCES S-B4、S-M6） |
 | 销售能否继续用手机 App | 不能，统一在 Botmaker 坐席界面回复 | 能；手机 App 发的消息免费，经平台发的按条计费（SOURCES S-M6） |
-| 额外约束 | 号码需能收短信或语音验证码，且当前未注册在任何 WhatsApp 上 | App 版本不低于 2.24.17；至少每 14 天打开一次 App，否则断连；吞吐固定 20 条/秒；阅后即焚、一次性查看、实时位置、广播列表停用；号码国家码是否受限【待核实】（SOURCES S-M7） |
+| 额外约束 | 号码需能收短信或语音验证码，且当前未注册在任何 WhatsApp 上 | App 版本不低于 2.24.17；至少每 14 天打开一次 App，否则断连；Meta 另写伴侣设备约 30 天不活跃也会断连，所指范围【待核实】（SOURCES S-M6）；吞吐固定 20 条/秒；阅后即焚、一次性查看、实时位置、广播列表停用；国家限制已全部取消，仅中国大陆 +86 号码没有官方原文点名，以接入流程实测为准【待核实】（SOURCES S-M7） |
 
 ### 2a. 新号接入
 
@@ -64,9 +65,10 @@ flowchart LR
 2. 进入 Settings > Channels > WhatsApp，点 "Add WhatsApp account"，用客户管理员的 Facebook 账号登录并选择客户的 Business Portfolio。
 3. **勾选 "Connect with a WhatsApp Business app"**，输入现用号码（SOURCES S-B4）。
 4. 持有该手机的人在场：App 会收到提示，扫描屏幕上的二维码并按手机的安全验证授权；确认共享近 6 个月的联系人与聊天。
-5. 回到 Botmaker 确认连接，选择该号码，填账户名与时区。
+5. 回到 Botmaker 确认连接，选择该号码，填账户名与时区。接入后 24 小时内要完成历史同步，未完成须断开重走（SOURCES S-M6）。
 6. 与销售约定分工：哪些会话由机器人先接、哪些由人在手机上直接回。人从手机 App 回复后机器人是否自动静默【待核实】，在试用账号验证（`trial-test-plan.md` 的 T-1）。
 7. 安排专人至少每 14 天打开一次该 App（建议每周一次，写进 `00-client/运维手册.md` 的周检项）。
+8. 并存号码不能用 API 注销：要断开由客户在 App 的 Settings > Account > Business Platform 里操作，断开后 15 分钟才能重新接入（SOURCES S-M6）。
 
 **验证方法（两条路径通用）**：
 
@@ -74,13 +76,23 @@ flowchart LR
 2. 用另一部手机给该号码发 "Hi Tromox! [OT-2610]"，Botmaker 会话列表里出现该会话。
 3. 路径 b 追加：从手机 App 回一条消息，确认 Botmaker 会话里能看到这条人工消息；确认 App 内老会话仍在。
 
+### 2c. 关闭 WhatsApp→Central 转接（两条路径都要做）
+
+Botmaker 自 2026-10-01 起在每条 WhatsApp 线路上默认开启"WhatsApp→Central 转接"：开着时机器人不在 WhatsApp 上回复，客户只会收到一条带按钮的邀请消息，被引到 Botmaker 自家的 Central 网页聊天继续对话（SOURCES S-B16）。MVP 要在 WhatsApp 上接待、由销售用公司号接手，必须关掉。
+
+1. 号码接入后、第 3 步搭流程之前，进入该线路的 Settings，取消勾选 WhatsApp→Central 转接，**保存后才生效**。
+2. 它按线路开关：每条线路都要单独关一次，以后新接入或重新接入的号码也一样。
+3. 2026-10-01 之前接入的线路，10/1 之后再复查一次开关状态。
+
+**验证方法**：用另一部手机给该号码发一条消息，收到的不是带按钮的 Central 邀请消息；第 3 步搭好流程后，收到的是机器人的开场消息。线路设置页截图存入交付记录。
+
 ## 3. 建 Flow
 
 话术与状态机的唯一源头是 `01-design/conversation-flow.md`，分支条件见 `01-design/routing-rules.md`；这里只写在 Botmaker 里怎么搭。原则：**能用按钮就不让 AI 猜；一条消息说清，少来回**（每条窗口内消息都计费，见 `03-whatsapp/cost-model.md`）。
 
 ### 3.1 先建会话变量
 
-在 Botmaker 后台的变量管理功能中【待核实】建下列 18 个会话变量，**变量名与线索字段名逐字相同**（源头：`shared/tromox_lead/fields.py` 的 `BOTMAKER_VARIABLES`）。平台若不接受下划线【待核实】，改用驼峰（如 `b2bType`），集成服务的归一化两种写法都接受。
+在 Botmaker 后台的变量管理功能中【待核实】建下列 18 个会话变量，**变量名与线索字段名逐字相同**（源头：`shared/tromox_lead/fields.py` 的 `BOTMAKER_VARIABLES`）。变量 ID 不能含空格、连字符、星号等特殊字符（SOURCES S-B18）；是否允许下划线、是否区分大小写、长度上限原文未写【待核实】，由 `trial-test-plan.md` 的 T-9 实测，实测前不改名。平台若不接受下划线，改用驼峰（如 `b2bType`），集成服务的归一化两种写法都接受；但这会牵动全仓以下划线命名的字段名（本表、`ai-agent-system-prompt.md` 的写变量指令、7.2 的 `FIELDS`、6.3 的标签字符串、`shared/tromox_lead/fields.py` 等），须统一改，不能只改平台一侧。自定义变量还要避开预定义变量（驼峰命名、不可删除）与 Google Ads 集成自动写入的 `sourceId`、`gclid`（SOURCES S-B18）。
 
 | # | 变量名 | 类型与取值 | 由谁写入 |
 |---|---|---|---|
@@ -141,9 +153,10 @@ flowchart LR
 2. 把 `ai-agent-system-prompt.md` 第 2 节各段按顺序粘进 Agent 的指令（Instructions）里；身份与业务背景放进 Bot 的身份设置（SOURCES S-B9）。占位符 `{privacy_url}`、`{working_hours}`、`{sla_b2b}`、`{sla_general}` 先替换为客户确认的值。
 3. **路线 A**：保留 prompt 里"把字段写进同名变量"的一段（官方写法为 "store it in ${变量名}"，SOURCES S-B9）。**路线 B**：删掉这一段，字段由 Code Action 调外部分类后写入（第 7 步）。
 4. 资源（Resources）里挂上第 5 步的知识库；动作（Actions）里只开放"转人工"与必要的流程跳转，其余不开。可用动作清单【待核实】。
-5. 模型：Bot Designer 左侧工具栏 "Generative model" 设 Bot 默认模型；AI Agent 配置最后一步 "Generative Model" 里可选 "Use a different model" 单独指定（SOURCES S-B8）。未指定时默认 "GPT-4 Mini"。**离线评测与生产必须是同一模型、同一版 prompt**：在这里选定的模型名与版本要写回 `01-design/adr/0006-model-selection.md`，离线评测用同名模型跑；平台内置模型与公开接口的同名模型是否完全一致【待核实】。
+5. 模型：Bot Designer 左侧工具栏 "Generative model" 设 Bot 默认模型；AI Agent 配置最后一步 "Generative Model" 里可选 "Use a different model" 单独指定（SOURCES S-B8）。未指定时默认 "GPT-4 Mini"。帮助中心 "Botmaker 3.0 - AI Agents" 栏目的文章另写默认模型为 "Open AI 5.4"、目前不能换模型；两种说法很可能分属两代界面，新账号落在哪一代、能否指定模型【待核实】，以试用账号为准（SOURCES S-B8）。**离线评测与生产必须是同一模型、同一版 prompt**：在这里选定（不能选时即平台预设）的模型名与版本要写回 `01-design/adr/0006-model-selection.md`，离线评测用同名模型跑；平台内置模型与公开接口的同名模型是否完全一致【待核实】。
 6. 换模型后必须重跑离线评测与 `trial-test-plan.md` 的 20 条样例，不能只凭感觉（帮助中心也提示"更聪明的模型不保证更好的效果"）。
 7. 在 Settings > Account > "Products and consumption" 记录试用期 token 消耗（SOURCES S-B7），回填 `03-whatsapp/cost-model-inputs.csv` 的 `ai_tokens_per_ai_msg` 与单价两项后重跑成本模型。
+8. **不启用 Co-pilot**（坐席回复建议）：Botmaker 官网原文写明 Co-pilot 用坐席与客户的全部对话训练 ChatGPT 模型，而 WhatsApp 条款禁止用业务数据训练 AI 模型（SOURCES S-B17、S-M5）。Co-pilot 的开关位置与默认状态【待核实】，首次进入时确认为关闭。AI Agent 的对话是否用于训练、有无 DPA，公开页面都没写【待核实】：由客户书面问 Botmaker，答复存档；这是模型选型的一票否决项（`01-design/adr/0006-model-selection.md`）。
 
 **验证方法**：
 
@@ -151,6 +164,7 @@ flowchart LR
 2. 问 3 个无关问题（天气、写代码、闲聊），都应得到固定的礼貌拒答并被引回业务。
 3. 问经销价与质保承诺，应得到固定的保护话术并转人工，不出现任何数字。
 4. 用德语、西班牙语各发一条，回复语言应跟随客户。
+5. 坐席界面里不出现 Co-pilot 回复建议。
 
 ## 5. 导入知识库
 
@@ -188,7 +202,7 @@ flowchart LR
 | 精简版 | `country_`、`seg_` | `country_de`、`seg_b2b` |
 | 完整版 | 另加 `b2b_`、`prod_`、`intent_`、`stage_`、`src_`、`lang_`、`prio_` | `b2b_distributor`、`prod_mc10`、`intent_test_ride`、`stage_handed_off`、`src_instagram`、`lang_es`、`prio_high` |
 
-写入方式按优先级：流程节点里的打标签动作（`seg_` 跟按钮走）【待核实】；不能在流程里算的（`country_`、`src_`、`prio_`）由集成服务算好存进线索库的 `tags` 字段，是否同时回写 Botmaker 会话标签（`PATCH /chats/{chatReference}`，3 次/秒，SOURCES S-B2）在试用后定【待核实】。标签名能否带下划线【待核实】。
+写入方式按优先级：流程节点里的打标签动作（`seg_` 跟按钮走）【待核实】；不能在流程里算的（`country_`、`src_`、`prio_`）由集成服务算好存进线索库的 `tags` 字段，是否同时回写 Botmaker 会话标签（`PATCH /chats/{chatReference}`，3 次/秒，SOURCES S-B2）在试用后定【待核实】。标签是 TAG 类型的变量，命名规则同 3.1（SOURCES S-B18）：不能含空格、连字符、星号；能否带下划线【待核实】。
 
 ### 6.4 结束分类（typification）
 
@@ -209,7 +223,8 @@ flowchart LR
 ### 7.1 Webhook（两条路线都要）
 
 1. 先按 `05-integration/deployment.md` 部署集成服务，拿到公网 HTTPS 地址。
-2. 进入 Settings > Integrations > Botmaker API 的 Webhooks 部分（SOURCES S-B5），新增：
+2. 开通 webhook 功能：它是额外计费、默认关闭的功能，由客户所有者在账户设置里开通；单价未公开【待核实】，开通前由客户向 Botmaker 书面要价并同意（SOURCES S-B5）。同一渠道最多挂 1 个 webhook：本项目的 WhatsApp 渠道只挂集成服务这一个，其他系统要用回调数据由集成服务转发。
+3. 进入 Settings > Integrations > Botmaker API 的 Webhooks 部分（SOURCES S-B5），新增：
    - URL：`https://<集成服务域名>/webhooks/botmaker`
    - 安全 Token：生成一段随机长串，同时写进集成服务的环境变量 `BOTMAKER_WEBHOOK_TOKEN`。Botmaker 每次回调会把它放在请求头 `auth-bm-token` 里，服务端不匹配即拒绝。
    - 渠道：只选本项目的 WhatsApp 号码。
@@ -224,8 +239,8 @@ flowchart LR
 | 消息状态（Message Status）、仅 HSM 状态 | 不勾 | MVP 不做送达统计；模板送达情况在 Botmaker 后台看 |
 | 包含变量（Include variables） | **开** | 线索字段全靠变量带出；不开就拿不到抽取结果 |
 
-3. 集成服务如需限制来源，可把 Botmaker 公布的出口 IP 清单（SOURCES S-B11）配进 `ALLOWED_IPS`；默认不开，先靠 Token。
-4. 回调的重试与超时策略未见官方说明【待核实】（SOURCES S-B5）：集成服务按"先落盘原始事件、立即返回 200、再处理"设计，并按消息 `_id_` 做幂等。
+4. 集成服务如需限制来源，可把 Botmaker 公布的出口 IP 清单（SOURCES S-B11）配进 `ALLOWED_IPS`；默认不开，先靠 Token。
+5. 单条回调失败是否重试、重试间隔、超时阈值、有无重放，原文均未写【待核实】；已知的是熔断规则：10 分钟内失败超过 100 次，接下来 10 分钟停发新消息，这段时间的消息丢失（SOURCES S-B5）。所以集成服务按"先落盘原始事件、立即返回 200、再处理"设计，并按消息 `_id_` 做幂等（帮助中心字段表写作 `_id`，与示例不一致，以真实样本为准，SOURCES S-B6）；健康检查必须接告警，故障要在失败累积到熔断之前处理。
 
 **验证方法**：
 
@@ -233,6 +248,7 @@ flowchart LR
 2. 用测试手机发一条消息，集成服务日志里出现一条 `type=message` 的原始事件，字段与 `05-integration/webhook-service/fixtures/` 的样例对得上；对不上的字段回填 fixture 并去掉相应的【待核实】。
 3. 故意把 Token 改错一位，集成服务返回 401 且不落库；改回后恢复。
 4. 走一遍 B 端交接，销售群在 60 秒内收到卡片，号码只显示后四位。
+5. 在 Botmaker 的 webhook 页查看错误日志与成功 / 慢 / 错误 / 被拒计数（SOURCES S-B5），错误与被拒为 0 或都能解释。
 
 ### 7.2 Code Action（仅路线 B）
 
@@ -320,11 +336,12 @@ main()
 |---|---|---|
 | 1 | 成员管理、账号设置、安全设置的界面路径 | 1、8 |
 | 2 | 两步验证 PIN 在哪里设、由谁保管 | 2 |
-| 3 | Coexistence 下人从手机回复后机器人是否自动静默；号码国家码限制 | 2 |
-| 4 | 变量管理路径；变量名与标签名能否带下划线 | 3、6 |
+| 3 | Coexistence 下人从手机回复后机器人是否自动静默；+86 号码能否接入 | 2 |
+| 4 | 变量管理路径；变量名与标签名能否带下划线、是否区分大小写、长度上限（空格、连字符、星号已知不允许） | 3、6 |
 | 5 | 营业时间、转人工动作、静默机器人、流程内建工单的节点名称 | 3 |
-| 6 | AI Agent 可用动作清单；内置模型与公开接口同名模型是否一致 | 4 |
+| 6 | AI Agent 可用动作清单；账号属 3.0 版还是经典界面、能否指定模型；内置模型与公开接口同名模型是否一致；Co-pilot 开关位置；AI Agent 对话是否用于训练、有无 DPA | 4 |
 | 7 | 知识库上传路径、支持格式、大小上限 | 5 |
 | 8 | 队列创建路径；工单自定义字段；结束分类的配置位置 | 6 |
-| 9 | Webhook 重试与超时；变量变更随哪类消息送达 | 7 |
+| 9 | Webhook 单条重试与超时、有无重放；webhook 单价；变量变更随哪类消息送达 | 7 |
 | 10 | Code Action 的创建与发布路径、密钥保存方式、调用频率上限 | 7 |
+| 11 | Meta 支付方式由 Botmaker 结算还是客户自绑；超量单价以哪页为准；非拉美主体开票 | 1 |

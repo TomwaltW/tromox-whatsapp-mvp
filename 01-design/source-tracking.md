@@ -91,13 +91,14 @@ MVP 要验证的是"社媒流量能不能变成有效线索"。不知道线索�
 
 ## 6. Click-to-WhatsApp 广告 referral
 
-Meta 在广告带来的首条消息上附带 referral 数据（来源类型、广告 id、来源 URL、标题、正文、点击 id）。线索结构里已留好 `referral` 对象，字段为 `source_type`、`source_id`、`source_url`、`headline`、`body`、`ctwa_clid`。
+Meta 在广告带来的首条消息上附带 referral 数据（来源类型、广告 id、来源 URL、标题、正文、点击 id）。线索结构里已留好 `referral` 对象，字段为 `source_type`、`source_id`、`source_url`、`headline`、`body`、`ctwa_clid`。Botmaker 回调字段表里的对应对象只有 `sourceId`、`sourceURL`、`headline`、`body` 四个子键，没有来源类型与点击 id；`ctwa_clid` 在 Botmaker 帮助中心与 API 描述文件中都未出现（SOURCES S-B12）。所以经 Botmaker 接入时，`source_type` 与 `ctwa_clid` 预计留空，以真实样本为准【待核实】。
 
 | 事项 | 现状 |
 |---|---|
-| Botmaker 是否把 referral 明细放进 webhook 回调 | 【待核实】帮助中心的回调示例里没有这一段（SOURCES S-B6）；试用账号第一周验证（`02-botmaker/trial-test-plan.md`） |
+| Botmaker 是否把 referral 明细放进 webhook 回调 | 【待核实】帮助中心回调字段表列有 `messages[].whatsappReferral`（子键 `sourceId`、`sourceURL`、`headline`、`body`），但同文 JSON 示例里没有这个对象，真实回调未见（SOURCES S-B6、S-B12）；广告 referral 写进哪个会话变量也未见明文（变量清单只列了 Messenger 的 referral 变量）。试用账号第一周用真实样本核对（`02-botmaker/trial-test-plan.md`） |
+| 集成服务现状 | 只识别名为 `referral` 的对象（顶层或消息内），照字段表写法到达的 `whatsappReferral` 读不到。本轮不改代码：拿到真实样本、核对对象名与层级后，再决定是否解析、怎么映射 |
 | Botmaker 自带的广告来源能力 | 有 "Click to WhatsApp Dashboards"，会识别来源为广告 referral 的会话（SOURCES S-B12），可在后台看广告维度的会话数 |
-| 透传成立时 | 集成服务把 referral 写入线索，`source_channel` 记 `ctwa_ad`；同时有短码时两者都保留 |
+| 透传成立且服务读得到时（对象名就是 `referral`，或已按样本补上 `whatsappReferral` 的解析） | 集成服务把 referral 写入线索，`source_channel` 记 `ctwa_ad`；同时有短码时两者都保留 |
 | 透传不成立时 | 靠广告预填消息里的 `AD-` 短码区分素材；广告维度的统计看 Botmaker 后台 |
 
 ## 7. 报表口径

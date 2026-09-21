@@ -2,20 +2,24 @@
 
 ### 1.1 我要做的（集成工程师 沈思锴）
 
+2026-09-22 二次核实已解决原第 6、7、8 条："每号码每月 1,000 条免费"由 Meta 官方确认（SOURCES S-M3）；法、意、西等市场官方费率已填入成本模型（S-M4）；未认证可无上限回复入站会话、分级现行数值已核实（S-M8、S-M10）。要书面问 Botmaker 的问题已合并成一份清单：`02-botmaker/botmaker-sales-questions.md`。
+
 | # | 事项 | 怎么核实 | 影响什么 | 期限 |
 |---|---|---|---|---|
 | 1 | Botmaker 内置 AI Agent 把抽取字段写入变量是否稳定、能否固定输出 JSON | 试用账号跑 20 条样例，`02-botmaker/trial-test-plan.md` | 路线 A / B 决策（`01-design/adr/0003-ai-route-a-b.md`）；走 B 加 1 人天 | 2026-10-16 |
-| 2 | 真实 webhook 回调样本、重试策略、CTWA referral 是否透传 | 试用账号把回调指到抓包地址 | `05-integration` 的 fixture 与归一化；来源追踪 | W1 |
-| 3 | 客户号码的国家码能否走 Coexistence | 在接入流程里实测（仅选方式 b 时） | 号码策略（`01-design/adr/0002-number-strategy.md`） | W1 |
-| 4 | 10/1 之后 Botmaker 如何结算客服消息（是否加 20%、是否计入套餐对话数） | 向 Botmaker 销售要书面答复 | 成本模型 `bsp_markup_service` | 开工前 |
-| 5 | Botmaker AI token 单价与可选模型清单 | 后台 Settings > Account > Products and consumption，或问销售 | 成本模型 `botmaker_ai_usd_per_1m_tokens`；模型选型 | 开工前 |
-| 6 | "每号码每月前 1,000 条免费"是否属实 | Meta 官方定价页；Botmaker 确认 | 成本模型 `free_service_msgs_per_month`；对客户的费用说明 | 开工前 |
-| 7 | 法、意、西及其他目标市场的官方费率 | 下载 Meta 费率卡填入 `cost-model-rates.csv` | 第三方费用区间可能变化一倍以上 | 客户给出国家分布后 |
-| 8 | 未认证状态能否先承接入站咨询；发送量分级的现行数值 | Meta 官方文档 | 认证延误时的退路（`07-project/timeline.md` 第 3 节） | W0 |
-| 9 | 从中国大陆访问 Botmaker 后台与 API 是否稳定 | 请客户在办公网络实测登录与坐席界面 | 销售能否正常接手；是否改用 Coexistence 手机端回复 | W0 |
-| 10 | Botmaker 标签与变量名是否允许下划线 | 试用账号 | `01-design/tag-taxonomy.md` 命名 | W1 |
-| 11 | 再触达模板是否会被 Meta 归为 marketing 类 | W2 第一天提交审核看结果 | 模板单价与话术 | W2 |
-| 12 | Botmaker 的发票与合同主体、后台界面语言 | 问销售 | 客户财务流程；运营培训用哪种语言界面 | 开工前 |
+| 2 | 新账号是 Botmaker 3.0 还是经典界面；3.0 版默认模型 "Open AI 5.4" 且暂不能换（SOURCES S-B8），离线评测能否与生产用同一模型 | 试用账号开通当天看界面与 Account 页的模型名；同时书面问 | 路线 A 的"同一模型"前提；ADR 0006 选型 | 开工前 |
+| 3 | 真实 webhook 回调样本、单条失败的重试策略、`whatsappReferral` 字段是否真的出现 | 试用账号把回调指到测试部署；故意返回 500 观察 | `05-integration` 的 fixture 与归一化；来源追踪（S-B5、S-B12） | W1 |
+| 4 | 每条 WhatsApp 线路的"Central 转接"已关闭，机器人在 WhatsApp 上正常回复（S-B16，10/1 起默认开启） | 试用账号接入线路后立刻检查并关闭；上线前逐线路复查 | 机器人是否在 WhatsApp 上静默 | W1 起每次接线路 |
+| 5 | 10/1 之后 Botmaker 如何结算客服消息（是否加价、是否计入套餐对话数）；超量单价 0.07 还是 0.025 USD；DAILY USER 计数口径 | 书面问 Botmaker 销售 | 成本模型 `bsp_markup_service`、套餐费（S-B3、S-B13） | 开工前 |
+| 6 | webhook 附加功能的单价与开通方式 | 书面问 Botmaker 销售 | 报价单第三方费用多一项（S-B5） | 开工前 |
+| 7 | Botmaker AI token 单价与可选模型清单 | 后台 Settings > Account > Products and consumption，或问销售 | 成本模型 `botmaker_ai_usd_per_1m_tokens`；模型选型（S-B7、S-B8） | 开工前 |
+| 8 | AI 数据条款：AI Agent 对话是否用于训练、OpenAI 侧是否不训练、能否签 DPA、子处理方清单；Co-pilot 训练条款与 WhatsApp 条款的冲突 | 书面问 Botmaker；拿到书面答复前不启用 Co-pilot | ADR 0006 一票否决项；合规（S-B17、S-M5） | 开工前 |
+| 9 | 经 Botmaker 接入时，Meta 要求 9/30 前绑定的支付方式由谁绑定 | 书面问 Botmaker | 10/1 起超出免费额度的服务消息会不会停投（S-M9） | 接入前 |
+| 10 | 客户号码走 Coexistence 时能否接入：国家限制已取消，仅 +86 号码官方未点名 | 在接入流程里实测（仅选方式 b 且用 +86 号时） | 号码策略（`01-design/adr/0002-number-strategy.md`，S-M7） | W1 |
+| 11 | 从中国大陆访问 Botmaker 后台与 API 是否稳定 | 请客户在办公网络实测登录与坐席界面 | 销售能否正常接手；是否改用 Coexistence 手机端回复 | W0 |
+| 12 | 变量名是否允许下划线、是否区分大小写（S-B18：空格、连字符、星号已知不允许） | 试用账号建 `b2b_type`、`B2B_Type` 等 | 不允许下划线时全仓字段名要改（`shared/tromox_lead/`） | W1 |
+| 13 | 再触达模板是否会被 Meta 归为 marketing 类 | W2 第一天提交审核看结果 | 模板单价与话术 | W2 |
+| 14 | 非拉美主体能否由 Botmaker 开票、发票抬头与税务（主体与界面语言已查明：BOTMAKER INC 或阿根廷、巴西关联公司；界面英西葡法，无中文，S-B14） | 问销售 | 客户财务流程；运营培训用哪种语言界面 | 开工前 |
 
 ### 1.2 张宝文要定的
 

@@ -59,7 +59,7 @@ flowchart TD
 要点：
 
 1. AI Agent 按指令把抽取结果写进与线索字段同名的会话变量（SOURCES S-B9）；Botmaker 的 webhook 在"包含变量"打开时把变量随消息一起回调（SOURCES S-B5、S-B6）。
-2. 集成服务不参与对话，只做"接收、归一化、入库、通知"。它宕机时对话照常，只是线索入库与通知暂停。
+2. 集成服务不参与对话，只做"接收、归一化、入库、通知"。它宕机时对话照常，只是线索入库与通知中断；宕机期间的回调未必补得回：Botmaker 对单条失败是否重发未知【待核实】，10 分钟内失败超过 100 次还会熔断 10 分钟、期间的回调丢失（SOURCES S-B5）。所以健康检查要告警，缺口靠对账补（`05-integration/botmaker-api-notes.md` 第 7 节）。
 3. 销售接管发生在 Botmaker 坐席界面，用的是公司号；通知卡片只是提醒，不承载对话。
 
 ## 3. 路线 B（内置抽取不稳定时）：外部固定 JSON 调用
@@ -171,9 +171,9 @@ C 端咨询在第 3 步之后由 AI Agent 依据知识库作答，通常不产�
 
 | 事项 | 标记 |
 |---|---|
-| Botmaker webhook 的重试与超时策略 | 【待核实】SOURCES S-B5 |
+| Botmaker webhook 单条失败的重试与超时策略（熔断规则已证实：10 分钟内失败超过 100 次停发 10 分钟，期间消息丢失） | 【待核实】SOURCES S-B5 |
 | webhook 真实回调样本与字段 | 【待核实】SOURCES S-B6 |
 | Code Action 调用频率上限 | 【待核实】SOURCES S-B10 |
-| Click-to-WhatsApp referral 明细是否进入回调 | 【待核实】SOURCES S-B12 |
+| Click-to-WhatsApp referral：字段表已列 `whatsappReferral`，JSON 示例没有，待真实样本核对；集成服务目前只认 `referral` 键 | 【待核实】SOURCES S-B12 |
 | 销售所在网络能否稳定打开 Botmaker 坐席界面 | 【待核实】SOURCES S-B15 |
 | 销售群用哪种协作工具 | 【待客户确认】 |
