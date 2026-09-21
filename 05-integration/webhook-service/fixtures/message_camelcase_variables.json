@@ -1,0 +1,40 @@
+{
+  "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：平台若不接受带下划线的变量名，变量会写成驼峰（b2bType 等）；归一化必须同样识别。product_interest 以 JSON 数组字符串给出。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "34600000017",
+  "whatsappNumber": "34600000017",
+  "customerId": "TRXDEMOCUSTOMER00003",
+  "sessionId": "TRXDEMOCUSTOMER00003_2026-11-05T09:00:00.000Z",
+  "sessionCreationTime": "2026-11-05T09:00:00.000Z",
+  "customerCreationTime": "2026-11-05T09:00:00.000Z",
+  "firstName": "Lucia",
+  "lastName": "M",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXDEMOMSG0000000031",
+      "date": "2026-11-05T09:02:00.000Z",
+      "from": "user",
+      "fromName": "Lucia M",
+      "message": "Hola Tromox! [TT-2610B] Tenemos dos tiendas en Valencia y queremos el precio de distribuidor del M05.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "es",
+    "segment": "B2B",
+    "b2bType": "dealer",
+    "countryStated": "ES",
+    "cityRegion": "Valencia",
+    "contactName": "Lucia M",
+    "productInterest": "[\"M05\"]",
+    "aiSummary": "西班牙瓦伦西亚的经销商，有两家门店，询问 M05 的经销价；价格问题需销售跟进。",
+    "aiConfidence": "0.9",
+    "escalationFlag": "true",
+    "escalationReason": "price_negotiation",
+    "consentMarketing": "false"
+  }
+}

@@ -1,0 +1,23 @@
+param,low,mid,high,unit,status,note
+daily_inquiries,10,30,120,个/天,【待客户确认】,日均新咨询数；月对话数 = 日均 x 30
+b2b_share,0.10,0.15,0.20,比例,【待客户确认】,B 端咨询占比
+ai_msgs_per_conv_b2b,6,8,10,条/对话,假设,Bot 与 AI 发给 B 端客户的消息条数（含开场与按钮）
+ai_msgs_per_conv_b2c,4,5,7,条/对话,假设,Bot 与 AI 发给 C 端客户的消息条数
+human_msgs_per_conv_b2b,4,6,10,条/对话,假设,销售经 Botmaker 用公司号回复 B 端的条数（窗口内）
+human_handoff_share_b2c,0.10,0.15,0.20,比例,假设,C 端对话中需要人工介入的比例
+human_msgs_per_conv_b2c,3,4,6,条/对话,假设,人工介入的 C 端对话中人工回复条数
+ctwa_share,0.00,0.20,0.30,比例,【待客户确认】,经 Click-to-WhatsApp 广告或 Facebook 主页按钮进入的对话占比（72 小时免费）
+template_followup_share_b2b,0.20,0.30,0.40,比例,假设,窗口关闭后需要用模板再触达的 B 端对话占比
+templates_per_followup,1,1,2,条,假设,每次再触达发送的 utility 模板条数
+free_service_msgs_per_month,1000,1000,1000,条/号码/月,【待核实】,SOURCES S-M3：仅 BSP 来源，官方页面未读到；敏感性分析含 0 条情景
+bsp_markup_service,0.20,0.20,0.20,比例,【待核实】,SOURCES S-B13：Botmaker 对客服消息的加价未公布，暂按通知类同为 20% 假设
+bsp_markup_template,0.20,0.20,0.20,比例,已复核,SOURCES S-B3：通知类为 WhatsApp 成本 + 20%
+ai_tokens_per_ai_msg,3000,4000,5000,token/条,假设,路线 A 每条 AI 回复消耗（指令 + 约 20 条上下文 + 知识库段落 + 输出），SOURCES S-B7
+botmaker_ai_usd_per_1m_tokens,1.0,2.5,5.0,USD/百万 token,【待核实】,SOURCES S-B7：单价未公开，此为占位区间
+route_b_calls_per_conv,1,2,2,次/对话,假设,路线 B 外部"分类 + 抽字段"调用次数
+route_b_input_tokens,1500,1500,2000,token/次,假设,prompt + 对话文本
+route_b_output_tokens,250,250,300,token/次,假设,固定 JSON 输出
+ext_model_usd_per_1m_input,0.15,1.00,3.00,USD/百万 token,【待核实】,占位区间（小模型到旗舰模型的公开价位量级），以选定模型官网价为准
+ext_model_usd_per_1m_output,0.60,5.00,15.00,USD/百万 token,【待核实】,同上
+hosting_usd_per_month,6,6,12,USD/月,假设,境外小型 VPS 或 serverless，见 05-integration/deployment.md
+usd_to_cny,7.10,7.10,7.10,汇率,假设,按开票当月实际汇率更新

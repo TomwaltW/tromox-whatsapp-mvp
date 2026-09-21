@@ -1,0 +1,48 @@
+{
+  "usd_to_cny": 7.1,
+  "botmaker_setup_usd_one_time": 99.0,
+  "scenarios": {
+    "low": {
+      "daily_inquiries": 10.0,
+      "conversations_per_month": 300.0,
+      "botmaker_plan": "Standard",
+      "botmaker_plan_usd": 149,
+      "meta_messaging_usd": 20,
+      "botmaker_ai_usd": 0,
+      "route_b_model_usd": 0,
+      "hosting_usd": 6,
+      "total_route_a_usd": 180,
+      "total_route_a_cny": 1300,
+      "total_route_b_usd": 180,
+      "total_route_b_cny": 1300
+    },
+    "mid": {
+      "daily_inquiries": 30.0,
+      "conversations_per_month": 900.0,
+      "botmaker_plan": "Standard",
+      "botmaker_plan_usd": 149,
+      "meta_messaging_usd": 170,
+      "botmaker_ai_usd": 50,
+      "route_b_model_usd": 5,
+      "hosting_usd": 6,
+      "total_route_a_usd": 370,
+      "total_route_a_cny": 2600,
+      "total_route_b_usd": 370,
+      "total_route_b_cny": 2700
+    },
+    "high": {
+      "daily_inquiries": 120.0,
+      "conversations_per_month": 3600.0,
+      "botmaker_plan": "Standard",
+      "botmaker_plan_usd": 164,
+      "meta_messaging_usd": 1090,
+      "botmaker_ai_usd": 680,
+      "route_b_model_usd": 76,
+      "hosting_usd": 12,
+      "total_route_a_usd": 1950,
+      "total_route_a_cny": 13800,
+      "total_route_b_usd": 2020,
+      "total_route_b_cny": 14400
+    }
+  }
+}

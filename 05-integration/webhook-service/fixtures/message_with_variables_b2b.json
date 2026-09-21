@@ -1,0 +1,54 @@
+{
+  "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：同一客户完成 B 端信息收集后，Bot 发出交接话术；变量由按钮与 AI Agent 写入，变量名与线索字段同名。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069011",
+  "whatsappNumber": "4917604069011",
+  "customerId": "TRXDEMOCUSTOMER00001",
+  "sessionId": "TRXDEMOCUSTOMER00001_2026-11-04T19:12:03.000Z",
+  "sessionCreationTime": "2026-11-04T19:12:03.000Z",
+  "customerCreationTime": "2026-11-04T19:12:03.000Z",
+  "firstName": "Jonas",
+  "lastName": "K",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXDEMOMSG0000000006",
+      "date": "2026-11-04T19:16:40.000Z",
+      "from": "user",
+      "fromName": "Jonas K",
+      "message": "Nordrad Mobility GmbH, Hamburg, Germany. We are a distributor with 3 shops, interested in MC10 and Ukko S+, about 40 units per year. Jonas Keller, purchasing manager.",
+      "operatorId": null,
+      "clientPayload": ""
+    },
+    {
+      "_id_": "TRXDEMOMSG0000000007",
+      "date": "2026-11-04T19:16:44.500Z",
+      "from": "bot",
+      "fromName": "Bot",
+      "message": "Thank you, Jonas Keller. I have passed your details to our sales team. A Tromox sales manager will reply here, on this WhatsApp number, within one business day.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2B",
+    "b2b_type": "distributor",
+    "b2c_intent": "",
+    "country_stated": "DE",
+    "city_region": "Hamburg",
+    "contact_name": "Jonas Keller",
+    "company": "Nordrad Mobility GmbH",
+    "role": "purchasing manager",
+    "product_interest": "MC10; Ukko S+",
+    "volume": "about 40 units per year",
+    "existing_dealer_relationship": "distributor with 3 shops",
+    "ai_summary": "德国汉堡的分销商 Nordrad Mobility GmbH（3 家门店），采购经理 Jonas Keller，意向 MC10 与 UKKO，每年约 40 台；建议销售尽快跟进并确认区域与合作方式。",
+    "ai_confidence": "0.95",
+    "escalation_flag": "true",
+    "escalation_reason": "b2b_qualified",
+    "source_code": "IG-2609"
+  }
+}

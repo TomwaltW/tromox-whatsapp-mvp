@@ -1,0 +1,15 @@
+{
+  "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：消息状态回调（v1.0）。服务只落盘与忽略，不改线索。",
+  "v": "1.0",
+  "businessId": "tromoxdemo",
+  "customerId": "TRXDEMOCUSTOMER00001",
+  "contactId": "+4917604069011",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "chatPlatform": "whatsapp",
+  "status": "delivered",
+  "statusChangeTime": "2026-11-04T19:16:46.000Z",
+  "messageId": "TRXDEMOMSG0000000007",
+  "clientPayload": null,
+  "intentTxId": null,
+  "error": []
+}

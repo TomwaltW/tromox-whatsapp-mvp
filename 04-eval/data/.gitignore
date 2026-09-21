@@ -1,0 +1,3 @@
+# Real labelled enquiries and raw model outputs contain personal data: never commit them.
+*
+!.gitignore

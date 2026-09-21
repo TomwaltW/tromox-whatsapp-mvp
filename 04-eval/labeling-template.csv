@@ -1,0 +1,4 @@
+sample_id,data_origin,phone,conversation_text,language,segment,b2b_type,b2c_intent,country_gold,product_interest,escalation_flag,escalation_reason,is_valid_lead,annotator,label_notes
+EX-001,example,+4917604069001,"Hallo, wir sind ein Motorradhändler in Hamburg und möchten Tromox verkaufen. [IG-2609]",de,B2B,dealer,,DE,,false,,yes,示例,示例行：填写前请删除
+EX-002,example,+12025550101,"Hi, how much is the MC10 and where can I test ride it?",en,B2C,,test_ride,US,MC10,false,,no,示例,示例行：填写前请删除
+EX-003,example,+34600000001,"Quiero hablar con una persona, mi batería echa humo",es,B2C,,warranty,ES,,true,complaint_warranty_legal_safety,no,示例,示例行：填写前请删除

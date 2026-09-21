@@ -1,0 +1,444 @@
+{
+  "$defs": {
+    "B2BType": {
+      "enum": [
+        "dealer",
+        "distributor",
+        "fleet",
+        "importer",
+        "other"
+      ],
+      "title": "B2BType",
+      "type": "string"
+    },
+    "B2CIntent": {
+      "enum": [
+        "buy",
+        "support",
+        "parts",
+        "warranty",
+        "test_ride",
+        "other"
+      ],
+      "title": "B2CIntent",
+      "type": "string"
+    },
+    "EscalationReason": {
+      "description": "Why the conversation must be handed to a human (01-design/routing-rules.md).",
+      "enum": [
+        "human_requested",
+        "b2b_qualified",
+        "low_confidence",
+        "complaint_warranty_legal_safety",
+        "price_negotiation",
+        "not_understood_twice"
+      ],
+      "title": "EscalationReason",
+      "type": "string"
+    },
+    "LeadStatus": {
+      "enum": [
+        "new",
+        "qualified",
+        "handed_off",
+        "contacted",
+        "closed_won",
+        "closed_lost",
+        "nurture",
+        "invalid"
+      ],
+      "title": "LeadStatus",
+      "type": "string"
+    },
+    "Referral": {
+      "description": "Click-to-WhatsApp ad referral. Whether Botmaker passes it through is 【待核实】.",
+      "properties": {
+        "source_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Type"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Id"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "headline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Headline"
+        },
+        "body": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Body"
+        },
+        "ctwa_clid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ctwa Clid"
+        }
+      },
+      "title": "Referral",
+      "type": "object"
+    },
+    "Segment": {
+      "enum": [
+        "B2B",
+        "B2C",
+        "unknown"
+      ],
+      "title": "Segment",
+      "type": "string"
+    },
+    "SourceChannel": {
+      "enum": [
+        "instagram",
+        "facebook",
+        "tiktok",
+        "youtube",
+        "website",
+        "ctwa_ad",
+        "offline_qr",
+        "other",
+        "unknown"
+      ],
+      "title": "SourceChannel",
+      "type": "string"
+    }
+  },
+  "description": "Full lead record. One lead per contact.\n\nThe dedupe key is the E.164 phone number. When the platform delivers no phone number\n(a customer reaching the business through a WhatsApp username only exposes a\nbusiness-scoped user id), `phone` is None and the lead is keyed by the platform's\ncustomer id instead - see `tromox_lead.ids.contact_key`.",
+  "properties": {
+    "lead_id": {
+      "title": "Lead Id",
+      "type": "string"
+    },
+    "phone": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Phone"
+    },
+    "country_by_phone": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Country By Phone"
+    },
+    "country_stated": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Country Stated"
+    },
+    "language": {
+      "default": "und",
+      "title": "Language",
+      "type": "string"
+    },
+    "contact_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Contact Name"
+    },
+    "company": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Company"
+    },
+    "role": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Role"
+    },
+    "segment": {
+      "$ref": "#/$defs/Segment",
+      "default": "unknown"
+    },
+    "b2b_type": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/B2BType"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "b2c_intent": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/B2CIntent"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "product_interest": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Product Interest",
+      "type": "array"
+    },
+    "volume": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Volume"
+    },
+    "city_region": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "City Region"
+    },
+    "existing_dealer_relationship": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Existing Dealer Relationship"
+    },
+    "source_channel": {
+      "$ref": "#/$defs/SourceChannel",
+      "default": "unknown"
+    },
+    "source_code": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source Code"
+    },
+    "referral": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Referral"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "first_message_ts": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "First Message Ts"
+    },
+    "last_message_ts": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Last Message Ts"
+    },
+    "ai_summary": {
+      "default": "",
+      "title": "Ai Summary",
+      "type": "string"
+    },
+    "ai_confidence": {
+      "default": 0.0,
+      "maximum": 1.0,
+      "minimum": 0.0,
+      "title": "Ai Confidence",
+      "type": "number"
+    },
+    "escalation_flag": {
+      "default": false,
+      "title": "Escalation Flag",
+      "type": "boolean"
+    },
+    "escalation_reason": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/EscalationReason"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "assigned_to": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assigned To"
+    },
+    "status": {
+      "$ref": "#/$defs/LeadStatus",
+      "default": "new"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "consent_marketing": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Consent Marketing"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    }
+  },
+  "required": [
+    "lead_id"
+  ],
+  "title": "TromoxLead",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

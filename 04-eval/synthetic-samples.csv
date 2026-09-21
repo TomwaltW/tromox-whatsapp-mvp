@@ -1,0 +1,81 @@
+sample_id,data_origin,phone,conversation_text,language,segment,b2b_type,b2c_intent,country_gold,product_interest,escalation_flag,escalation_reason,is_valid_lead,annotator,label_notes
+SYN-001,synthetic,+447700900101,"Hi Tromox! [IG-2609] We are Northline Motors Ltd, a motorcycle dealership in Manchester, UK. We'd like to become a Tromox dealer. Interested in the MC10 and Ukko, around 20 units a year. I'm Daniel Reeves, owner.",en,B2B,dealer,,GB,MC10;UKKO,true,b2b_qualified,yes,synthetic-generator,
+SYN-002,synthetic,+61491570156,"Hello, we are an e-mobility distributor covering all of Australia with 14 sub-dealers. We would like to add Tromox to our portfolio. Which models are available for our market?",en,B2B,distributor,,AU,,false,,yes,synthetic-generator,
+SYN-003,synthetic,+971500000101,"We operate a food delivery fleet in Dubai with about 120 riders and want to switch to electric. Is the M05 suitable for delivery use, and how do fleet orders work?",en,B2B,fleet,,AE,M05,false,,yes,synthetic-generator,仅城市无国家：国家取号码国家码
+SYN-004,synthetic,+27820000101,"Good day. My company imports motorcycles into South Africa, we handle homologation and customs ourselves. We are interested in importing Tromox, starting with one container of mixed models.",en,B2B,importer,,ZA,,false,,yes,synthetic-generator,
+SYN-005,synthetic,+6580000101,"Hi, we're a corporate gifting company in Singapore and want to buy 30 Mino scooters as employee rewards for a client. Can a sales representative contact me about a bulk order?",en,B2B,other,,SG,MINO,true,human_requested,yes,synthetic-generator,
+SYN-006,synthetic,+16135550101,"Hello, I own two scooter shops in Toronto, Canada. Please send me your dealer price list and MOQ for the Ukko and MC10.",en,B2B,dealer,,CA,MC10;UKKO,true,price_negotiation,yes,synthetic-generator,
+SYN-007,synthetic,+12025550101,"Hi, I'm interested in buying a few of your bikes, maybe 3 or 4. Can you send me some info?",en,B2B,other,,US,,true,low_confidence,,synthetic-generator,歧义：3 到 4 台，个人或小商家都可能；按不对称原则标 B2B
+SYN-008,synthetic,+12025550102,"Hi, I'm based in Mexico City, Mexico and run a small dealership called MotoVerde. We'd love to sell Tromox here. Which models can you ship to Mexico?",en,B2B,dealer,,MX,,true,b2b_qualified,yes,synthetic-generator,自述国家与号码国家不同
+SYN-009,synthetic,+6281200000101,Hello from Bali! We run a scooter rental business for tourists with 60 scooters. Thinking about going electric next season. Do you work with rental companies?,en,B2B,fleet,,ID,,false,,yes,synthetic-generator,仅地区无国家：国家取号码国家码
+SYN-010,synthetic,+12025550103,Hi Tromox! [FB-2609] How much does the MC10 cost and can I order it online in the US?,en,B2C,,buy,US,MC10,false,,no,synthetic-generator,
+SYN-011,synthetic,+447700900102,"Hi, is there somewhere in London where I can test ride the Ukko?",en,B2C,,test_ride,GB,UKKO,false,,no,synthetic-generator,
+SYN-012,synthetic,+12025550104,My Mino won't connect to the app after the last update. How do I pair it again?,en,B2C,,support,US,MINO,false,,no,synthetic-generator,
+SYN-013,synthetic,+61491570157,Hi Tromox! [QR-2610] I need a replacement rear mirror and a spare charger for my M03. Where can I buy parts?,en,B2C,,parts,AU,M03,false,,no,synthetic-generator,
+SYN-014,synthetic,+447700900103,"Hi, I bought an Ukko S+ four months ago. Does the warranty cover the display if it stops working?",en,B2C,,warranty,GB,UKKO,false,,no,synthetic-generator,质保范围提问，不是索赔，不升级
+SYN-015,synthetic,+12025550105,I've been waiting six weeks for my warranty repair and nobody answers my emails. This is unacceptable. I want a refund or I will take legal action.,en,B2C,,warranty,US,,true,complaint_warranty_legal_safety,no,synthetic-generator,
+SYN-016,synthetic,+14165550102,Can I please speak to a real person? I have questions about buying an MC10.,en,B2C,,buy,CA,MC10,true,human_requested,no,synthetic-generator,
+SYN-017,synthetic,+12025550106,"Hey, I'm a student. Any chance of a discount on the Mino if I buy this week?",en,B2C,,buy,US,MINO,true,price_negotiation,no,synthetic-generator,
+SYN-018,synthetic,+447700900104,Urgent: the battery of my M05 got very hot and started smoking while charging. What should I do?,en,B2C,,warranty,GB,M05,true,complaint_warranty_legal_safety,no,synthetic-generator,安全事故：必须升级
+SYN-019,synthetic,+12025550107,Do you have any owner clubs or community rides for Tromox riders in California?,en,B2C,,other,US,,false,,no,synthetic-generator,
+SYN-020,synthetic,+12025550108,Hi Tromox! [AD-2610A] Do you offer financing for the M05? I live in Austin.,en,B2C,,buy,US,M05,false,,no,synthetic-generator,
+SYN-021,synthetic,+447700900105,Do I need a motorcycle license to ride the Mino in the UK?,en,B2C,,other,GB,MINO,false,,no,synthetic-generator,
+SYN-022,synthetic,+61491570158,Looking for a replacement battery for my MC10 StreetX. I'm in Melbourne. Do you ship batteries?,en,B2C,,parts,AU,MC10,false,,no,synthetic-generator,
+SYN-023,synthetic,+12025550109,How long should I charge the Ukko before the first ride? The manual isn't clear.,en,B2C,,support,US,UKKO,false,,no,synthetic-generator,
+SYN-024,synthetic,+447700900106,"Hi, I'm moving to Ireland next month. Are there any Tromox dealers in Dublin where I can see the M05?",en,B2C,,test_ride,IE,M05,false,,no,synthetic-generator,自述国家与号码国家不同
+SYN-025,synthetic,+12025550110,Hi Tromox! [IG-2609],en,unknown,,,US,,false,,no,synthetic-generator,仅问候：等待客户按按钮
+SYN-026,synthetic,+2348030000101,Congratulations! You have been selected for a free crypto bonus. Click here to claim now!!!,en,unknown,,,NG,,false,,no,synthetic-generator,垃圾消息
+SYN-027,synthetic,+31600000101,"Hello, I am a mechanical engineer with 5 years of experience. Are there any job openings at Tromox Europe?",en,unknown,,,NL,,false,,no,synthetic-generator,求职
+SYN-028,synthetic,+8613800000101,"Dear Sir/Madam, we are a manufacturer of lithium battery packs and brake systems. We would like to be your supplier. Please find our catalog.",en,unknown,,,CN,,false,,no,synthetic-generator,供应商推销：看似 B 端，实际不是客户
+SYN-029,synthetic,+4917604069011,"Hallo Tromox! [IG-2609] Wir sind das Zweiradhaus Lindner in Leipzig, Deutschland, und möchten Tromox-Händler werden. Interesse an MC10 und Ukko, ca. 15 Fahrzeuge pro Jahr. Ansprechpartner: Markus Lindner, Inhaber.",de,B2B,dealer,,DE,MC10;UKKO,true,b2b_qualified,yes,synthetic-generator,
+SYN-030,synthetic,+4917604069012,"Guten Tag, wir sind ein E-Mobility-Großhändler mit Sitz in Österreich und beliefern rund 40 Fachhändler. Wir möchten den Vertrieb von Tromox für Österreich übernehmen. Firma: AlpenVolt Handels GmbH.",de,B2B,distributor,,AT,,true,b2b_qualified,yes,synthetic-generator,自述国家与号码国家不同
+SYN-031,synthetic,+41760000101,Wir betreiben einen Lieferdienst in Zürich mit 35 Fahrern und suchen elektrische Roller für die Flotte. Ist der M05 dafür geeignet?,de,B2B,fleet,,CH,M05,false,,yes,synthetic-generator,
+SYN-032,synthetic,+4917604069013,"Guten Tag, ich habe ein Motorradgeschäft in Köln. Bitte senden Sie mir Ihre Händlerpreisliste und die Zahlungsbedingungen.",de,B2B,dealer,,DE,,true,price_negotiation,yes,synthetic-generator,
+SYN-033,synthetic,+4917604069014,"Hallo, was kostet die Mino und wo kann ich sie in Deutschland kaufen?",de,B2C,,buy,DE,MINO,false,,no,synthetic-generator,
+SYN-034,synthetic,+4917604069015,Kann ich den Ukko irgendwo in München Probe fahren?,de,B2C,,test_ride,DE,UKKO,false,,no,synthetic-generator,
+SYN-035,synthetic,+4917604069016,"Meine MC10 lädt nicht mehr vollständig, die Anzeige bleibt bei 80 % stehen. Was kann ich tun?",de,B2C,,support,DE,MC10,false,,no,synthetic-generator,故障排查提问，未提出保修要求
+SYN-036,synthetic,+4917604069017,"Guten Tag, das Display meines Ukko ist nach drei Monaten ausgefallen. Ich möchte das als Garantiefall melden. Wie gehe ich vor?",de,B2C,,warranty,DE,UKKO,true,complaint_warranty_legal_safety,no,synthetic-generator,明确提出质保索赔
+SYN-037,synthetic,+436600000101,"Wo bekomme ich Ersatzteile für die M03, konkret einen neuen Seitenständer?",de,B2C,,parts,AT,M03,false,,no,synthetic-generator,
+SYN-038,synthetic,+4917604069018,Gibt es die MC10 auch in anderen Farben als auf eurer Website?,de,B2C,,buy,DE,MC10,false,,no,synthetic-generator,
+SYN-039,synthetic,+4917604069019,"Ich möchte bitte mit einem Mitarbeiter sprechen, nicht mit einem Bot.",de,unknown,,,DE,,true,human_requested,no,synthetic-generator,类型未知但明确要求真人
+SYN-040,synthetic,+4917604069020,"Hi, ich bin Content Creator mit 80k Followern auf Instagram und würde gerne eine Kooperation mit Tromox machen. Habt ihr ein Influencer-Programm?",de,unknown,,,DE,,false,,no,synthetic-generator,媒体/达人合作
+SYN-041,synthetic,+573000000101,"Hola Tromox! [TT-2610] Somos Movilidad Andina S.A.S., distribuidores de motos eléctricas en Colombia con una red de 12 puntos de venta. Queremos distribuir Tromox en el país. Soy Camila Rojas, gerente comercial.",es,B2B,distributor,,CO,,true,b2b_qualified,yes,synthetic-generator,
+SYN-042,synthetic,+34600000101,"Buenas tardes, tengo una tienda de motos en Sevilla y me interesa vender la Mino y la MC10. ¿Qué requisitos piden para ser concesionario?",es,B2B,dealer,,ES,MC10;MINO,false,,yes,synthetic-generator,
+SYN-043,synthetic,+34600000102,"Hola, somos una empresa importadora y queremos llevar Tromox a Chile. Manejamos homologación y aduanas, y pensamos empezar con un contenedor. ¿Qué documentación necesitan?",es,B2B,importer,,CL,,false,,yes,synthetic-generator,自述国家与号码国家不同
+SYN-044,synthetic,+525500000101,"Hola, me interesan unas 3 motos, ¿hacen envíos a Guadalajara?",es,B2B,other,,MX,,true,low_confidence,,synthetic-generator,歧义：数量 3，用途不明；按不对称原则标 B2B
+SYN-045,synthetic,+34600000103,"Hola, ¿cuánto cuesta la Ukko y dónde la puedo comprar en España?",es,B2C,,buy,ES,UKKO,false,,no,synthetic-generator,
+SYN-046,synthetic,+34600000104,Hola Tromox! [IG-2609] Vi la Mino en Instagram. ¿Dónde puedo probarla en Valencia?,es,B2C,,test_ride,ES,MINO,false,,no,synthetic-generator,
+SYN-047,synthetic,+5491100000101,Mi M05 no enciende después de la lluvia de ayer. ¿Qué puedo revisar?,es,B2C,,support,AR,M05,false,,no,synthetic-generator,
+SYN-048,synthetic,+34600000105,Quiero poner una queja: los frenos de mi MC10 fallaron y tuve un accidente. Necesito que alguien me llame hoy mismo.,es,B2C,,warranty,ES,MC10,true,complaint_warranty_legal_safety,no,synthetic-generator,事故与投诉优先于要求真人
+SYN-049,synthetic,+525500000102,¿Venden baterías de repuesto para la Mino B? Vivo en Monterrey.,es,B2C,,parts,MX,MINO,false,,no,synthetic-generator,
+SYN-050,synthetic,+34600000106,"Quiero comprar dos Ukko, una para mi esposa y otra para mí. ¿Tienen stock ahora?",es,B2C,,buy,ES,UKKO,false,,no,synthetic-generator,两台自用，明确是个人
+SYN-051,synthetic,+56900000101,¿La garantía cubre la batería si la moto se usa todos los días para ir al trabajo?,es,B2C,,warranty,CL,,false,,no,synthetic-generator,
+SYN-052,synthetic,+573000000102,Hola,es,unknown,,,CO,,false,,no,synthetic-generator,仅问候
+SYN-053,synthetic,+33639980101,"Bonjour Tromox ! [FB-2609] Nous sommes Cycles & Motos Lemaire, concession deux-roues à Lyon, France. Nous souhaitons devenir revendeur Tromox. Intérêt pour la MC10, environ 10 unités par an. Julien Lemaire, gérant.",fr,B2B,dealer,,FR,MC10,true,b2b_qualified,yes,synthetic-generator,
+SYN-054,synthetic,+33639980102,"Bonjour, notre société distribue des scooters électriques en Belgique auprès d'une trentaine de revendeurs. Nous aimerions représenter Tromox en Belgique.",fr,B2B,distributor,,BE,,false,,yes,synthetic-generator,自述国家与号码国家不同
+SYN-055,synthetic,+212600000101,Nous gérons un service de livraison à Casablanca avec 50 livreurs. Vos modèles conviennent-ils à un usage intensif de livraison ?,fr,B2B,fleet,,MA,,false,,yes,synthetic-generator,
+SYN-056,synthetic,+33639980103,"Bonjour, quel est le prix de l'Ukko et où puis-je l'acheter en France ?",fr,B2C,,buy,FR,UKKO,false,,no,synthetic-generator,
+SYN-057,synthetic,+33639980104,Est-il possible d'essayer la Mino à Bordeaux ?,fr,B2C,,test_ride,FR,MINO,false,,no,synthetic-generator,
+SYN-058,synthetic,+32470000101,Comment réinitialiser l'application après avoir changé de téléphone ? Mon M05 n'apparaît plus.,fr,B2C,,support,BE,M05,false,,no,synthetic-generator,
+SYN-059,synthetic,+33639980105,Cela fait deux mois que ma MC10 est en panne sous garantie et le revendeur refuse de la réparer. Je vais saisir une association de consommateurs.,fr,B2C,,warranty,FR,MC10,true,complaint_warranty_legal_safety,no,synthetic-generator,
+SYN-060,synthetic,+33639980106,"Bonjour, la M03 est-elle homologuée pour transporter un passager en France ?",fr,B2C,,other,FR,M03,false,,no,synthetic-generator,
+SYN-061,synthetic,+33639980107,"Bonjour, je suis étudiant en commerce international et je cherche un stage. Recrutez-vous chez Tromox Europe ?",fr,unknown,,,FR,,false,,no,synthetic-generator,求职
+SYN-062,synthetic,+15145550101,Bonjour Tromox ! [YT-2609],fr,unknown,,,CA,,false,,no,synthetic-generator,仅问候
+SYN-063,synthetic,+5511900000101,"Olá Tromox! [IG-2609] Somos distribuidores de veículos elétricos em São Paulo, Brasil, com 25 lojas parceiras. Queremos distribuir a Tromox no Brasil. Quais modelos estão disponíveis?",pt,B2B,distributor,,BR,,false,,yes,synthetic-generator,
+SYN-064,synthetic,+351910000101,"Boa tarde, tenho uma loja de motas em Lisboa, Portugal. Podem enviar a tabela de preços para revendedores?",pt,B2B,dealer,,PT,,true,price_negotiation,yes,synthetic-generator,
+SYN-065,synthetic,+351910000102,"Olá, quanto custa a MC10 e vocês entregam em Portugal?",pt,B2C,,buy,PT,MC10,false,,no,synthetic-generator,
+SYN-066,synthetic,+351910000103,Onde posso fazer um test ride da Ukko no Porto?,pt,B2C,,test_ride,PT,UKKO,false,,no,synthetic-generator,
+SYN-067,synthetic,+5511900000102,A minha Mino não carrega até 100%. Há algum procedimento para calibrar a bateria?,pt,B2C,,support,BR,MINO,false,,no,synthetic-generator,
+SYN-068,synthetic,+5511900000103,Preciso de um carregador novo para a M03. Onde encontro peças em Curitiba?,pt,B2C,,parts,BR,M03,false,,no,synthetic-generator,
+SYN-069,synthetic,+5511900000104,"Quero falar com um atendente, por favor. É sobre a compra de uma M05.",pt,B2C,,buy,BR,M05,true,human_requested,no,synthetic-generator,
+SYN-070,synthetic,+5511900000105,Ganhe dinheiro rápido trabalhando de casa! Clique no link e saiba mais.,pt,unknown,,,BR,,false,,no,synthetic-generator,垃圾消息
+SYN-071,synthetic,+5511900000106,"Oi, tudo bem?",pt,unknown,,,BR,,false,,no,synthetic-generator,仅问候
+SYN-072,synthetic,+393330000101,"Ciao Tromox! [WEB-2610] Siamo Moto Elettra Srl, concessionaria a Bologna, Italia. Vorremmo diventare rivenditori Tromox: ci interessano Ukko e Mino, circa 12 pezzi l'anno. Sono Giulia Ferri, titolare.",it,B2B,dealer,,IT,MINO;UKKO,true,b2b_qualified,yes,synthetic-generator,
+SYN-073,synthetic,+393330000102,"Buongiorno, gestiamo un e-commerce di mobilità elettrica e vorremmo vendere i vostri modelli online in Italia. È possibile?",it,B2B,other,,IT,,false,,yes,synthetic-generator,线上转售：B 端 other
+SYN-074,synthetic,+393330000103,"Buongiorno, quanto costa la MC10 e dove posso acquistarla in Italia?",it,B2C,,buy,IT,MC10,false,,no,synthetic-generator,
+SYN-075,synthetic,+393330000104,È possibile provare la Ukko a Milano?,it,B2C,,test_ride,IT,UKKO,false,,no,synthetic-generator,
+SYN-076,synthetic,+393330000105,Come si aggiorna il firmware della M05? L'app mi dà errore.,it,B2C,,support,IT,M05,false,,no,synthetic-generator,
+SYN-077,synthetic,+393330000106,Il motore della mia Mino fa un rumore strano dopo due mesi. È normale?,it,B2C,,support,IT,MINO,false,,no,synthetic-generator,故障排查提问，未提出保修要求
+SYN-078,synthetic,+393330000107,"Vivo in Svizzera, a Lugano. Spedite ricambi per la MC10 anche in Svizzera?",it,B2C,,parts,CH,MC10,false,,no,synthetic-generator,自述国家与号码国家不同
+SYN-079,synthetic,+393330000108,Avete in programma nuovi modelli per il prossimo anno?,it,B2C,,other,IT,,false,,no,synthetic-generator,
+SYN-080,synthetic,+393330000109,"Gentili signori, produciamo caschi e accessori per moto e vorremmo proporvi una collaborazione come fornitori.",it,unknown,,,IT,,false,,no,synthetic-generator,供应商推销

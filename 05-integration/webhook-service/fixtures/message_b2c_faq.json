@@ -1,0 +1,37 @@
+{
+  "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：C 端客户询问试驾，AI 按知识库回答，不需要人工，不应产生销售通知。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "12025550143",
+  "whatsappNumber": "12025550143",
+  "customerId": "TRXDEMOCUSTOMER00002",
+  "sessionId": "TRXDEMOCUSTOMER00002_2026-11-05T02:30:00.000Z",
+  "sessionCreationTime": "2026-11-05T02:30:00.000Z",
+  "customerCreationTime": "2026-11-05T02:30:00.000Z",
+  "firstName": "Sam",
+  "lastName": "R",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXDEMOMSG0000000021",
+      "date": "2026-11-05T02:31:10.000Z",
+      "from": "user",
+      "fromName": "Sam R",
+      "message": "Where can I test ride the MC10 near Washington?",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2C",
+    "b2c_intent": "test_ride",
+    "city_region": "Washington",
+    "product_interest": "MC10",
+    "ai_summary": "美国个人用户，想在华盛顿附近试驾 MC10；已按知识库提供经销商查询方式。",
+    "ai_confidence": "0.92",
+    "escalation_flag": "false",
+    "escalation_reason": "null"
+  }
+}

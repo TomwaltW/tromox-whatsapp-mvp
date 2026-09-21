@@ -1,0 +1,27 @@
+{
+  "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：客户点击带短码的 wa.me 链接后发来的第一条消息。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069011",
+  "whatsappNumber": "4917604069011",
+  "customerId": "TRXDEMOCUSTOMER00001",
+  "sessionId": "TRXDEMOCUSTOMER00001_2026-11-04T19:12:03.000Z",
+  "sessionCreationTime": "2026-11-04T19:12:03.000Z",
+  "customerCreationTime": "2026-11-04T19:12:03.000Z",
+  "firstName": "Jonas",
+  "lastName": "K",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXDEMOMSG0000000001",
+      "date": "2026-11-04T19:12:03.120Z",
+      "from": "user",
+      "fromName": "Jonas K",
+      "message": "Hi Tromox! [IG-2609]",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {}
+}

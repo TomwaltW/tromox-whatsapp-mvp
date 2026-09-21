@@ -1,0 +1,10 @@
+.venv/
+.env
+*.db
+*.sqlite3
+__pycache__/
+.pytest_cache/
+*.egg-info/
+.DS_Store
+/05-integration/webhook-service/data/
+/scratch/

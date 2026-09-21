@@ -1,0 +1,39 @@
+# Root project: installs the shared `tromox_lead` package (single source of truth for the
+# lead schema, enums, country/language/short-code rules) plus optional dependency groups
+# for the eval tool (04-eval), the webhook service (05-integration) and the cost model.
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tromox-lead"
+version = "0.1.0"
+description = "Shared lead schema and routing rules for the Tromox WhatsApp MVP"
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.6,<3",
+    "phonenumbers>=8.13",
+]
+
+[project.optional-dependencies]
+eval = ["httpx>=0.27", "anthropic>=1.0"]  # anthropic: official SDK, only needed for --model anthropic:<model>
+service = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "httpx>=0.27",
+    "pydantic-settings>=2.2",
+]
+cost = ["openpyxl>=3.1"]
+dev = ["pytest>=7.4"]
+
+[tool.setuptools.packages.find]
+where = ["shared"]
+include = ["tromox_lead*"]
+
+[tool.setuptools.package-data]
+tromox_lead = ["py.typed"]
+
+[tool.pytest.ini_options]
+# Each sub-project keeps its own tests; run them separately (see README) because
+# 04-eval and 05-integration each have a top-level package on their own sys.path.
+testpaths = ["tests"]

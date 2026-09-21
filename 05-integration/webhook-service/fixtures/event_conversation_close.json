@@ -1,0 +1,20 @@
+{
+  "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分类名称为占位【待客户确认】。",
+  "v": "1.1",
+  "type": "event",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069011",
+  "customerId": "TRXDEMOCUSTOMER00001",
+  "chatIdInChatPlatform": "4917604069011",
+  "customerCreationTime": "2026-11-04T19:12:03.000Z",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "events": [
+    {
+      "name": "conversation-close",
+      "info": [
+        { "name": "typification", "value": "qualified_followup" },
+        { "name": "agentName", "value": "Li Wei" }
+      ]
+    }
+  ]
+}

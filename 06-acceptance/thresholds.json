@@ -1,0 +1,16 @@
+{
+  "_comment": "Single machine-readable source of the acceptance thresholds. The eval report and scripts/check_repo.py read this file; 06-acceptance/acceptance-criteria.md explains it. All values are pending Zhang Baowen's confirmation.",
+  "offline_min_samples": 150,
+  "offline_min_b2b_samples": 30,
+  "b2b_recall_min": 0.90,
+  "b2b_precision_min": 0.80,
+  "country_accuracy_min": 0.95,
+  "product_recognition_min": 0.85,
+  "escalation_rate_max": 0.30,
+  "json_parse_success_min": 0.98,
+  "e2e_scenarios": 20,
+  "e2e_min_languages": 3,
+  "notify_latency_max_seconds": 60,
+  "route_a_variable_write_success_min": 0.95,
+  "route_a_trial_samples": 20
+}
