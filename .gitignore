@@ -8,3 +8,8 @@ __pycache__/
 .DS_Store
 /05-integration/webhook-service/data/
 /scratch/
+# local multi-track orchestration (worktrees, dispatch notes, track guard) and export output
+/.worktrees/
+/review/
+/.claude/
+/dist/

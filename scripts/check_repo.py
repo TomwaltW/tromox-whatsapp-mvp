@@ -14,7 +14,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", "data"}
+# .worktrees / review / .claude: local multi-track orchestration (worktree copies, dispatch notes, hooks); dist: export output.
+SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", "data",
+             ".worktrees", "review", ".claude", "dist"}
 TEXT_SUFFIXES = {".md", ".py", ".csv", ".json", ".txt", ".toml", ".yml", ".yaml", ".example", ".sh", ""}
 
 REQUIRED_FILES = [

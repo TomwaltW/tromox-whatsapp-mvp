@@ -26,7 +26,7 @@ CHROME_CANDIDATES = (
     "/usr/bin/chromium",
 )
 BLOCK_RE = re.compile(r"^```mermaid[ \t]*\n(.*?)^```", re.DOTALL | re.MULTILINE)
-SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__"}
+SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".worktrees", "review", ".claude", "dist"}
 
 
 def find_blocks(path: Path) -> list[tuple[int, str]]:

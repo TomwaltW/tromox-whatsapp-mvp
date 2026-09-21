@@ -17,7 +17,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "99-internal" / "open-questions.md"
 PREAMBLE = ROOT / "scripts" / "open_questions_preamble.md"
-SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", "data"}
+# .worktrees / review / .claude: local multi-track orchestration (worktree copies, dispatch notes, hooks); dist: export output.
+SKIP_DIRS = {".git", ".venv", "node_modules", "__pycache__", ".pytest_cache", "data",
+             ".worktrees", "review", ".claude", "dist"}
 SUFFIXES = {".md", ".csv", ".py", ".json", ".example"}
 MARKERS = OrderedDict([
     ("【待核实】", ("我要做的：平台、政策、价格类事实核实", "集成工程师（沈思锴）")),
