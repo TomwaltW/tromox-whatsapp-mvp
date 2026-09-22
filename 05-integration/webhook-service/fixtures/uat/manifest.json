@@ -1,5 +1,5 @@
 {
-  "_note": "UAT U01–U20（06-acceptance/uat-test-cases.md 第 2 节）在回调服务上的回放清单。每条用例：fixtures 按顺序 POST；expect 是全部回调之后的服务层期望；after 是按第几条回调计的中间检查点（词汇同 expect，另加响应 status）；note 写明 UAT 表里哪些属 Bot 层、本测试不验，以及与服务现状的出入。词汇说明见 tests/test_uat_replay.py 开头。",
+  "_note": "UAT U01–U20（06-acceptance/uat-test-cases.md 第 2 节）在回调服务上的回放清单。每条用例：fixtures 按顺序 POST；expect 是全部回调之后的服务层期望；after 是按第几条回调计的中间检查点（词汇同 expect，另加响应 status）；note 写明 UAT 表里哪些属 Bot 层、本测试不验，以及服务层在该用例里具体验什么。词汇说明见 tests/test_uat_replay.py 开头。",
   "cases": {
     "U01": {
       "title": "B 端经销商顺利路径",
