@@ -185,6 +185,19 @@ cd 05-integration/webhook-service
 ../../.venv/bin/python -m pytest -q tests/test_uat_replay.py -k U17   # 只跑一条
 ```
 
+怎么拿到真实样本：试用期把 `KEEP_RAW_PAYLOADS=true` 打开（默认是关的，回调处理完就把 `raw_events.payload_json` 清空），按本节的 U01–U20（`../../02-botmaker/trial-test-plan.md` 第 4 节的 20 条样例）走几遍真实会话，再用 `app/samples.py` 把原文导出来看。它只读打开线索库（`mode=ro`），不经过服务、不改库；默认脱敏：号码只留尾号 4 位，`firstName` / `lastName` / `fromName` / `name` / `contactName` / `profileName` 的值换成 `<redacted>`，邮箱换成 `<email>`，消息正文保留（结构对照要看正文落在哪个字段，正文里的号码与邮箱同样打码）。`events[].name` 与 `events[].info[].name` 也在打码之列，要看事件名与结束分类的原文就在本机加 `--no-redact` 重导一次——那份是原始个人数据，只留在本机，别提交。
+
+```bash
+cd 05-integration/webhook-service
+../../.venv/bin/python -m app.samples --out data/samples                                  # 最新 200 条，库取 .env 的 DATABASE_PATH
+../../.venv/bin/python -m app.samples --db data/leads.db --out data/samples --since 2026-11-04 --limit 50
+../../.venv/bin/python -m app.samples --out data/samples-raw --no-redact                  # 不脱敏，只在本机比对时用
+```
+
+`data/` 在 `.gitignore` 里，导出目录放这儿不会被提交。每条回调一个 `<收到时间>_<kind>_<id>.json`，另出一份 `data/samples/schema-summary.md`：第 1 节样本条数、kind 分布与时间范围；第 2 节每种 kind 的顶层 / `messages[]` / `variables` / `events[]` 键及出现次数；第 3 节把这些键和 `fixtures/*.json`、`fixtures/uat/*.json` 的键对起来，列出「样本有 fixture 没有」与「fixture 有样本没有」。摘要全文只有键名与计数、没有字段值，可以直接贴进仓库或发给同事。
+
+先看摘要第 3 节的差异，再按差异改 `app/models.py` 与 fixture——第 8 节第 1、2、6 条（字段名与层级、按钮与变量的下发形态、CTWA `whatsappReferral`）就是照这份差异逐条关掉的。
+
 拿到 Botmaker 真实回调样本后：按真实结构改 `fixtures/uat/*.json`（字段名、层级、按钮点击在回调里的形态、变量随哪条消息下发），`manifest.json` 里的期望不动，看哪条用例变红就是哪条行为受影响；`app/models.py` 与 `app/normalize.py` 若随样本调整，也以这 20 条全绿为准。W3 集成联调时把这 20 条当执行清单，和 UAT 现场核对的 Bot 话术、时延互补。
 
 ## 10. 调优期周报
