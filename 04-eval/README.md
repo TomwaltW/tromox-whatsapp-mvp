@@ -48,6 +48,8 @@ mock 客户端对标注答案做确定性扰动（按 `sample_id` 播种），�
 
 命令行最后一行是 `RESULT: PASS` 或 `RESULT: FAIL（列出不达标项）`。退出码默认恒为 0；加 `--fail-under` 后，任一阈值不达标返回 1（数据错误返回 2，客户端配置错误返回 3）。
 
+`data_origin=example` 的行默认被跳过（标注模板的示例行）；要评测试用样例包（`scripts/gen_trial_kit.py` 的默认产物，整份都是 `example`）时加 `--include-examples`，否则会因没有可用行返回 2。报告第 2 节的"真实样本数"仍只统计 `data_origin=real`。
+
 ## 4. 换成真实标注数据
 
 ### 4.0 从客户导出到标注模板
