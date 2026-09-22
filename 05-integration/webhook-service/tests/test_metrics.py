@@ -13,7 +13,8 @@ from app.metrics import NOTIFICATION_STATUSES, collect
 from webhook_test_helpers import HEADERS, NO_WAIT, RecordingNotifier, load_fixture
 
 KEYS = {"generated_at", "window_hours", "callbacks", "notifications", "raw_events_unprocessed",
-        "mirror_outbox_pending", "mirror_outbox_failed_24h", "last_callback_at", "leads_total"}
+        "mirror_outbox_pending", "mirror_outbox_failed_24h", "mirror_outbox_exhausted",
+        "last_callback_at", "leads_total"}
 
 
 def _insert_raw(db_path, key: str, received_at: str = "2026-09-22T00:00:00.000+00:00") -> None:

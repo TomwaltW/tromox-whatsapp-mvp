@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable, Iterator
 
@@ -73,6 +73,14 @@ CREATE TABLE IF NOT EXISTS mirror_outbox (
 
 def _now() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+
+
+def _next_after(stamp: str) -> str:
+    """比 `stamp` 严格大一毫秒，格式与 `_now()` 一致。
+
+    `mirror_outbox.updated_at` 当版本号用（`finish_mirror` 按它做条件更新），所以同一行两次
+    改动的时间戳必须严格递增。时间戳是毫秒精度，同一毫秒内连着来两条回调就会撞上。"""
+    return (datetime.fromisoformat(stamp) + timedelta(milliseconds=1)).isoformat(timespec="milliseconds")
 
 
 class SqliteStore:
@@ -286,15 +294,25 @@ class SqliteStore:
         At most one row per (lead, sink): a lead that changes again while its mirror is still
         pending does not queue a second entry, because the send pushes whatever the ledger holds
         at that moment, not a snapshot. An already sent row goes back to `pending` for the new
-        state. `attempts` is deliberately NOT reset: it is the lifetime failure count that
-        `pending_mirrors(max_attempts=...)` uses to stop retrying a hopeless (lead, sink) pair."""
+        state, and `attempts` / `last_error` are reset: the lead changed, so this is a new piece
+        of work and it deserves a fresh retry budget. Without that reset a (lead, sink) pair that
+        once failed 10 times would stay pending for ever, invisible to
+        `pending_mirrors(max_attempts=...)` and never retried again.
+
+        `updated_at` doubles as the row's version: `finish_mirror(..., seen_updated_at=...)`
+        completes the send only while it is unchanged."""
         with self._connect() as conn:
             now = _now()
+            current = conn.execute("SELECT updated_at FROM mirror_outbox WHERE lead_id = ? AND sink = ?",
+                                   (lead_id, sink)).fetchone()
+            if current is not None and current["updated_at"] >= now:
+                now = _next_after(current["updated_at"])  # same millisecond: keep the version strictly increasing
             conn.execute(
                 """
                 INSERT INTO mirror_outbox (lead_id, sink, status, created_at, updated_at)
                 VALUES (?, ?, 'pending', ?, ?)
-                ON CONFLICT(lead_id, sink) DO UPDATE SET status = 'pending', updated_at = excluded.updated_at
+                ON CONFLICT(lead_id, sink) DO UPDATE SET
+                    status = 'pending', attempts = 0, last_error = NULL, updated_at = excluded.updated_at
                 """,
                 (lead_id, sink, now, now),
             )
@@ -313,24 +331,61 @@ class SqliteStore:
             rows = conn.execute(sql + " ORDER BY id", params).fetchall()
         return [self._mirror(row) for row in rows]
 
-    def finish_mirror(self, mirror_id: int, ok: bool, error: str | None = None) -> None:
+    def finish_mirror(self, mirror_id: int, ok: bool, error: str | None = None, *,
+                      seen_updated_at: str | None = None) -> bool:
         """Success: the row is `sent` and its last error cleared. Failure: it stays `pending`
-        with one more attempt recorded, so the next callback, background task or replay retries."""
+        with one more attempt recorded, so the next callback, background task or replay retries.
+
+        `seen_updated_at` is the row version the caller sent: with it, success only lands while
+        the row is still that version (`WHERE id = ? AND updated_at = ?`). A new callback during
+        the send bumps the version, the update matches nothing and this returns False — the row
+        stays `pending` with its `attempts` untouched, so the newest state still gets sent.
+        Returns whether the row was actually changed."""
         with self._connect() as conn:
-            if ok:
-                conn.execute("UPDATE mirror_outbox SET status = 'sent', last_error = NULL, updated_at = ? WHERE id = ?",
-                             (_now(), mirror_id))
-            else:
+            if not ok:
                 conn.execute(
                     "UPDATE mirror_outbox SET status = 'pending', attempts = attempts + 1, last_error = ?, "
                     "updated_at = ? WHERE id = ?",
                     ((error or "")[:500] or None, _now(), mirror_id),
                 )
+                return True
+            if seen_updated_at is None:
+                conn.execute("UPDATE mirror_outbox SET status = 'sent', last_error = NULL, updated_at = ? WHERE id = ?",
+                             (_now(), mirror_id))
+                return True
+            cursor = conn.execute(
+                "UPDATE mirror_outbox SET status = 'sent', last_error = NULL, updated_at = ? "
+                "WHERE id = ? AND updated_at = ?",
+                (_now(), mirror_id, seen_updated_at),
+            )
+            return cursor.rowcount == 1
+
+    def reset_exhausted_mirrors(self, max_attempts: int = 10) -> int:
+        """Give every pending row that used up its retry budget a fresh one. Returns how many.
+
+        Manual operation (`python -m app.replay --reset-mirrors`): the rows stopped being retried
+        because they failed `max_attempts` times, so the cause is read off `last_error` and fixed
+        first — otherwise this just burns the same budget again."""
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "UPDATE mirror_outbox SET attempts = 0, last_error = NULL, updated_at = ? "
+                "WHERE status = 'pending' AND attempts >= ?",
+                (_now(), max_attempts),
+            )
+            return int(cursor.rowcount)
+
+    def exhausted_mirrors(self, max_attempts: int = 10) -> int:
+        """Pending rows `pending_mirrors(max_attempts=...)` no longer hands out (same predicate)."""
+        with self._connect() as conn:
+            return int(conn.execute(
+                "SELECT COUNT(*) FROM mirror_outbox WHERE status = 'pending' AND attempts >= ?",
+                (max_attempts,),
+            ).fetchone()[0])
 
     @staticmethod
     def _mirror(row: sqlite3.Row) -> MirrorRow:
         return MirrorRow(id=row["id"], lead_id=row["lead_id"], sink=row["sink"], status=row["status"],
-                         attempts=row["attempts"], last_error=row["last_error"])
+                         attempts=row["attempts"], last_error=row["last_error"], updated_at=row["updated_at"])
 
     # ------------------------------------------------------------------ health
     def ping(self) -> bool:

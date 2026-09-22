@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app
+from app.metrics import collect
 from app.pipeline import Pipeline
 from app.replay import replay
 from app.store import CsvExportSink, MirrorError, SqliteStore
@@ -226,3 +227,145 @@ def test_delete_lead_removes_the_outbox_rows_of_that_lead(tmp_path):
 def test_feishu_bitable_is_remote_and_the_csv_export_is_not():
     assert FeishuBitableSink.remote is True
     assert CsvExportSink.remote is False
+
+
+# --------------------------------------------------------------- 收尾：重试预算、条件更新、卡住的行
+def _payload(company: str, message_id: str) -> dict:
+    """同一个号码的又一条回调，公司名可变（用来看发出去的是不是最新状态）。"""
+    payload = load_fixture(B2B)
+    payload["variables"]["company"] = company
+    payload["messages"][0]["_id_"] = message_id
+    return payload
+
+
+def test_re_enqueue_resets_the_retry_budget(tmp_path):
+    """线索又变了 = 一份新的活，重试预算重新给满：attempts 归零、last_error 清空。
+
+    不重置的话，同一 (线索, sink) 失败累计满 10 次之后 `pending_mirrors` 再也不取它，
+    这行就永远 pending、永不重试。"""
+    sink = RemoteSink(fail=True, error=MirrorError("remote_fake: 服务端 500"))
+    pipeline, db = make_pipeline(tmp_path, [sink], "budget")
+    first = pipeline.handle(_payload("Alpha GmbH", "TRXMSG-B1"))
+    pipeline.mirror(first.lead_id)
+    assert outbox(db)[0][3] == 1 and outbox(db)[0][4] is not None
+
+    pipeline.handle(_payload("Beta GmbH", "TRXMSG-B2"))
+
+    _, _, status, attempts, last_error = outbox(db)[0]
+    assert (status, attempts, last_error) == ("pending", 0, None)
+
+
+def test_finish_mirror_only_completes_the_version_it_sent(tmp_path):
+    """条件更新：拿过期的 updated_at 去标 sent 不生效，行仍 pending、attempts 不变。"""
+    pipeline, db = make_pipeline(tmp_path, [RemoteSink()], "version")
+    result = pipeline.handle(_payload("Alpha GmbH", "TRXMSG-V1"))
+    row = pipeline.store.pending_mirrors(result.lead_id)[0]
+
+    pipeline.handle(_payload("Beta GmbH", "TRXMSG-V2"))        # 发送期间来了新回调，版本变了
+
+    assert pipeline.store.finish_mirror(row.id, True, None, seen_updated_at=row.updated_at) is False
+    assert outbox(db)[0][2] == "pending" and outbox(db)[0][3] == 0
+    fresh = pipeline.store.pending_mirrors(result.lead_id)[0]   # 拿当下的版本就能标完
+    assert pipeline.store.finish_mirror(fresh.id, True, None, seen_updated_at=fresh.updated_at) is True
+    assert outbox(db)[0][2] == "sent"
+
+
+def test_the_row_version_is_strictly_increasing(tmp_path):
+    """updated_at 当版本号用：同一毫秒内连着入队也必须严格递增，否则条件更新分不出新旧。"""
+    pipeline, _ = make_pipeline(tmp_path, [RemoteSink()], "monotonic")
+    result = pipeline.handle(_payload("Alpha GmbH", "TRXMSG-M1"))
+
+    seen = []
+    for _ in range(5):
+        pipeline.store.enqueue_mirror(result.lead_id, "remote_fake")
+        seen.append(pipeline.store.pending_mirrors(result.lead_id)[0].updated_at)
+
+    assert seen == sorted(seen) and len(set(seen)) == len(seen)
+
+
+def test_a_callback_during_the_send_is_not_lost(tmp_path):
+    """发送期间同一线索来了新回调：第一遍被超过，第二遍把最新状态发出去。"""
+
+    class ReentrantSink(RemoteSink):
+        def __init__(self) -> None:
+            super().__init__()
+            self.companies: list = []
+            self.hook = None
+
+        def upsert_lead(self, lead) -> None:
+            self.companies.append(lead.company)
+            if self.hook is not None:
+                hook, self.hook = self.hook, None
+                hook()
+            super().upsert_lead(lead)
+
+    sink = ReentrantSink()
+    pipeline, db = make_pipeline(tmp_path, [sink], "race")
+    result = pipeline.handle(_payload("Old GmbH", "TRXMSG-R1"))
+    sink.hook = lambda: pipeline.handle(_payload("New GmbH", "TRXMSG-R2"))
+
+    assert pipeline.mirror(result.lead_id) == {"remote_fake": "sent"}
+    assert sink.companies == ["Old GmbH", "New GmbH"]          # 第二遍发的是最新状态
+    assert outbox(db)[0][2] == "sent"
+
+
+def test_a_second_supersede_leaves_the_row_for_the_next_run(tmp_path):
+    """连着两次被超过就收手：最多两遍，行留着 pending 交给下次回调 / replay。"""
+
+    class AlwaysReentrantSink(RemoteSink):
+        def __init__(self) -> None:
+            super().__init__()
+            self.pipeline = None
+            self.n = 0
+
+        def upsert_lead(self, lead) -> None:
+            self.n += 1
+            self.pipeline.handle(_payload(f"Company {self.n}", f"TRXMSG-S{self.n}"))
+            super().upsert_lead(lead)
+
+    sink = AlwaysReentrantSink()
+    pipeline, db = make_pipeline(tmp_path, [sink], "twice")
+    sink.pipeline = pipeline
+    result = pipeline.handle(_payload("Start GmbH", "TRXMSG-S0"))
+
+    assert pipeline.mirror(result.lead_id) == {"remote_fake": "superseded"}
+    assert sink.n == 2                                          # 不无限重试
+    assert outbox(db)[0][2] == "pending"
+
+
+def test_exhausted_rows_are_skipped_visible_and_resettable(tmp_path):
+    """卡满 10 次：pending_mirrors 不再取、/metrics 看得到、--reset-mirrors 之后能重发。"""
+    sink = RemoteSink(fail=True, error=MirrorError("remote_fake: 服务端 500"))
+    pipeline, db = make_pipeline(tmp_path, [sink], "stuck")
+    result = pipeline.handle(_payload("Alpha GmbH", "TRXMSG-E1"))
+    conn = sqlite3.connect(db)
+    conn.execute("UPDATE mirror_outbox SET attempts = 10")
+    conn.commit()
+    conn.close()
+
+    assert pipeline.store.pending_mirrors() == []               # 不再自动重试
+    assert pipeline.store.exhausted_mirrors() == 1
+    assert collect(db)["mirror_outbox_exhausted"] == 1
+
+    sink.fail = False
+    counts = replay(pipeline, reset_mirrors=True)
+
+    assert counts["mirrors_reset"] == 1 and counts["mirrors"] == 1
+    assert outbox(db)[0][2] == "sent"
+    assert collect(db)["mirror_outbox_exhausted"] == 0
+    assert pipeline.store.get_lead(result.lead_id) is not None
+
+
+def test_replay_without_the_flag_leaves_exhausted_rows_alone(tmp_path):
+    """默认不重置：卡住的行原样留着，等人看过 last_error 再说。"""
+    pipeline, db = make_pipeline(tmp_path, [RemoteSink(fail=True)], "no-reset")
+    pipeline.handle(_payload("Alpha GmbH", "TRXMSG-N1"))
+    conn = sqlite3.connect(db)
+    conn.execute("UPDATE mirror_outbox SET attempts = 10")
+    conn.commit()
+    conn.close()
+
+    counts = replay(pipeline)
+
+    assert counts["mirrors_reset"] == 0 and counts["mirrors"] == 0
+    assert outbox(db)[0][2] == "pending" and outbox(db)[0][3] == 10

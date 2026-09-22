@@ -29,7 +29,7 @@ from .models import BotmakerWebhook
 from .normalize import collect_message_facts, merge_events, merge_message, notification_suppressed, resolve_contact
 from .notify import Notifier, NotifyError, build_card
 from .retry import RetryError, RetryPolicy, retry_call
-from .store import LeadSink, MirrorError, RawEventState, SqliteStore
+from .store import LeadSink, MirrorError, MirrorRow, RawEventState, SqliteStore
 
 log = logging.getLogger(__name__)
 
@@ -164,7 +164,9 @@ class Pipeline:
 
     # ------------------------------------------------------------------ outbound
     def mirror(self, lead_id: str) -> dict[str, str]:
-        """Send this lead's pending remote mirrors. Returns {sink name: "sent"|"failed"}; never raises.
+        """Send this lead's pending remote mirrors. Returns {sink name: "sent"|"failed"|"superseded"};
+        never raises. "superseded" = a new callback for this lead landed while the row was being
+        sent and it could not be caught up within this run; the row is still pending.
 
         Runs after the HTTP response (background task) and again from `python -m app.replay`. What
         is sent is the lead as the ledger holds it *now*, not a snapshot taken at callback time, so
@@ -179,39 +181,54 @@ class Pipeline:
         rows = self.store.pending_mirrors(lead_id)
         if not rows:
             return {}
-        by_name = {sink.name: sink for sink in self.sinks}
-        lead = self.store.get_lead(lead_id)
         results: dict[str, str] = {}
-        for row in rows:
-            sink = by_name.get(row.sink)
-            if sink is None:  # STORAGE_BACKENDS changed while the row was waiting
-                self.store.finish_mirror(row.id, False, f"{row.sink}: sink not configured")
-                results[row.sink] = "failed"
-                log.error("mirror sink not configured", extra={"lead_id": lead_id, "sink": row.sink,
-                                                               "attempts": row.attempts + 1,
-                                                               "error_type": "SinkNotConfigured"})
-                continue
-            if lead is None:  # erased between the callback and the send: nothing left to mirror
-                self.store.finish_mirror(row.id, False, "lead not found")
-                results[row.sink] = "failed"
-                log.error("mirror skipped: lead not found", extra={"lead_id": lead_id, "sink": row.sink,
-                                                                   "attempts": row.attempts + 1,
-                                                                   "error_type": "LeadNotFound"})
-                continue
-            try:
-                _, attempts = retry_call(lambda s=sink: s.upsert_lead(lead), self.retry_policy, self._sleep)
-            except RetryError as exc:
-                # keep the text only for the sink's own error type (URL- and secret-free by construction)
-                detail = str(exc.last) if isinstance(exc.last, MirrorError) else type(exc.last).__name__
-                self.store.finish_mirror(row.id, False, detail)
-                results[row.sink] = "failed"
-                log.error("mirror failed", extra={"lead_id": lead_id, "sink": row.sink,
-                                                  "attempts": row.attempts + 1, "error_type": type(exc.last).__name__})
-            else:
-                self.store.finish_mirror(row.id, True, None)
-                results[row.sink] = "sent"
-                log.info("mirror sent", extra={"lead_id": lead_id, "sink": row.sink, "attempts": attempts})
+        # At most two passes. A callback that lands mid-send bumps the row's version, the send
+        # cannot be completed ("superseded") and the row stays pending — so read the ledger again
+        # and push the state that callback left behind. A second supersede is left to the next
+        # callback's own background task or to `app.replay`: this is a background task, not a
+        # place to spin.
+        for pass_no in (1, 2):
+            lead = self.store.get_lead(lead_id)
+            for row in rows:
+                results[row.sink] = self._mirror_row(lead_id, lead, row)
+            superseded = {name for name, outcome in results.items() if outcome == "superseded"}
+            if not superseded or pass_no == 2:
+                break
+            rows = [row for row in self.store.pending_mirrors(lead_id) if row.sink in superseded]
+            if not rows:
+                break
         return results
+
+    def _mirror_row(self, lead_id: str, lead: Lead | None, row: MirrorRow) -> str:
+        """Send one outbox row. Returns "sent" | "failed" | "superseded"; never raises."""
+        sink = {s.name: s for s in self.sinks}.get(row.sink)
+        if sink is None:  # STORAGE_BACKENDS changed while the row was waiting
+            self.store.finish_mirror(row.id, False, f"{row.sink}: sink not configured")
+            log.error("mirror sink not configured", extra={"lead_id": lead_id, "sink": row.sink,
+                                                           "attempts": row.attempts + 1,
+                                                           "error_type": "SinkNotConfigured"})
+            return "failed"
+        if lead is None:  # erased between the callback and the send: nothing left to mirror
+            self.store.finish_mirror(row.id, False, "lead not found")
+            log.error("mirror skipped: lead not found", extra={"lead_id": lead_id, "sink": row.sink,
+                                                               "attempts": row.attempts + 1,
+                                                               "error_type": "LeadNotFound"})
+            return "failed"
+        try:
+            _, attempts = retry_call(lambda s=sink: s.upsert_lead(lead), self.retry_policy, self._sleep)
+        except RetryError as exc:
+            # keep the text only for the sink's own error type (URL- and secret-free by construction)
+            detail = str(exc.last) if isinstance(exc.last, MirrorError) else type(exc.last).__name__
+            self.store.finish_mirror(row.id, False, detail)
+            log.error("mirror failed", extra={"lead_id": lead_id, "sink": row.sink,
+                                              "attempts": row.attempts + 1, "error_type": type(exc.last).__name__})
+            return "failed"
+        # complete only while the row is still the version we sent (`row.updated_at`)
+        if not self.store.finish_mirror(row.id, True, None, seen_updated_at=row.updated_at):
+            log.info("mirror superseded", extra={"lead_id": lead_id, "sink": row.sink})
+            return "superseded"
+        log.info("mirror sent", extra={"lead_id": lead_id, "sink": row.sink, "attempts": attempts})
+        return "sent"
 
     def deliver(self, notification_id: int) -> str:
         """Send one claimed notification. Returns the final status; never raises."""
