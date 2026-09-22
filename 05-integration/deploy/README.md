@@ -131,7 +131,7 @@ TROMOX_METRICS_TOKEN=local-token ./healthcheck-alert.sh http://127.0.0.1:18080/h
 docker compose -p tromox-smoke down -v && rm -rf "$T"
 ```
 
-脚本单测不需要 Docker：`backup.sh` / `restore.sh` 对任意 SQLite 文件都能跑，`healthcheck-alert.sh` 对一个返回 503 的地址应退出 1 并在 stderr 打印 `tromox webhook down`。 设了 `TROMOX_METRICS_TOKEN` 时，对 `/metrics` 返回 `raw_events_unprocessed` 非 0 的地址应退出 1 并打印 `tromox webhook degraded`。
+脚本单测不需要 Docker：`backup.sh` / `restore.sh` 的往返一致（写连接还开着时 WAL 里的行也在备份里）、过期备份清理、恢复后删 `-wal` / `-shm`、拒绝不是 SQLite 的备份文件，都由根目录 `tests/test_backup_restore.py` 固定（`scripts/check_all.sh` 会跑，不用手工 smoke）；`healthcheck-alert.sh` 对一个返回 503 的地址应退出 1 并在 stderr 打印 `tromox webhook down`。 设了 `TROMOX_METRICS_TOKEN` 时，对 `/metrics` 返回 `raw_events_unprocessed` 非 0 的地址应退出 1 并打印 `tromox webhook degraded`。
 
 ## 6. 与 deployment.md 的对应
 
