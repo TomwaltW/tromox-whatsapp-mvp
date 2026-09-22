@@ -149,7 +149,7 @@
 | 79 | 是否需要平台支持结构化 JSON 输出 / 不需要。平台是否支持 JSON 输出【待核实】；若支持，可作为后续优化，把 16 个字段合成一次写入 / 不依赖平台，由外部调用保证固定 JSON | `02-botmaker/ai-agent-system-prompt.md:265` | 集成工程师（沈思锴） |
 | 80 | 连续无关消息的限流（例如同一会话内拒答超过若干次后不再回复）如需要，在流程层处理【待核实】，不写进 prompt。 | `02-botmaker/ai-agent-system-prompt.md:270` | 集成工程师（沈思锴） |
 | 81 | 答复回填：Q1–Q3 改 03-whatsapp/cost-model-inputs.csv 后重跑 cost_model.py，再同步报价单；Q5、Q6 回填 05-integration/botmaker-api-notes.md 与 01-design/source-tracking.md；Q7、Q8 回填 ADR 0006；其余回… | `02-botmaker/botmaker-sales-questions.md:26` | 集成工程师（沈思锴） |
-| 82 | 假设：账号、号码、Meta 商务账户全部开在客户名下，集成工程师只拿管理权限；后台界面以英文为准；界面路径只写已在帮助中心读到的（见 SOURCES.md），其余一律写成"在 Botmaker 后台的 X 功能中"并标【待核实】，首次进入试用账号时补全。 | `02-botmaker/setup-guide.md:4` | 集成工程师（沈思锴） |
+| 82 | 假设：账号、号码、Meta 商务账户全部开在客户名下，集成工程师只持有 Botmaker 后台的操作席位（Meta 侧默认不需要管理员权限，见 03-whatsapp/meta-onboarding-checklist.md 第 2 节第 6 项）；后台界面以英文为准；界面路径只写已在帮助中心读到的（见 SOURCES.md），其余一律写… | `02-botmaker/setup-guide.md:4` | 集成工程师（沈思锴） |
 | 83 | 前置：客户已按 03-whatsapp/meta-onboarding-checklist.md 准备好 Meta 商务账户与号码；操作人所在网络可稳定访问 Botmaker 后台（SOURCES S-B15）【待核实】。 | `02-botmaker/setup-guide.md:5` | 集成工程师（沈思锴） |
 | 84 | 套餐先不付费，试用期验证完（trial-test-plan.md）再由客户绑卡开 Standard（149 USD/月，按 DAILY USER 计数，SOURCES S-B3）。开通 WhatsApp 商业平台账户另有一次性 99 USD。超出套餐的单价两页不一致：定价页写 Standard 每个额外对话 0.07 USD，FAQ 写 … | `02-botmaker/setup-guide.md:37` | 集成工程师（沈思锴） |
 | 85 | 账号内的时区、语言等全局设置：在 Botmaker 后台的账号设置功能中完成【待核实】；号码的时区在第 2 步接入时填写（SOURCES S-B4）。后台界面语言只有英、西、葡、法四种，没有中文（SOURCES S-B14），统一用英文。 | `02-botmaker/setup-guide.md:38` | 集成工程师（沈思锴） |
