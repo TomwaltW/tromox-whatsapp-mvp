@@ -160,7 +160,31 @@ cd 05-integration/webhook-service
 
 ## 10. 调优期周报
 
-（本节由 T9 填写：`python -m app.report` 的用法、指标口径与周复盘怎么用。）
+`app/report.py` 从线索库出一份周复盘报告（Markdown + JSON），给 `../../07-project/timeline.md` W5–W8 的每周误判复盘用；`../../07-project/phase-2-outline.md` 第 1 节要在调优结束时回看的几个数（线索数与 B 端占比、有效线索率按渠道 / 短码、升级率与通知时延）都在里面。它只读打开 SQLite（`mode=ro`），不经过服务，不改库、不发通知，随时可跑。
+
+```bash
+cd 05-integration/webhook-service
+../../.venv/bin/python -m app.report --out report.md --json report.json                       # 最近 7 天，库取 .env 的 DATABASE_PATH
+../../.venv/bin/python -m app.report --db data/leads.db --since 2026-11-09 --until 2026-11-16 --out w6.md --json w6.json
+../../.venv/bin/python -m app.report --out report.md --latency-threshold 30                     # 收紧通知时延阈值
+```
+
+窗口口径：`--until` 默认今天（UTC 日期）、`--since` 默认往前 7 天，区间是 `[since, until)`，**`until` 当天不算**，所以周一早上直接跑就是上一整周。线索按 `leads.updated_at` 落在窗口内计（一条线索本周有任何更新就算进来，包括状态回写），通知按 `notifications.created_at` 计。
+
+六个指标怎么读（JSON 的键名与 Markdown 的节号一一对应）：
+
+| 节 | JSON 键 | 口径 | 看什么 |
+|---|---|---|---|
+| 1 线索 | `leads`、`valid_lead_rate` | `b2b_share = b2b / total`；`valid_lead_rate` 是**代理指标**：状态为 `handed_off` / `contacted` / `closed_won` 的 B 端线索 ÷ B 端线索，B 端为 0 时为 `null` | 量够不够；结束分类（`04-eval/labeling-guide.md`）攒够之后要换成"销售填的有效线索标准" |
+| 2 来源 | `by_source_channel`、`by_source_code` | 渠道列全部枚举值（含 `unknown`）；短码只列前 20 | 哪条内容带来真经销商；`unknown` 占比持续高于三成要回头查链接（`../../01-design/source-tracking.md` 第 7 节） |
+| 3 转人工 | `escalation` | `rate = flagged / total`；`by_reason` 各值之和等于 `flagged` | 对照 `../../06-acceptance/thresholds.json` 的 `escalation_rate_max`；`b2b_qualified` 是设计上必转的，误判看 `low_confidence` 与 `not_understood_twice` |
+| 4 通知 | `notifications` | 五种状态各计一次（含义见第 7 节）；时延 = `sent_at − created_at`（秒，只算有 `sent_at` 的行）；`over_threshold` 是超过 `--latency-threshold`（默认 60，与 `thresholds.json` 的 `notify_latency_max_seconds` 一致）的条数 | `failed` / `pending` 非 0 或 `over_threshold` 非 0，先查通知渠道与 `app.replay` |
+| 5 状态漏斗 | `status_funnel` | 八个状态各一格，合计等于 `leads.total` | `handed_off` 之后靠销售回写；长期停在 `qualified` 是回写没跟上 |
+| 6 复盘清单 | （只在 Markdown） | 窗口内 `low_confidence` / `not_understood_twice` 的线索：`lead_id`、原因、尾号 4 位、`ai_summary` | 本周逐条人工复看，判断是 prompt、知识库还是流程的问题 |
+
+隐私：报告会贴到群里，所以号码只出尾号 4 位，摘要里像号码的数字串也一并打码；`lead_id` 是哈希，可拿去 `data/leads.csv` 或 Botmaker 后台对账。
+
+周复盘怎么用（W5–W8）：每周一跑一次，`report.md` 整份贴进当周复盘记录；先看第 6 节逐条定性（AI 判错 / 客户表达含糊 / 流程漏洞），再看第 3 节升级率和第 4 节时延有没有越线，最后把第 1、2 节的数按周排成一列看趋势。要看四周的变化，把每周的 `report.json` 留下来即可，键名固定。
 
 ## 11. 演示卡片
 
