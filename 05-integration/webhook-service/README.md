@@ -98,6 +98,8 @@ docker run -d --name tromox-webhook --restart unless-stopped \
 
 Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockerignore`。Dockerfile 只 COPY `pyproject.toml`、`shared/` 与 `app/`，其他目录不会进镜像；若想加快构建时的上下文传输，可在仓库根目录加 `.dockerignore`，排除 `.venv/`、`.git/`、`04-eval/` 与 `**/__pycache__/`。
 
+部署到服务器：见 `../deploy/README.md`（docker compose、Caddy、备份与更新脚本）。
+
 ## 6. 配置项
 
 | 变量 | 默认值 | 说明 |

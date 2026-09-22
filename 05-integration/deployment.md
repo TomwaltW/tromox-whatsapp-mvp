@@ -45,54 +45,25 @@ ufw allow 22/tcp && ufw allow 80/tcp && ufw allow 443/tcp && ufw enable
 apt-get update && apt-get install -y unattended-upgrades sqlite3    # 自动安全更新；sqlite3 用于备份
 ```
 
-### 4.2 安装 Docker 并构建镜像
+4.2 到 4.5 的文件都在 `deploy/` 目录：`deploy/docker-compose.yml`（服务定义）、`deploy/Caddyfile.example`（反向代理）与几个运维脚本，逐步操作见 `deploy/README.md` 第 2 节；本节只保留每一步的用意。
 
-按 Docker 官方文档为该发行版安装 Docker Engine，然后：
+### 4.2 安装 Docker 并取回代码
 
-```bash
-sudo mkdir -p /opt/tromox && sudo chown deploy /opt/tromox && cd /opt/tromox
-git clone <客户名下的代码仓库地址> app && cd app
-docker build -f 05-integration/webhook-service/Dockerfile -t tromox-webhook .   # 构建上下文是仓库根目录
-```
+按 Docker 官方文档为该发行版安装 Docker Engine 与 Compose 插件（`docker compose version` 能返回），把 deploy 用户加进 `docker` 组。仓库克隆到 `/opt/tromox/app`，之后所有 `docker compose` 命令都在 `/opt/tromox/app/05-integration/deploy` 目录执行。镜像不再手动 `docker build`：compose 文件里写了构建上下文（仓库根目录）与 Dockerfile 路径，`docker compose up --build` 会构建。
 
 ### 4.3 环境变量文件
 
-```bash
-cp 05-integration/webhook-service/.env.example /opt/tromox/.env
-chmod 600 /opt/tromox/.env
-# 必填：BOTMAKER_WEBHOOK_TOKEN（openssl rand -hex 32 生成）、NOTIFIERS 及对应的群机器人地址
-# 容器内路径已由镜像设定，DATABASE_PATH / CSV_EXPORT_PATH 两行可以删掉
-```
+`deploy/.env`（由 `webhook-service/.env.example` 复制，权限 600，已被 `.gitignore` 排除）同时做两件事：作为 `env_file` 传给容器，也给 compose 文件里的 `TROMOX_*` 变量插值（数据目录、端口、绑定地址）。必填 `BOTMAKER_WEBHOOK_TOKEN`（`openssl rand -hex 32` 生成）、`NOTIFIERS` 及对应的群机器人地址；容器内路径已由镜像设定，`DATABASE_PATH` / `CSV_EXPORT_PATH` 两行删掉；加一行 `TROMOX_DATA_DIR=/opt/tromox/data`，把数据放在仓库之外。
 
 ### 4.4 数据目录与启动
 
-服务器上用绑定挂载，备份与取 CSV 都方便；容器以 uid 10001 运行，目录要交给它：
-
-```bash
-sudo mkdir -p /opt/tromox/data && sudo chown 10001 /opt/tromox/data
-docker run -d --name tromox-webhook --restart unless-stopped \
-  --env-file /opt/tromox/.env \
-  -v /opt/tromox/data:/srv/data \
-  -p 127.0.0.1:8000:8000 \
-  --log-opt max-size=10m --log-opt max-file=5 \
-  tromox-webhook
-```
-
-端口只绑 `127.0.0.1`，公网流量一律经反向代理进入。`--log-opt` 两项就是日志轮转：单文件 10 MB，保留 5 个。日志是 JSON 结构化的，不含完整号码与消息正文。
+服务器上用绑定挂载，备份与取 CSV 都方便；容器以 uid 10001 运行，目录要 `chown 10001` 交给它。`docker compose up -d --build webhook` 起服务。compose 文件里已经写死的几项及其理由：端口只绑 `127.0.0.1`，公网流量一律经反向代理进入；`restart: unless-stopped`，机器重启后自动拉起；日志驱动 json-file、单文件 10 MB、保留 5 个，就是日志轮转；健康检查与镜像里的一样查 `/health`。日志是 JSON 结构化的，不含完整号码与消息正文。
 
 ### 4.5 反向代理与 TLS
 
-推荐 Caddy，配置三行，证书自动签发与续期。先把子域名的 A 记录指到服务器，再写 `/etc/caddy/Caddyfile`：
+推荐 Caddy，配置三行，证书自动签发与续期。先把子域名的 A 记录指到服务器，再把 `deploy/Caddyfile.example` 复制为 `deploy/Caddyfile`、改域名，`docker compose --profile proxy up -d` 起代理。Caddy 跑在同一个 compose 网络里，所以上游写服务名 `webhook:8000`；不加 `--profile proxy` 时 Caddy 不会起，本机 smoke test 因此不占 80 / 443。改在宿主机上直接跑 Caddy（systemd）也可以，上游改成 `127.0.0.1:8000`；用 Nginx 则是 `proxy_pass http://127.0.0.1:8000;` 加 certbot 签发证书。
 
-```
-wa-hook.<客户域名> {
-    reverse_proxy 127.0.0.1:8000
-}
-```
-
-`sudo systemctl reload caddy` 后生效。用 Nginx 也可以，等价配置是 `proxy_pass http://127.0.0.1:8000;` 加 certbot 签发证书。
-
-如果启用了 `ALLOWED_IPS`：容器看到的对端是 Docker 网桥网关而不是真实来源，需要让 uvicorn 信任反向代理传来的 `X-Forwarded-For`。在 `.env` 里加 `FORWARDED_ALLOW_IPS=<网桥网关 IP>`（`docker network inspect bridge` 可查，常见为 `172.17.0.1`）。不启用 `ALLOWED_IPS` 时不需要这一步，密钥校验才是主防线。
+如果启用了 `ALLOWED_IPS`：容器看到的对端是 Caddy 容器（宿主机跑 Caddy 时则是 Docker 网桥网关）而不是真实来源，需要让 uvicorn 信任反向代理传来的 `X-Forwarded-For`。在 `.env` 里加 `FORWARDED_ALLOW_IPS`：Caddy 在 compose 里时其地址会随重建变化，写 `*` 即可（8000 端口只绑 127.0.0.1，只有 Caddy 与本机能到达）；宿主机跑 Caddy 时写网桥网关 IP（`docker network inspect bridge` 可查，常见为 `172.17.0.1`）。不启用 `ALLOWED_IPS` 时不需要这一步，密钥校验才是主防线。
 
 ### 4.6 验证
 
@@ -112,35 +83,24 @@ curl -s -X POST https://wa-hook.<客户域名>/webhooks/botmaker \
 
 ### 4.7 在 Botmaker 侧接上
 
-webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置里开通；同一渠道只能挂 1 个（SOURCES S-B5）。然后在 Settings > Integrations > Botmaker API 的 Webhooks 区域填回调地址 `https://<子域名>/webhooks/botmaker` 与同一个 Token，勾选项见 `botmaker-api-notes.md` 第 4 节。用测试号发一条消息，确认服务日志出现 `callback processed`。
+webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置里开通；同一渠道只能挂 1 个（SOURCES S-B5）。然后在 Settings > Integrations > Botmaker API 的 Webhooks 区域填回调地址 `https://<子域名>/webhooks/botmaker` 与同一个 Token，勾选项见 `botmaker-api-notes.md` 第 4 节。用测试号发一条消息，确认服务日志（`docker compose logs -f webhook`）出现 `callback processed`。
 
 ## 5. 定时任务
 
-```bash
-# crontab -e（deploy 用户）
-*/5 * * * * docker exec tromox-webhook python -m app.replay >/dev/null 2>&1      # 重放未处理事件、重试失败通知
-15 3 * * *  sqlite3 /opt/tromox/data/leads.db ".backup '/opt/tromox/backup/leads-$(date +\%F).db'"   # 每日备份
-30 3 * * *  find /opt/tromox/backup -name 'leads-*.db' -mtime +30 -delete          # 备份保留 30 天
-*/5 * * * * curl -fsS https://wa-hook.<客户域名>/health >/dev/null || echo "tromox webhook down" | logger -t tromox
-```
+三条任务写在 `deploy/cron.example`，贴进 deploy 用户的 `crontab -e` 后改路径、域名与告警地址：每 5 分钟 `app.replay`（重放未处理事件、重试失败通知）；每日 03:15 `deploy/backup.sh`（备份并清理 30 天前的备份）；每 5 分钟 `deploy/healthcheck-alert.sh`（查 `/health`，不健康就 POST 到运维群机器人并写系统日志）。
 
-健康检查失败要能通知到人：上面的 `logger` 只写本机系统日志，上线时把 `echo ... | logger` 换成向运维群机器人或邮箱发一条消息。理由：Botmaker 的 webhook 在 10 分钟内失败超过 100 次会熔断，接下来 10 分钟停发，这段时间的消息丢失；单条失败是否重试也还不知道（SOURCES S-B5）。这些回调没有落盘，`app.replay` 补不回，只能按 `botmaker-api-notes.md` 第 7 节对账。所以服务停摆要在几分钟内发现，处理路径也保持"先落盘、尽快应答、通知放到响应之后"。`/health` 只查数据库：Token 未配置、Token 与 Botmaker 侧不一致或 `ALLOWED_IPS` 过期时它照样返回 200，回调却全被拒（503 / 401 / 403），同样收不到、同样没落盘；所以每次改配置或更新后，还要看一眼 Botmaker 后台 webhook 的错误与被拒计数（`botmaker-api-notes.md` 第 4 节）。
+健康检查失败要能通知到人：`healthcheck-alert.sh` 的第二个参数就是运维群机器人（或任何接收 JSON POST）的地址，不填则只写本机系统日志。理由：Botmaker 的 webhook 在 10 分钟内失败超过 100 次会熔断，接下来 10 分钟停发，这段时间的消息丢失；单条失败是否重试也还不知道（SOURCES S-B5）。这些回调没有落盘，`app.replay` 补不回，只能按 `botmaker-api-notes.md` 第 7 节对账。所以服务停摆要在几分钟内发现，处理路径也保持"先落盘、尽快应答、通知放到响应之后"。`/health` 只查数据库：Token 未配置、Token 与 Botmaker 侧不一致或 `ALLOWED_IPS` 过期时它照样返回 200，回调却全被拒（503 / 401 / 403），同样收不到、同样没落盘；所以每次改配置或更新后，还要看一眼 Botmaker 后台 webhook 的错误与被拒计数（`botmaker-api-notes.md` 第 4 节）。
 
 ## 6. 备份与恢复
 
-1. 用 `sqlite3 ... ".backup"` 做在线一致性备份（库开了 WAL，不要直接拷贝正在写的文件）。
+1. `deploy/backup.sh <数据目录> <备份目录> [保留天数]` 用 `sqlite3 ... ".backup"` 做在线一致性备份（库开了 WAL，不要直接拷贝正在写的文件），并删除过期备份；cron 每日调用。
 2. 每天把最新备份同步到机器之外（客户的对象存储或第二台机器）；备份里有客户号码与姓名，存放位置的访问权限与主库一致。
-3. 恢复：停容器，用备份文件覆盖 `/opt/tromox/data/leads.db`，删除同目录下的 `leads.db-wal` 与 `leads.db-shm`，启动容器，执行一次 `docker exec tromox-webhook python -m app.replay --export` 重建 CSV。
+3. 恢复：停容器（`docker compose stop webhook`），`deploy/restore.sh <备份文件> <数据目录>` 用备份覆盖 `leads.db` 并删除同目录下的 `leads.db-wal` 与 `leads.db-shm`（现有库会留底一份），然后按脚本打印的提示启动容器、执行一次 `app.replay --export` 重建 CSV。
 4. 上线前做一次恢复演练，写进上线检查清单。
 
 ## 7. 更新
 
-```bash
-cd /opt/tromox/app && git pull
-docker build -f 05-integration/webhook-service/Dockerfile -t tromox-webhook .
-docker stop tromox-webhook && docker rm tromox-webhook
-# 再执行 4.4 的 docker run
-```
+`deploy/update.sh`：`git pull --ff-only` → `docker compose build webhook` → `docker compose up -d webhook` → 等 `/health` 返回 200（最多 60 秒），任一步失败退出非 0。
 
 切换有数秒不可用。Botmaker 对单条回调失败是否重试尚不清楚【待核实】；若不重试，这几秒里的回调会丢失，`app.replay` 也补不回（它只重放已落盘的事件）。数秒的切换一般碰不到熔断线（10 分钟内失败超过 100 次，SOURCES S-B5）。所以更新放在咨询低谷（北京时间上午，欧美的深夜）进行；更新后看一眼 `/health` 与最近日志。表结构用 `CREATE TABLE IF NOT EXISTS` 建立，线索以 JSON 存放，升级字段不需要迁移脚本。
 
