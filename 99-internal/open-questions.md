@@ -254,9 +254,9 @@
 | 184 | VPS / 约 6 至 12 USD / 与 03-whatsapp/cost-model-inputs.csv 的 hosting_usd_per_month（低、中档 6 USD，高档 12 USD）一致；具体厂商报价【待核实】 | `05-integration/deployment.md:21` | 集成工程师（沈思锴） |
 | 185 | Botmaker webhook 功能 / 单价未公开【待核实】 / 额外计费、默认关闭的功能，不开就收不到回调（SOURCES S-B5）；计在 Botmaker 账单里，不属于本机费用 | `05-integration/deployment.md:25` | 集成工程师（沈思锴） |
 | 186 | 切换有数秒不可用。Botmaker 对单条回调失败是否重试尚不清楚【待核实】；若不重试，这几秒里的回调会丢失，app.replay 也补不回（它只重放已落盘的事件）。数秒的切换一般碰不到熔断线（10 分钟内失败超过 100 次，SOURCES S-B5）。所以更新放在咨询低谷（北京时间上午，欧美的深夜）进行；更新后看一眼 /health … | `05-integration/deployment.md:105` | 集成工程师（沈思锴） |
-| 187 | 所选厂商的实际月费是否落在 6 至 12 USD / 【待核实】 / 集成工程师 | `05-integration/deployment.md:141` | 集成工程师（沈思锴） |
-| 188 | Botmaker 单条回调失败的重试策略（决定更新窗口的宽严；熔断规则已知，SOURCES S-B5） / 【待核实】 / 集成工程师 | `05-integration/deployment.md:142` | 集成工程师（沈思锴） |
-| 189 | Botmaker webhook 功能的单价 / 【待核实】 / 集成工程师 | `05-integration/deployment.md:143` | 集成工程师（沈思锴） |
+| 187 | 所选厂商的实际月费是否落在 6 至 12 USD / 【待核实】 / 集成工程师 | `05-integration/deployment.md:150` | 集成工程师（沈思锴） |
+| 188 | Botmaker 单条回调失败的重试策略（决定更新窗口的宽严；熔断规则已知，SOURCES S-B5） / 【待核实】 / 集成工程师 | `05-integration/deployment.md:151` | 集成工程师（沈思锴） |
+| 189 | Botmaker webhook 功能的单价 / 【待核实】 / 集成工程师 | `05-integration/deployment.md:152` | 集成工程师（沈思锴） |
 | 190 | 接口路径、请求体与返回体按飞书开放平台公开文档整理（租户令牌、记录查询 records/search、记录创建、记录更新），未用真实租户跑通。尤其是查询接口的 filter 写法与「单选列自动补选项」的行为。【待核实】 | `05-integration/feishu-bitable-setup.md:78` | 集成工程师（沈思锴） |
 | 191 | 日期列接受毫秒时间戳、复选框列接受布尔、多选列接受字符串数组，是按文档写的；若某列类型建错（例如把日期建成文本），写入会报错码，日志里能看到。【待核实】 | `05-integration/feishu-bitable-setup.md:79` | 集成工程师（沈思锴） |
 | 192 | 频控：飞书对单个应用的写接口有每秒次数限制，MVP 的线索量远低于该限制；历史导入一次写几千行时要分批。【待核实】 | `05-integration/feishu-bitable-setup.md:81` | 集成工程师（沈思锴） |
@@ -643,9 +643,9 @@
 | 209 | 销售在 Botmaker 结束会话时选择结束分类，conversation-close 事件把它带回来，服务据此回写 status。分类名称需要在 Botmaker 后台的结束分类功能中预先建好【待核实】，名称与含义由客户销售确认【待客户确认】。 | `05-integration/botmaker-api-notes.md:87` | 客户（经张宝文 / Kim 对接） |
 | 210 | 假设：日均咨询在成本模型的低到高档之间（单机足够）；服务器账号、域名解析都开在客户名下；服务器放在中国大陆以外，保证 Botmaker 能稳定回调；具体云厂商与机房【待客户确认】。 | `05-integration/deployment.md:4` | 客户（经张宝文 / Kim 对接） |
 | 211 | 线索库里有个人数据：号码、姓名、公司、对话摘要。客户多在欧洲时，机房优先选欧洲经济区内，并与云厂商签数据处理协议；选其他地区前请客户法务确认。【待客户确认】 | `05-integration/deployment.md:109` | 客户（经张宝文 / Kim 对接） |
-| 212 | 云厂商、机房地区、由谁开账号 / 【待客户确认】 / 客户、张宝文 | `05-integration/deployment.md:139` | 客户（经张宝文 / Kim 对接） |
-| 213 | 子域名与 DNS 解析由谁操作 / 【待客户确认】 / 客户 | `05-integration/deployment.md:140` | 客户（经张宝文 / Kim 对接） |
-| 214 | 通知渠道用飞书还是企业微信 / 【待客户确认】 / 客户销售 | `05-integration/deployment.md:144` | 客户（经张宝文 / Kim 对接） |
+| 212 | 云厂商、机房地区、由谁开账号 / 【待客户确认】 / 客户、张宝文 | `05-integration/deployment.md:148` | 客户（经张宝文 / Kim 对接） |
+| 213 | 子域名与 DNS 解析由谁操作 / 【待客户确认】 / 客户 | `05-integration/deployment.md:149` | 客户（经张宝文 / Kim 对接） |
+| 214 | 通知渠道用飞书还是企业微信 / 【待客户确认】 / 客户销售 | `05-integration/deployment.md:153` | 客户（经张宝文 / Kim 对接） |
 | 215 | 海外租户（Lark）的开放平台域名不同，服务的 base_url 参数目前只在代码里可改，没有环境变量；客户若用 Lark 而不是飞书，要加一个配置项。【待客户确认】 | `05-integration/feishu-bitable-setup.md:80` | 客户（经张宝文 / Kim 对接） |
 | 216 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 客户（经张宝文 / Kim 对接） |
 | 217 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 客户（经张宝文 / Kim 对接） |
