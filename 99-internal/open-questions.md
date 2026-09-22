@@ -193,7 +193,7 @@
 | 123 | 之后客服消息与 AI token 在账单里怎么体现 / T-7 / 成本模型的两个【待核实】输入 | `02-botmaker/trial-test-plan.md:17` | 集成工程师（沈思锴） |
 | 124 | 回调接收 / 集成服务的测试部署（05-integration/deployment.md），打开原始事件落盘；不使用第三方抓包网站，避免测试数据外流。webhook 是额外计费、默认关闭的功能，要先在账户设置里开通（SOURCES S-B5）；试用账号能否开通、是否收费【待核实】，开通前征得客户同意 | `02-botmaker/trial-test-plan.md:31` | 集成工程师（沈思锴） |
 | 125 | T-11 / 回调里没有号码的联系人 / 查看 contactId 是否总是号码；若测试中出现业务范围用户标识（以用户名联系的客户），保存 1 份样本【待核实】 / 确认集成服务按平台客户 ID 入库并照常通知，号码与号码国家留空 / 05-integration/botmaker-api-notes.md；01-design/lead-… | `02-botmaker/trial-test-plan.md:48` | 集成工程师（沈思锴） |
-| 126 | 各平台事实的核实结论，去掉已解决的【待核实】 / SOURCES.md（S-B3 至 S-B18、S-M6、S-M7、S-M9） | `02-botmaker/trial-test-plan.md:139` | 集成工程师（沈思锴） |
+| 126 | 各平台事实的核实结论，去掉已解决的【待核实】 / SOURCES.md（S-B3 至 S-B18、S-M6、S-M7、S-M9） | `02-botmaker/trial-test-plan.md:141` | 集成工程师（沈思锴） |
 | 127 | 模型提供方不得用我们的数据训练或改进模型 / 选有明确"接口数据不用于训练"条款的企业级或接口级服务；消费级产品一律不用 / 选型时逐家核对条款【待核实】 | `03-whatsapp/compliance.md:39` | 集成工程师（沈思锴） |
 | 128 | Botmaker 内置模型同样适用 / 公开页面没有数据处理协议、子处理方清单或通用的"不用于训练"条款；AI Agent 与生成式回复的对话是否用于训练、下游模型供应商是否训练，原文都没写。已知下游模型供应商至少两家：3.0 版默认模型 "Open AI 5.4"（SOURCES S-B8），搭建用的 AI Assistant 使用 A… | `03-whatsapp/compliance.md:41` | 集成工程师（沈思锴） |
 | 129 | 本方案的主动消息只有一种**：针对客户自己发起的咨询做后续跟进（02-botmaker/templates/），按 utility 类别提交；是否被改判为 marketing【待核实】。 | `03-whatsapp/compliance.md:51` | 集成工程师（沈思锴） |
@@ -396,7 +396,7 @@
 | 52 | 决策门阈值 95% 与样例数 20 / 【张宝文确认】 | `01-design/adr/0003-ai-route-a-b.md:46` | 张宝文 |
 | 53 | Botmaker 内置模型若因数据条款被一票否决，退到路线 B 也不够：路线 B 下对话与 FAQ 仍由内置 AI Agent 承担（0003-ai-route-a-b.md 决策第 2 条），届时 Botmaker 内的 AI 怎么用要重新决策【张宝文确认】。 | `01-design/adr/0006-model-selection.md:50` | 张宝文 |
 | 54 | 假设：开工前发出（07-project/timeline.md 的开工日前）；邮件以客户名义还是我方名义发、是否写明客户名称【张宝文确认】；不在邮件里透露我方报价与工作量。平台事实引用 SOURCES.md 条目编号。 | `02-botmaker/botmaker-sales-questions.md:4` | 张宝文 |
-| 55 | 门槛 / 不低于 95%（即 140 项中最多错 7 项）走路线 A，否则走路线 B【张宝文确认】 / 06-acceptance/thresholds.json 的 route_a_variable_write_success_min | `02-botmaker/trial-test-plan.md:113` | 张宝文 |
+| 55 | 门槛 / 不低于 95%（即 140 项中最多错 7 项）走路线 A，否则走路线 B【张宝文确认】 / 06-acceptance/thresholds.json 的 route_a_variable_write_success_min | `02-botmaker/trial-test-plan.md:115` | 张宝文 |
 | 56 | 集成服务 / 域名与托管位置： / 客户（托管费属第三方费用，客户直付）；如需代开代管【张宝文确认】 / 集成工程师 / 见 05-integration/deployment.md | `03-whatsapp/meta-onboarding-checklist.md:182` | 张宝文 |
 | 57 | 数量 / 真实咨询不少于 150 条，其中 B 端不少于 30 条【张宝文确认】；B 端不足时宁可多翻历史记录补齐，也不要用编造的样本凑数 | `04-eval/labeling-guide.md:10` | 张宝文 |
 | 58 | 假设：阈值为集成工程师建议值，**全部需【张宝文确认】**后再写进对客户的承诺；语种范围随报价档位变化。 | `06-acceptance/acceptance-criteria.md:4` | 张宝文 |
@@ -598,7 +598,7 @@
 | 162 | 测试号码 / 备用号码 1 个，走新号接入；另备 1 部装有 WhatsApp Business App（版本不低于 2.24.17）的手机与 1 个测试号，仅用于 T-1。商家认证未通过时一个商务组合最多注册 2 个号码（SOURCES S-M8），测试号接在客户的商务组合下也占名额：这两个测试号正好占满，上线号码要等认证通过（或升到 … | `02-botmaker/trial-test-plan.md:27` | 客户（经张宝文 / Kim 对接） |
 | 163 | T-6 / CTWA referral 透传 / 客户有广告账户且同意时，投 1 条最小预算的 Click-to-WhatsApp 测试广告【待客户确认】；否则书面询问 Botmaker 支持。检查回调 messages[] 里是否出现 whatsappReferral 及其子键 sourceId、sourceURL、headline、b… | `02-botmaker/trial-test-plan.md:43` | 客户（经张宝文 / Kim 对接） |
 | 164 | 语种分布：EN 8、DE 3、ES 3、FR 3、PT 2、IT 1。最终语种清单【待客户确认】后，把不在范围内的语种样例换成范围内的。 | `02-botmaker/trial-test-plan.md:82` | 客户（经张宝文 / Kim 对接） |
-| 165 | T-6 如需投测试广告，费用由客户广告账户承担，投放前征得客户同意【待客户确认】。 | `02-botmaker/trial-test-plan.md:153` | 客户（经张宝文 / Kim 对接） |
+| 165 | T-6 如需投测试广告，费用由客户广告账户承担，投放前征得客户同意【待客户确认】。 | `02-botmaker/trial-test-plan.md:155` | 客户（经张宝文 / Kim 对接） |
 | 166 | 假设：本文件是工程侧的合规设计说明，**不是法律意见**；欧盟隐私要求只写到"基本做法"的深度；客户以哪个主体作为数据责任方尚未确定【待客户确认】。平台条款引用见 SOURCES S-M5；账号与发送量规则已按 Meta 原文核实，见 SOURCES S-M8、S-M10；Botmaker 的 AI 数据条款见 SOURCES S-B17… | `03-whatsapp/compliance.md:4` | 客户（经张宝文 / Kim 对接） |
 | 167 | 与提供方之间有数据处理协议 / 客户作为业务方"聘用 AI 提供方作为第三方服务商"，需要相应的数据处理条款 / 【待客户确认】由哪一方签 | `03-whatsapp/compliance.md:40` | 客户（经张宝文 / Kim 对接） |
 | 168 | 营销类消息必须有明确的事先同意**：MVP 不发营销消息。流程里的同意步骤（S8，可选【待客户确认】）只是把同意记录进线索字段 consent_marketing，为第二阶段的主动再触达做准备；没有记录同意的客户，第二阶段也不得群发。 | `03-whatsapp/compliance.md:52` | 客户（经张宝文 / Kim 对接） |

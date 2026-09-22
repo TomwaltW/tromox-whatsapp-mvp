@@ -85,6 +85,8 @@
 
 每条样例跑完填一行。
 
+样例 CSV 与计分表由 `scripts/gen_trial_kit.py` 生成（命令见脚本头部）；路线 B 对照：`python -m eval.run --input <csv> --prompt prompts/classify-v1.md --model mock`。
+
 | 样例 ID | 执行日期 | 模型与 prompt 版本 | 7 个计分字段中写对的个数 | 写错或漏写的字段 | 文本字段（company、contact_name、volume 等）是否合理 | 回复语言正确 | 机器人发出的消息条数 | 备注 |
 |---|---|---|---|---|---|---|---|---|
 | S-01 | | | | | | | | |
