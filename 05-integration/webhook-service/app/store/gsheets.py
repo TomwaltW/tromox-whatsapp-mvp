@@ -16,6 +16,7 @@ from tromox_lead import Lead
 
 class GoogleSheetsSink:
     name = "gsheets"
+    remote = True   # the Sheets API is a network hop: it would go through mirror_outbox as well
 
     def __init__(self) -> None:
         raise NotImplementedError(

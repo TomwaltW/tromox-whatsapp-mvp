@@ -1,6 +1,7 @@
 """Operations helper: re-run what did not finish.
 
-    python -m app.replay            # reprocess stored-but-unprocessed callbacks, retry failed notifications
+    python -m app.replay            # reprocess stored-but-unprocessed callbacks, retry failed notifications,
+                                    # retry the mirrors that never reached a remote sink
     python -m app.replay --export   # additionally rewrite the CSV export
 
 Safe to run at any time (everything is idempotent); suitable for a cron job.
@@ -21,7 +22,7 @@ log = logging.getLogger("app.replay")
 
 
 def replay(pipeline: Pipeline, max_attempts: int = 10) -> dict[str, int]:
-    counts = {"events": 0, "notifications": 0}
+    counts = {"events": 0, "notifications": 0, "mirrors": 0}
     for event_key, payload_json in pipeline.store.unprocessed_events():
         result = pipeline.handle(json.loads(payload_json))
         counts["events"] += 1
@@ -30,6 +31,10 @@ def replay(pipeline: Pipeline, max_attempts: int = 10) -> dict[str, int]:
     for row in pipeline.store.retryable_notifications(max_attempts):
         pipeline.deliver(row.id)
         counts["notifications"] += 1
+    # `mirror()` takes a lead and sends every pending row it has, so visit each lead once
+    for lead_id in dict.fromkeys(row.lead_id for row in pipeline.store.pending_mirrors(max_attempts=max_attempts)):
+        pipeline.mirror(lead_id)
+        counts["mirrors"] += 1
     return counts
 
 

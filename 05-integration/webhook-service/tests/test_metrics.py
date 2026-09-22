@@ -12,8 +12,8 @@ from app.metrics import NOTIFICATION_STATUSES, collect
 
 from webhook_test_helpers import HEADERS, NO_WAIT, RecordingNotifier, load_fixture
 
-KEYS = {"generated_at", "window_hours", "callbacks", "notifications", "raw_events_unprocessed", "last_callback_at",
-        "leads_total"}
+KEYS = {"generated_at", "window_hours", "callbacks", "notifications", "raw_events_unprocessed",
+        "mirror_outbox_pending", "mirror_outbox_failed_24h", "last_callback_at", "leads_total"}
 
 
 def _insert_raw(db_path, key: str, received_at: str = "2026-09-22T00:00:00.000+00:00") -> None:
@@ -43,6 +43,7 @@ def test_empty_database_is_all_zero(client: TestClient):
     assert body["callbacks"] == {"total": 0, "by_outcome": {"lead_upserted": 0}}
     assert body["notifications"] == {"by_status": {s: 0 for s in NOTIFICATION_STATUSES}, "failed_24h": 0, "pending": 0}
     assert body["raw_events_unprocessed"] == 0 and body["last_callback_at"] is None and body["leads_total"] == 0
+    assert body["mirror_outbox_pending"] == 0 and body["mirror_outbox_failed_24h"] == 0
 
 
 def test_counts_after_replaying_fixtures(client: TestClient):

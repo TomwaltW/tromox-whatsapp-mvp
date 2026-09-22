@@ -42,13 +42,15 @@ from pydantic import BaseModel
 
 from tromox_lead import LEAD_FIELDS, Lead
 
+from .base import MirrorError
+
 DEFAULT_TIMEOUT = httpx.Timeout(10.0, connect=5.0)      # same values as notify/_http.py
 TOKEN_SAFETY_MARGIN_SECONDS = 300                       # refresh this long before Feishu says it expires
 TOKEN_INVALID_CODES = frozenset({99991661, 99991663})   # tenant token expired / invalid: refetch once
 _TOKEN_PATH = "/open-apis/auth/v3/tenant_access_token/internal"
 
 
-class FeishuBitableError(RuntimeError):
+class FeishuBitableError(MirrorError):
     """Raised for any transport, HTTP or API-level failure. Never carries a secret."""
 
 
@@ -86,6 +88,7 @@ def lead_to_fields(lead: Lead) -> dict[str, Any]:
 
 class FeishuBitableSink:
     name = "feishu_bitable"
+    remote = True   # token + search + create/update = three HTTP calls: never in the request path
 
     def __init__(self, app_id: str, app_secret: str, app_token: str, table_id: str, *,
                  client: httpx.Client | None = None, clock: Callable[[], float] = time.time,

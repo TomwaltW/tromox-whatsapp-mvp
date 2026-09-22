@@ -73,20 +73,22 @@ def test_delete_lead_removes_lead_notifications_and_raw_payloads_with_the_contac
     store.mark_processed("e1", "lead_upserted", keep_payload=True)
 
     preview = store.lead_footprint(target.lead_id, "4917604069011", "C1")
-    assert preview == {"leads": 1, "notifications": 2, "raw_events": 2}
+    assert preview == {"leads": 1, "notifications": 2, "raw_events": 2, "mirror_outbox": 0}
     assert len(store.list_leads()) == 2                                             # the preview changed nothing
     assert store.delete_lead(target.lead_id, "4917604069011", "C1") == preview
     assert store.get_lead(target.lead_id) is None and store.get_lead_by_phone(other) is not None
     assert [row.lead_id for row in store.retryable_notifications()] == ["L-other"]
     assert store.unprocessed_events() == [("e4", '{"contactId": "34612345678"}')]
     assert store.record_raw_event("e3", "message", "{}") is RawEventState.DUPLICATE_PROCESSED   # ledger keeps idempotency
-    assert store.delete_lead(target.lead_id, "4917604069011", "C1") == {"leads": 0, "notifications": 0, "raw_events": 0}
+    assert store.delete_lead(target.lead_id, "4917604069011", "C1") == {"leads": 0, "notifications": 0,
+                                                                        "raw_events": 0, "mirror_outbox": 0}
 
 
 def test_delete_lead_with_no_identifiers_never_touches_raw_events(tmp_path):
     store = SqliteStore(tmp_path / "s.db")
     store.record_raw_event("e1", "message", '{"contactId": "4917604069011"}')
     store.record_raw_event("e2", "message", "{}")
-    assert store.delete_lead("L-missing", None, "") == {"leads": 0, "notifications": 0, "raw_events": 0}
+    assert store.delete_lead("L-missing", None, "") == {"leads": 0, "notifications": 0, "raw_events": 0,
+                                                       "mirror_outbox": 0}
     assert store.delete_lead("L-missing", " ", None)["raw_events"] == 0
     assert len(store.unprocessed_events()) == 2
