@@ -1,0 +1,9 @@
+序号,时间,WhatsApp 号码,客户消息,来源,备注
+1,2026-08-01 10:00,+49 151 2345 6789,"Hallo, wir sind ein Motorradhändler in Berlin. Schreiben Sie an anna.k@example.com oder rufen Sie 0151 23456789 an.",Instagram,虚构样本
+2,2026-08-02 11:00,34612345678,"Hola,  quiero comprar una moto eléctrica   para mí.",Facebook,
+3,2026-08-02 11:05,34612345678,"Hola, quiero comprar una moto eléctrica para mí.",Facebook,重复导出
+4,2026-08-03 09:00,,   ,TikTok,正文为空
+5,2026-08-04 09:00,+61 412 345 678,"Hi, I own three motorcycle shops in Sydney, interested in dealer terms. Order 2026-000123 was late.",Website,
+6,2026-08-05 09:00,not-a-phone,"Bonjour, où puis-je essayer une Tromox à Lyon ?",,号码无法识别
+7,2026-08-06 09:00,+55 11 91234 5678,"Olá, gostaria de saber o preço da MC10. [IG-2609]",Instagram,
+,,,,,
