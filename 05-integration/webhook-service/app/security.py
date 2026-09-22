@@ -3,9 +3,16 @@
 Botmaker sends the token configured on the webhook in the `auth-bm-token` header
 (SOURCES S-B5). Its egress IP list is public (SOURCES S-B11) and can go into ALLOWED_IPS.
 
-Behind a reverse proxy, run uvicorn with proxy headers trusted only from the proxy
-(`FORWARDED_ALLOW_IPS=<proxy ip>`), so that `request.client.host` is the real caller and
-cannot be spoofed through X-Forwarded-For.
+Behind a reverse proxy the peer address is the proxy, so uvicorn runs with `--proxy-headers`
+and only trusts X-Forwarded-For from the senders listed in `FORWARDED_ALLOW_IPS` (IP, CIDR or
+`*`); a header from anyone else is ignored and `request.client.host` stays the real peer, so
+the allowlist cannot be bypassed by forging the header.
+
+`deploy/docker-compose.yml` sets it to `*` by default, which is safe only because port 8000 is
+bound to 127.0.0.1 and the sole entry point is Caddy on the same compose network (its container
+address changes on every rebuild, so pinning it is pointless). Exposing 8000 to the internet
+means narrowing it -- via `TROMOX_FORWARDED_ALLOW_IPS` -- to the proxy's fixed IP, or emptying
+it so no forwarded header is believed.
 """
 from __future__ import annotations
 

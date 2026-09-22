@@ -70,6 +70,19 @@ def test_ip_allowlist_rules():
     assert ip_allowed("testclient", ["203.0.113.0/24"]) is False
 
 
+def test_ip_allowlist_accepts_ipv6_entries():
+    assert ip_allowed("2001:db8::7", ["2001:db8::/32"]) is True
+    assert ip_allowed("2001:db8::7", ["2001:db8::7"]) is True
+    assert ip_allowed("2001:db8:1::7", ["2001:db8::/48"]) is False
+    assert ip_allowed("203.0.113.9", ["2001:db8::/32"]) is False  # families never match each other
+
+
+def test_ip_allowlist_ignores_unparsable_entries():
+    assert ip_allowed("203.0.113.9", ["not-an-ip", "203.0.113.0/24"]) is True   # a bad entry is skipped, not fatal
+    assert ip_allowed("203.0.113.9", ["", "203.0.113.0/33", "10/8"]) is False   # every entry unusable: nobody passes
+    assert ip_allowed("203.0.113.9", ["203.0.113.9/24"]) is True                # host bits set: strict=False allows it
+
+
 def test_verify_token():
     assert verify_token("abc", "abc") is True
     assert verify_token("abd", "abc") is False

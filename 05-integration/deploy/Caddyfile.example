@@ -2,6 +2,25 @@
 # 证书由 Caddy 自动签发与续期。
 # 上游写 compose 服务名 webhook：Caddy 跑在容器里，和 webhook 在同一个 compose 网络；
 # 若改为在宿主机上直接跑 Caddy（systemd），上游改成 127.0.0.1:8000。
+# 只放行服务真正提供的三条路径，其余一律 404，不把未知路径转给上游（deploy/README.md「安全基线」一节）。
 wa-hook.<客户域名> {
-    reverse_proxy webhook:8000
+    @app path /webhooks/botmaker /health /metrics
+
+    handle @app {
+        request_body {
+            max_size 1MB                # 回调体上限，超了 Caddy 直接拒，打不到上游
+        }
+        header {
+            -Server                                     # 不回显 Caddy 版本
+            X-Content-Type-Options nosniff
+            X-Frame-Options DENY
+            Referrer-Policy no-referrer
+            Strict-Transport-Security "max-age=31536000"
+        }
+        reverse_proxy webhook:8000
+    }
+
+    handle {
+        respond 404                                     # 其余路径（含探测扫描）不进上游
+    }
 }
