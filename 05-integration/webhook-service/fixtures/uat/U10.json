@@ -1,0 +1,42 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U10：客户直接问经销价与折扣；AI Agent 写 price_negotiation，Bot 发价格守卫话术不报价。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "447700900123",
+  "whatsappNumber": "447700900123",
+  "customerId": "TRXUAT10C1",
+  "sessionId": "TRXUAT10C1_2026-11-10T09:40:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:40:00.000Z",
+  "customerCreationTime": "2026-11-10T09:40:00.000Z",
+  "firstName": "Oliver",
+  "lastName": "B",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU10A001",
+      "date": "2026-11-10T09:40:10.000Z",
+      "from": "user",
+      "fromName": "Oliver B",
+      "message": "What is your best dealer price for 10 units? Any discount?",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2B",
+    "b2b_type": "",
+    "b2c_intent": "",
+    "country_stated": "",
+    "city_region": "",
+    "contact_name": "",
+    "company": "",
+    "product_interest": "",
+    "volume": "10 units",
+    "ai_summary": "英国（按号码）客户询问 10 台的经销价与折扣；价格谈判，需销售跟进。",
+    "ai_confidence": "0.85",
+    "escalation_flag": "true",
+    "escalation_reason": "price_negotiation"
+  }
+}

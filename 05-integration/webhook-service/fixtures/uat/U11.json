@@ -1,0 +1,39 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U11：法语客户问电池质保并要求承诺免费更换；AI Agent 按质保守卫写 complaint_warranty_legal_safety 转人工。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "33612345678",
+  "whatsappNumber": "33612345678",
+  "customerId": "TRXUAT11C1",
+  "sessionId": "TRXUAT11C1_2026-11-10T09:45:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:45:00.000Z",
+  "customerCreationTime": "2026-11-10T09:45:00.000Z",
+  "firstName": "Camille",
+  "lastName": "D",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU11A001",
+      "date": "2026-11-10T09:45:10.000Z",
+      "from": "user",
+      "fromName": "Camille D",
+      "message": "Quelle est la garantie de la batterie ? Pouvez-vous me garantir un remplacement gratuit ?",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "fr",
+    "segment": "B2C",
+    "b2b_type": "",
+    "b2c_intent": "warranty",
+    "country_stated": "",
+    "city_region": "",
+    "product_interest": "",
+    "ai_summary": "法国个人用户询问电池质保并要求承诺免费更换；涉及质保承诺，转人工。",
+    "ai_confidence": "0.9",
+    "escalation_flag": "true",
+    "escalation_reason": "complaint_warranty_legal_safety"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U02：奥地利分销商不按按钮、直接用德语打字并索要价目表；AI Agent 按抽取规则第 7 条的优先级写 price_negotiation（排在 b2b_qualified 之前）。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "436641234567",
+  "whatsappNumber": "436641234567",
+  "customerId": "TRXUAT02C1",
+  "sessionId": "TRXUAT02C1_2026-11-10T09:05:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:05:00.000Z",
+  "customerCreationTime": "2026-11-10T09:05:00.000Z",
+  "firstName": "Markus",
+  "lastName": "H",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU02A001",
+      "date": "2026-11-10T09:05:10.000Z",
+      "from": "user",
+      "fromName": "Markus H",
+      "message": "Hallo, wir sind ein Großhändler in Österreich und möchten Tromox exklusiv vertreiben. Bitte senden Sie uns Ihre Händlerpreisliste.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "de",
+    "segment": "B2B",
+    "b2b_type": "distributor",
+    "b2c_intent": "",
+    "country_stated": "AT",
+    "city_region": "",
+    "contact_name": "",
+    "company": "",
+    "role": "",
+    "product_interest": "",
+    "volume": "",
+    "ai_summary": "奥地利批发商，希望独家代理 Tromox 并索要经销商价目表；涉及价格与独家条款，需销售跟进。",
+    "ai_confidence": "0.9",
+    "escalation_flag": "true",
+    "escalation_reason": "price_negotiation"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U03（第 b 条回调）：客户只说有一家摩托车店；公司名与国家未给，AI Agent 不判 b2b_qualified，Bot 追问。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "34612345678",
+  "whatsappNumber": "34612345678",
+  "customerId": "TRXUAT03C1",
+  "sessionId": "TRXUAT03C1_2026-11-10T09:10:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:10:00.000Z",
+  "customerCreationTime": "2026-11-10T09:10:00.000Z",
+  "firstName": "Lucía",
+  "lastName": "M",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU03B001",
+      "date": "2026-11-10T09:10:40.000Z",
+      "from": "user",
+      "fromName": "Lucía M",
+      "message": "Tengo una tienda de motos",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "es",
+    "segment": "B2B",
+    "b2b_type": "dealer",
+    "b2c_intent": "",
+    "country_stated": "",
+    "city_region": "",
+    "contact_name": "",
+    "company": "",
+    "role": "",
+    "product_interest": "",
+    "volume": "",
+    "ai_summary": "西班牙语客户有一家摩托车门店，尚未提供公司名与国家，等待追问补齐。",
+    "ai_confidence": "0.85",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

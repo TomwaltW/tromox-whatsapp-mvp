@@ -1,0 +1,43 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U04（第 c 条回调）：客户补上公司与联系人，B 端信息收齐，AI Agent 判 b2b_qualified。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "61412345678",
+  "whatsappNumber": "61412345678",
+  "customerId": "TRXUAT04C1",
+  "sessionId": "TRXUAT04C1_2026-11-10T09:15:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:15:00.000Z",
+  "customerCreationTime": "2026-11-10T09:15:00.000Z",
+  "firstName": "Ben",
+  "lastName": "T",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU04C001",
+      "date": "2026-11-10T09:16:40.000Z",
+      "from": "user",
+      "fromName": "Ben T",
+      "message": "Outback Moto Imports Pty Ltd, Ben Taylor, owner.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2B",
+    "b2b_type": "importer",
+    "b2c_intent": "",
+    "country_stated": "AU",
+    "city_region": "",
+    "contact_name": "Ben Taylor",
+    "company": "Outback Moto Imports Pty Ltd",
+    "role": "owner",
+    "product_interest": "",
+    "volume": "1 container",
+    "ai_summary": "澳大利亚进口商 Outback Moto Imports Pty Ltd，店主 Ben Taylor，三家门店，想整柜进口；建议销售跟进。",
+    "ai_confidence": "0.9",
+    "escalation_flag": "true",
+    "escalation_reason": "b2b_qualified"
+  }
+}

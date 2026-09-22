@@ -1,0 +1,39 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U06：德语客户只说城市（Hamburg）问试驾；AI Agent 只填 city_region、country_stated 留空（抽取规则第 4 条），国家由服务按号码国家码给出。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069022",
+  "whatsappNumber": "4917604069022",
+  "customerId": "TRXUAT06C1",
+  "sessionId": "TRXUAT06C1_2026-11-10T09:25:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:25:00.000Z",
+  "customerCreationTime": "2026-11-10T09:25:00.000Z",
+  "firstName": "Tim",
+  "lastName": "S",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU06A001",
+      "date": "2026-11-10T09:25:10.000Z",
+      "from": "user",
+      "fromName": "Tim S",
+      "message": "Kann ich die MC10 in Hamburg Probe fahren?",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "de",
+    "segment": "B2C",
+    "b2b_type": "",
+    "b2c_intent": "test_ride",
+    "country_stated": "",
+    "city_region": "Hamburg",
+    "product_interest": "MC10",
+    "ai_summary": "德语个人用户想在汉堡试驾 MC10；已按知识库提供经销商查询方式。",
+    "ai_confidence": "0.92",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

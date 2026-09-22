@@ -1,0 +1,43 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U20（第 b 条回调）：柏林配送公司一条消息给齐车队采购信息；AI Agent 判 b2b_qualified，摘要为简体中文。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069027",
+  "whatsappNumber": "4917604069027",
+  "customerId": "TRXUAT20C1",
+  "sessionId": "TRXUAT20C1_2026-11-10T10:20:00.000Z",
+  "sessionCreationTime": "2026-11-10T10:20:00.000Z",
+  "customerCreationTime": "2026-11-10T10:20:00.000Z",
+  "firstName": "Jonas",
+  "lastName": "W",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU20B001",
+      "date": "2026-11-10T10:21:00.000Z",
+      "from": "user",
+      "fromName": "Jonas W",
+      "message": "Wir sind ein Lieferdienst in Berlin, Deutschland, und brauchen etwa 30 Roller für unsere Flotte. Firma: FlottExpress, Ansprechpartner Jonas Weber, Einkaufsleiter.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "de",
+    "segment": "B2B",
+    "b2b_type": "fleet",
+    "b2c_intent": "",
+    "country_stated": "DE",
+    "city_region": "Berlin",
+    "contact_name": "Jonas Weber",
+    "company": "FlottExpress",
+    "role": "Einkaufsleiter",
+    "product_interest": "",
+    "volume": "etwa 30 Roller",
+    "ai_summary": "德国柏林的配送公司 FlottExpress，采购主管 Jonas Weber，车队需要约 30 台踏板车；建议销售尽快跟进车型与交付。",
+    "ai_confidence": "0.95",
+    "escalation_flag": "true",
+    "escalation_reason": "b2b_qualified"
+  }
+}

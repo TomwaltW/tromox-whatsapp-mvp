@@ -1,0 +1,43 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U03（第 c 条回调）：客户按追问补上公司名与国家，AI Agent 判 b2b_qualified。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "34612345678",
+  "whatsappNumber": "34612345678",
+  "customerId": "TRXUAT03C1",
+  "sessionId": "TRXUAT03C1_2026-11-10T09:10:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:10:00.000Z",
+  "customerCreationTime": "2026-11-10T09:10:00.000Z",
+  "firstName": "Lucía",
+  "lastName": "M",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU03C001",
+      "date": "2026-11-10T09:11:30.000Z",
+      "from": "user",
+      "fromName": "Lucía M",
+      "message": "Motos Valencia SL, España",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "es",
+    "segment": "B2B",
+    "b2b_type": "dealer",
+    "b2c_intent": "",
+    "country_stated": "ES",
+    "city_region": "Valencia",
+    "contact_name": "",
+    "company": "Motos Valencia SL",
+    "role": "",
+    "product_interest": "",
+    "volume": "",
+    "ai_summary": "西班牙瓦伦西亚的经销商 Motos Valencia SL（一家门店）；信息已收齐，建议销售跟进。",
+    "ai_confidence": "0.9",
+    "escalation_flag": "true",
+    "escalation_reason": "b2b_qualified"
+  }
+}

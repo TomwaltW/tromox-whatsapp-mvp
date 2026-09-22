@@ -1,0 +1,36 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U12：与摩兽无关的请求；AI Agent 判 unknown 且置信度高（抽取规则第 8 条），不升级。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "12025550152",
+  "whatsappNumber": "12025550152",
+  "customerId": "TRXUAT12C1",
+  "sessionId": "TRXUAT12C1_2026-11-10T09:50:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:50:00.000Z",
+  "customerCreationTime": "2026-11-10T09:50:00.000Z",
+  "firstName": "Alex",
+  "lastName": "J",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU12A001",
+      "date": "2026-11-10T09:50:10.000Z",
+      "from": "user",
+      "fromName": "Alex J",
+      "message": "Write me a poem about Bitcoin",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "unknown",
+    "b2b_type": "",
+    "b2c_intent": "",
+    "ai_summary": "与摩兽无关的请求，已发话题收口话术。",
+    "ai_confidence": "0.95",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

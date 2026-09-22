@@ -1,0 +1,43 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U18（第 a 条回调）：B 端信息一次给齐，AI Agent 判 b2b_qualified；这是那条“已交接的 B 端测试线索”的起点。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069023",
+  "whatsappNumber": "4917604069023",
+  "customerId": "TRXUAT18C1",
+  "sessionId": "TRXUAT18C1_2026-11-10T09:30:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:30:00.000Z",
+  "customerCreationTime": "2026-11-10T09:30:00.000Z",
+  "firstName": "Felix",
+  "lastName": "B",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU18A001",
+      "date": "2026-11-10T09:30:10.000Z",
+      "from": "user",
+      "fromName": "Felix B",
+      "message": "Bikeshop Berlin GmbH, Germany. Dealer with one shop, interested in the MC10, about 10 units per year. Felix Braun, owner.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2B",
+    "b2b_type": "dealer",
+    "b2c_intent": "",
+    "country_stated": "DE",
+    "city_region": "Berlin",
+    "contact_name": "Felix Braun",
+    "company": "Bikeshop Berlin GmbH",
+    "role": "owner",
+    "product_interest": "MC10",
+    "volume": "about 10 units per year",
+    "ai_summary": "德国柏林经销商 Bikeshop Berlin GmbH（一家门店），店主 Felix Braun，意向 MC10，每年约 10 台。",
+    "ai_confidence": "0.95",
+    "escalation_flag": "true",
+    "escalation_reason": "b2b_qualified"
+  }
+}

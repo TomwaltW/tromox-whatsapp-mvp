@@ -1,0 +1,267 @@
+{
+  "_note": "UAT U01–U20（06-acceptance/uat-test-cases.md 第 2 节）在回调服务上的回放清单。每条用例：fixtures 按顺序 POST；expect 是全部回调之后的服务层期望；after 是按第几条回调计的中间检查点（词汇同 expect，另加响应 status）；note 写明 UAT 表里哪些属 Bot 层、本测试不验，以及与服务现状的出入。词汇说明见 tests/test_uat_replay.py 开头。",
+  "cases": {
+    "U01": {
+      "title": "B 端经销商顺利路径",
+      "fixtures": ["U01a.json", "U01b.json", "U01c.json"],
+      "after": {
+        "1": {"status": "lead_upserted", "notifications": 0, "source": {"source_code": "IG-2609", "source_channel": "instagram"}},
+        "2": {"notifications": 0, "lead": {"segment": "B2B", "b2b_type": null, "escalation_flag": false}}
+      },
+      "expect": {
+        "lead": {
+          "segment": "B2B", "b2b_type": "dealer", "b2c_intent": null, "country_stated": "DE", "country_by_phone": "DE",
+          "language": "en", "company": "Moto Nord GmbH", "contact_name": "Anna Keller", "role": "owner",
+          "product_interest": ["MC10", "UKKO"], "volume": "about 20 units per quarter",
+          "escalation_flag": true, "escalation_reason": "b2b_qualified", "status": "qualified",
+          "source_code": "IG-2609", "source_channel": "instagram",
+          "first_message_ts": "2026-11-10T09:00:05Z", "last_message_ts": "2026-11-10T09:01:30Z"
+        },
+        "tags": ["country_de", "seg_b2b", "b2b_dealer", "prod_mc10", "prod_ukko", "src_instagram", "lang_en", "stage_qualified", "prio_normal"],
+        "notifications": 1,
+        "priority": "normal"
+      },
+      "note": "服务层验：短码在首条消息就解析出来、按钮只写 segment 时不发卡、字段收齐后线索转 qualified 并发 1 张卡；last_message_ts 只看客户消息（Bot 交接消息不算）。Bot 共 3 条消息、话术逐字、卡片 60 秒时延与卡片版式由 UAT 现场验。UAT 表未提优先级；按 tag-taxonomy，dealer 是 prio_normal（distributor / importer / fleet 才 high）。"
+    },
+    "U02": {
+      "title": "B 端分销商直接打字并索要价目表",
+      "fixtures": ["U02.json"],
+      "expect": {
+        "lead": {"segment": "B2B", "b2b_type": "distributor", "country_stated": "AT", "country_by_phone": "AT", "language": "de",
+                 "escalation_flag": true, "escalation_reason": "price_negotiation"},
+        "tags": ["prio_high", "b2b_distributor", "country_at", "lang_de"],
+        "notifications": 1,
+        "priority": "high"
+      },
+      "note": "升级原因的优先级（price_negotiation 排在 b2b_qualified 前）是 AI Agent 按抽取规则第 7 条选的；服务层只验：AI 明确给出的原因原样入库、不被规则层改写成 b2b_qualified，distributor 的卡片优先级为 high。回复不含价格数字、德语守卫话术由 UAT 现场验。"
+    },
+    "U03": {
+      "title": "B 端信息不全，追问不超过 2 次",
+      "fixtures": ["U03a.json", "U03b.json", "U03c.json"],
+      "after": {
+        "1": {"notifications": 0, "lead": {"segment": "B2B", "escalation_flag": false, "contact_name": "Lucía M"}},
+        "2": {"notifications": 1, "lead": {"b2b_type": "dealer", "company": null, "contact_name": "Lucía M",
+                                           "escalation_flag": true, "escalation_reason": "b2b_qualified"}}
+      },
+      "expect": {
+        "lead": {"segment": "B2B", "b2b_type": "dealer", "company": "Motos Valencia SL", "country_stated": "ES",
+                 "country_by_phone": "ES", "language": "es", "escalation_flag": true, "escalation_reason": "b2b_qualified", "status": "qualified"},
+        "notifications": 1,
+        "notifications_total": 1
+      },
+      "note": "UAT 期望：补齐前 escalation_flag=false、无卡片，补齐后 1 张卡。服务现状：第 1 条回调把 WhatsApp 昵称 Lucía M 当作 contact_name 兜底存入线索，第 2 条回调 AI 一给 b2b_type=dealer，规则层就以“昵称 = 联系人 + 号码国家码 = 市场”判定 b2b_qualified，公司名与国家还没问到卡片就发出（第 2 条回调后已有 1 张卡）；第 3 条补齐后同会话同原因不再重复发，总数仍是 1。断言按服务现状写，待总管定：昵称兜底是否应参与 b2b_qualified 判定（tromox_lead.routing.is_b2b_qualified 的 has_who）。追问次数不超过 2、不重复问已答内容属 Bot 层，本测试不验。"
+    },
+    "U04": {
+      "title": "按钮与文字矛盾",
+      "fixtures": ["U04a.json", "U04b.json", "U04c.json"],
+      "after": {
+        "1": {"lead": {"segment": "B2C", "b2b_type": null, "ai_confidence": 0.0, "escalation_flag": false}, "notifications": 0},
+        "2": {"lead": {"segment": "B2B", "b2b_type": "importer", "b2c_intent": null, "country_stated": "AU", "ai_confidence": 0.75,
+                       "company": null, "contact_name": "Ben T", "escalation_flag": true, "escalation_reason": "b2b_qualified"},
+              "notifications": 1}
+      },
+      "expect": {
+        "lead": {"segment": "B2B", "b2b_type": "importer", "b2c_intent": null, "country_stated": "AU", "country_by_phone": "AU",
+                 "company": "Outback Moto Imports Pty Ltd", "contact_name": "Ben Taylor", "escalation_reason": "b2b_qualified"},
+        "tags": ["seg_b2b", "b2b_importer", "country_au", "prio_high"],
+        "notifications": 1,
+        "notifications_total": 1
+      },
+      "note": "服务层验：按钮写入的 B2C 被后续文字的 B2B 改判覆盖，b2c_intent 清空、b2b_type=importer、country_stated=AU、不再当 C 端处理；按钮直选时 ai_confidence 未知（服务记 0.0，且不当作低置信度），改判后记 AI 给的 0.75；最终 1 张卡、销售收到线索。与 UAT 的出入同 U03：第 2 条回调 AI 明确写了 escalation_flag=false（公司名未给，流程转入 B 端信息收集），但规则层用昵称 Ben T 当联系人判定 b2b_qualified，卡片在公司名到达前就发出，卡上“公司 / 联系人”只有昵称；第 3 条补齐后同会话同原因不再发，总数 1 与 UAT 一致。转入 B 端信息收集还是直接转人工由 Bot 层决定，本测试用“先收集再交接”这一种走法。"
+    },
+    "U05": {
+      "title": "C 端购买咨询",
+      "fixtures": ["U05a.json", "U05b.json", "U05c.json"],
+      "after": {
+        "2": {"lead": {"segment": "B2C", "b2c_intent": "buy", "escalation_flag": false}, "notifications": 0}
+      },
+      "expect": {
+        "lead": {"segment": "B2C", "b2c_intent": "buy", "b2b_type": null, "product_interest": ["MINO"], "country_stated": "IT",
+                 "country_by_phone": "IT", "language": "en", "escalation_flag": false, "escalation_reason": null, "status": "new"},
+        "tags": ["seg_b2c", "intent_buy", "prod_mino", "country_it"],
+        "notifications": 0
+      },
+      "note": "服务层验：两个按钮写入的 segment / b2c_intent 与 AI 抽取的产品、国家入库，不发卡。回答全部出自知识库、Bot 不超过 5 条消息、知识库无该国经销商时的转人工由 UAT 现场验。"
+    },
+    "U06": {
+      "title": "C 端试驾，只说城市",
+      "fixtures": ["U06.json"],
+      "expect": {
+        "lead": {"segment": "B2C", "b2c_intent": "test_ride", "product_interest": ["MC10"], "city_region": "Hamburg",
+                 "country_stated": null, "country_by_phone": "DE", "language": "de", "escalation_flag": false},
+        "tags": ["country_de", "seg_b2c", "intent_test_ride", "prod_mc10", "lang_de"],
+        "notifications": 0
+      },
+      "note": "服务层验：AI 只填 city_region、country_stated 变量为空时线索里保持 null，国家标签来自号码国家码；即使 AI 误把城市写进 country_stated，schema 也只接受两位 ISO 码（非法值丢弃）。“AI 不从城市推断国家”本身与德语回复由 UAT 现场验。"
+    },
+    "U07": {
+      "title": "C 端售后支持",
+      "fixtures": ["U07.json"],
+      "expect": {
+        "lead": {"segment": "B2C", "b2c_intent": "support", "product_interest": ["UKKO"], "language": "es", "country_by_phone": "ES",
+                 "escalation_flag": false, "escalation_reason": null},
+        "notifications": 0
+      },
+      "note": "服务层验：Ukko 归一化为 UKKO、语言 es、不发卡。排查指引出自知识库、知识库没有时转人工由 UAT 现场验。"
+    },
+    "U08": {
+      "title": "安全类投诉立即升级",
+      "fixtures": ["U08.json"],
+      "expect": {
+        "lead": {"escalation_flag": true, "escalation_reason": "complaint_warranty_legal_safety", "segment": "B2C", "language": "es"},
+        "tags": ["prio_high"],
+        "notifications": 1,
+        "priority": "high"
+      },
+      "note": "服务层验：C 端安全类升级打 prio_high、卡片优先级 high、1 张卡；服务不看工作时间，回调在 22:40 北京时间照发。Bot 不远程排查、S7 话术去掉最后一句、不作赔付承诺、60 秒时延由 UAT 现场验。"
+    },
+    "U09": {
+      "title": "明确要求真人",
+      "fixtures": ["U09.json"],
+      "expect": {
+        "lead": {"escalation_flag": true, "escalation_reason": "human_requested", "segment": "unknown", "language": "en"},
+        "notifications": 1,
+        "priority": ""
+      },
+      "note": "服务层验：human_requested 入库并发 1 张卡；segment 仍 unknown 时无优先级标签，卡片优先级为空。话术逐字、之后 AI 不再插话由 UAT 现场验。"
+    },
+    "U10": {
+      "title": "价格谈判守卫",
+      "fixtures": ["U10.json"],
+      "expect": {
+        "lead": {"escalation_flag": true, "escalation_reason": "price_negotiation", "segment": "B2B", "b2b_type": null,
+                 "volume": "10 units", "country_by_phone": "GB"},
+        "notifications": 1
+      },
+      "note": "服务层验：price_negotiation 入库、1 张卡；b2b_type 变量为空时线索里为 null。回复不含价格或折扣数字由 UAT 现场验。"
+    },
+    "U11": {
+      "title": "质保承诺守卫",
+      "fixtures": ["U11.json"],
+      "expect": {
+        "lead": {"segment": "B2C", "b2c_intent": "warranty", "language": "fr", "country_by_phone": "FR",
+                 "escalation_flag": true, "escalation_reason": "complaint_warranty_legal_safety"},
+        "tags": ["prio_high", "intent_warranty", "lang_fr"],
+        "notifications": 1,
+        "priority": "high"
+      },
+      "note": "服务层验：质保类升级入库、prio_high、1 张卡。“只复述知识库允许对外的表述、不作承诺”由 UAT 现场验；知识库有明确条款时是否升级由 Bot 层决定，本测试取“升级”这一支。"
+    },
+    "U12": {
+      "title": "话题收口",
+      "fixtures": ["U12.json"],
+      "expect": {
+        "lead": {"segment": "unknown", "escalation_flag": false, "escalation_reason": null, "status": "new", "language": "en"},
+        "notifications": 0,
+        "leads_total": 1
+      },
+      "note": "服务层验：无关话题仍建一条 unknown 线索（不丢回调），不发卡。注意抽取规则第 8 条要求无关消息的 ai_confidence 也在 0.9 以上；若 AI 写了低于 0.6 的值，服务会按 low_confidence 发卡，与 UAT 期望冲突——那是提示词层的事。话术逐字、不生成诗歌由 UAT 现场验。"
+    },
+    "U13": {
+      "title": "连续两次没听懂",
+      "fixtures": ["U13a.json", "U13b.json"],
+      "after": {
+        "1": {"notifications": 0, "lead": {"escalation_flag": false, "escalation_reason": null}}
+      },
+      "expect": {
+        "lead": {"escalation_flag": true, "escalation_reason": "not_understood_twice", "segment": "unknown", "country_by_phone": "PT"},
+        "notifications": 1
+      },
+      "note": "服务层验：第一条不发卡，第二条 not_understood_twice 入库并发 1 张卡。“没听懂”的计数与判定在 AI Agent / 流程里，服务只认变量；同 U12，AI 对无意义内容仍要写高置信度，否则第一条就会按 low_confidence 发卡。"
+    },
+    "U14": {
+      "title": "低置信度送人工",
+      "fixtures": ["U14.json"],
+      "expect": {
+        "lead": {"segment": "B2B", "ai_confidence": 0.45, "escalation_flag": true, "escalation_reason": "low_confidence"},
+        "notifications": 1
+      },
+      "note": "服务层验：AI 只给 ai_confidence=0.45、没写升级字段时，共享包的规则层补 escalation_flag=true / low_confidence 并发 1 张卡（卡片“接管原因”为“AI 把握不足，需人工判断”）。没有被判为 C 端后丢弃：线索存在且 segment=B2B。"
+    },
+    "U15": {
+      "title": "短码解析的变体",
+      "fixtures": ["U15a.json", "U15b.json"],
+      "expect": {
+        "leads_total": 2,
+        "lead": [
+          {"phone": "+12025550154", "source_code": "TT-2610B", "source_channel": "tiktok"},
+          {"phone": "+12025550155", "source_code": null, "source_channel": "unknown"}
+        ],
+        "notifications": 0
+      },
+      "note": "服务层验：小写、无方括号的 tt-2610b 归一化为 TT-2610B / tiktok；只发 Hello 的会话 source_code 为空、source_channel=unknown；两个号码各一条线索。两个会话都正常进入开场问候由 UAT 现场验。"
+    },
+    "U16": {
+      "title": "非工作时间转人工",
+      "fixtures": ["U16.json"],
+      "expect": {
+        "lead": {"escalation_flag": true, "escalation_reason": "human_requested", "segment": "B2C"},
+        "notifications": 1
+      },
+      "note": "服务层验：服务没有工作时间概念，22:30 北京时间的 human_requested 照样立即发 1 张卡（“卡片立即发出，不等到上班”）。S7 话术含 working_hours 实际取值、AI 仍可答 FAQ、销售次日 10:00 前回复由 UAT 现场验。"
+    },
+    "U17": {
+      "title": "重复回调不产生重复线索",
+      "fixtures": ["U01a.json", "U01b.json", "U01c.json", "U01c.json", "U01c.json"],
+      "after": {
+        "3": {"status": "lead_upserted", "notifications": 1},
+        "4": {"status": "duplicate", "notifications": 1},
+        "5": {"status": "duplicate", "notifications": 1}
+      },
+      "expect": {
+        "leads_total": 1,
+        "notifications": 1,
+        "notifications_total": 1
+      },
+      "note": "服务层验（本用例全部在服务层）：U01 触发通知的那条回调（U01c）原样重放两次，两次都返回 HTTP 200 且 status=duplicate；线索仍 1 条，notifications 表仍 1 行，销售群仍只收到 1 张卡。去重键是 messages[]._id_。"
+    },
+    "U18": {
+      "title": "窗口关闭后走模板",
+      "fixtures": ["U18a.json", "U18b.json", "U18c.json", "U18d.json"],
+      "after": {
+        "1": {"lead": {"status": "qualified", "escalation_reason": "b2b_qualified"}, "notifications": 1},
+        "2": {"status": "lead_upserted", "lead": {"status": "handed_off", "assigned_to": "Li Wei"}, "notifications": 1},
+        "3": {"lead": {"status": "contacted", "assigned_to": "Li Wei", "last_message_ts": "2026-11-10T09:30:10Z"}, "notifications": 2},
+        "4": {"notifications": 2}
+      },
+      "expect": {
+        "lead": {"status": "contacted", "assigned_to": "Li Wei", "company": "Bikeshop Berlin GmbH",
+                 "last_message_ts": "2026-11-11T11:00:00Z"},
+        "tags": ["stage_contacted"],
+        "leads_total": 1,
+        "notifications_total": 2
+      },
+      "note": "服务层能观察到的是 status 与时间戳：交接后 qualified，分配事件后 handed_off，销售发模板（坐席消息）后 contacted；坐席消息不推进 last_message_ts（24 小时窗口以客户最后一条消息起算），客户回复后才更新。UAT 对本用例通知无要求，但服务现状值得总管定：第 3 条回调（销售自己在新会话里发的模板，回调无用户消息、变量为空）让服务按存库的 escalation_flag=true / b2b_qualified 以新 sessionId 又领了一次通知，销售群收到第 2 张卡（notifications 从 1 变 2）；第 4 条客户回复在同一会话，不再加卡。若客户回复落在再下一个新会话，即使流程已把 escalation_flag 重置为 false，规则层也会因字段齐全重新补 b2b_qualified 再发一张（已单独验证）。模板是否过 Meta 审核、自由回复可用与否、窗口重开都在 WhatsApp / Botmaker 侧，本测试不验。分配事件的名称按 normalize.py 的假设。"
+    },
+    "U19": {
+      "title": "营销同意步骤",
+      "fixtures": ["U19a.json", "U19b.json", "U19c.json"],
+      "expect": {
+        "leads_total": 3,
+        "lead": [
+          {"phone": "+4917604069024", "consent_marketing": true},
+          {"phone": "+4917604069025", "consent_marketing": false},
+          {"phone": "+4917604069026", "consent_marketing": null}
+        ],
+        "notifications": 0
+      },
+      "note": "服务层验：consent_marketing 变量 true / false 原样入库，未询问的线索保持 null（不得当作同意），三条 C 端线索都不发卡。该步骤是否启用由客户拍板（见 UAT 表）；不启用时本用例退化为三条都为 null，改 fixture 去掉该变量即可。"
+    },
+    "U20": {
+      "title": "通知时延与卡片内容",
+      "fixtures": ["U20a.json", "U20b.json"],
+      "after": {
+        "1": {"notifications": 0}
+      },
+      "expect": {
+        "lead": {"segment": "B2B", "b2b_type": "fleet", "country_stated": "DE", "city_region": "Berlin", "company": "FlottExpress",
+                 "contact_name": "Jonas Weber", "role": "Einkaufsleiter", "language": "de", "product_interest": [],
+                 "volume": "etwa 30 Roller", "escalation_flag": true, "escalation_reason": "b2b_qualified", "status": "qualified"},
+        "tags": ["prio_high", "b2b_fleet", "country_de", "seg_b2b", "lang_de"],
+        "notifications": 1,
+        "priority": "high"
+      },
+      "note": "服务层验：fleet 线索字段齐全入库、prio_high、卡片优先级 high、1 张卡；“Roller”不是目录车型，product_interest 为空。60 秒时延（测 3 次取最大）、德语交接话术、摘要为简体中文与号码打码由 UAT 现场验（打码与卡片字段另有 tests/test_notify.py 覆盖）。"
+    }
+  }
+}
