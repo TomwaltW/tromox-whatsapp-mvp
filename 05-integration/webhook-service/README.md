@@ -106,7 +106,11 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 | `ALLOWED_IPS` | 空 | 可选，逗号分隔的 IP 或 CIDR |
 | `DATABASE_PATH` | `data/leads.db` | SQLite 主库 |
 | `CSV_EXPORT_PATH` | `data/leads.csv` | CSV 镜像 |
-| `STORAGE_BACKENDS` | `sqlite,csv` | `sqlite` 恒开；`feishu_bitable`、`gsheets` 为占位桩 |
+| `STORAGE_BACKENDS` | `sqlite,csv` | `sqlite` 恒开；`feishu_bitable` 把线索镜像到飞书多维表格（需下面四个 `FEISHU_*` 变量，设置步骤见 `05-integration/feishu-bitable-setup.md`）；`gsheets` 为占位桩 |
+| `FEISHU_APP_ID` | 空 | 飞书自建应用的 App ID；启用 `feishu_bitable` 时必填 |
+| `FEISHU_APP_SECRET` | 空 | 飞书自建应用的 App Secret；密钥，只放 `.env` 或部署平台的密钥配置 |
+| `FEISHU_BITABLE_APP_TOKEN` | 空 | 多维表格网址 `/base/` 后的那段 |
+| `FEISHU_BITABLE_TABLE_ID` | 空 | 多维表格网址 `table=` 后的那段（`tbl` 开头） |
 | `NOTIFIERS` | 空 | 逗号分隔：`feishu`、`wecom`、`generic`、`email`；为空则只记警告不通知 |
 | `FEISHU_WEBHOOK_URL`、`FEISHU_SIGNING_SECRET` | 空 | 飞书群自定义机器人地址；开启签名校验时填密钥 |
 | `WECOM_WEBHOOK_URL` | 空 | 企业微信群机器人地址 |
@@ -145,6 +149,7 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 8. 会话变量跨会话保留：流程需在新会话开场时重置 `escalation_flag` 与 `escalation_reason`，否则老客户再次来访会在第一条消息就触发一次通知。【待核实】已交接的线索不受此影响（不再因重判发卡）。
 9. `contactId` 是否永远是号码：Botmaker 的公开接口描述里已出现 BSUID（WhatsApp 的商家范围用户标识）相关字段与事件。若部分客户只给出标识而不给号码，"按号码判国家、按号码去重"对这部分客户不成立。服务的处理：WhatsApp 渠道的回调只要带 `customerId`，线索照常入库并照常通知销售，去重键改用 `bm:<customerId>`，`phone` 与 `country_by_phone` 留空（绝不从标识里猜号码），通知卡片提示"国家需向客户确认"；之后若同一客户的号码出现，会补写到同一条线索上。既无号码也无 `customerId`、或来自其他渠道的回调才跳过（结果 `skipped_no_contact`）。真实回调里 BSUID 的形态【待核实】。
 10. 已知限制：所有接管原因都通知到同一组渠道；如需把投诉、质保类单独发给售后群，需要按 `escalation_reason` 分流通知（二期）。
+11. 飞书多维表格镜像（`feishu_bitable`）的接口形态（租户令牌、`records/search` 按 `lead_id` 过滤、创建 / 更新记录、各列类型接受的值）按飞书开放平台公开文档整理，未用真实租户核实；拿到客户租户后按 `05-integration/feishu-bitable-setup.md` 第 6 节验一遍。【待核实】
 
 ## 9. UAT 回放
 
