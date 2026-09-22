@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from .base import LeadSink, NotificationRow, RawEventState
-from .csv_export import CsvExportSink
+from .csv_export import DEFAULT_MIN_INTERVAL_S, CsvExportSink
 from .sqlite_store import SqliteStore
 
 if TYPE_CHECKING:  # pragma: no cover - import for type hints only
@@ -26,14 +26,16 @@ def build_sinks(names: list[str], store: SqliteStore, csv_path, *, settings: Set
     ledger), so it is accepted here and skipped. A sink whose configuration is missing, and
     the remaining stub, fail fast at start-up instead of silently dropping leads.
 
-    `settings` is only needed for `feishu_bitable`; callers that never enable it may keep
-    the old three-argument form."""
+    `settings` is required for `feishu_bitable` and carries the CSV mirror's write-behind
+    interval; callers that need neither may keep the old three-argument form (the csv sink
+    then falls back to the default interval)."""
     sinks: list[LeadSink] = []
     for name in names:
         if name == "sqlite":
             continue
         if name == "csv":
-            sinks.append(CsvExportSink(store, csv_path))
+            sinks.append(CsvExportSink(store, csv_path, min_interval_s=(
+                settings.csv_export_min_interval_s if settings is not None else DEFAULT_MIN_INTERVAL_S)))
         elif name == "feishu_bitable":
             from .feishu_bitable import FeishuBitableSink
             missing = [env for attr, env in FEISHU_BITABLE_SETTINGS
