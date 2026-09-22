@@ -7,8 +7,8 @@
 
 | 文件 | 作用 |
 |---|---|
-| `docker-compose.yml` | 服务 `webhook`（从仓库根目录构建镜像、只绑 127.0.0.1、日志轮转、健康检查）与服务 `caddy`（profile `proxy`，不加参数不起） |
-| `Caddyfile.example` | 反向代理三行配置，复制为 `Caddyfile` 后改域名 |
+| `docker-compose.yml` | 服务 `webhook`（从仓库根目录构建镜像、只绑 127.0.0.1、日志轮转、健康检查、最小权限见第 4 节）与服务 `caddy`（profile `proxy`，不加参数不起） |
+| `Caddyfile.example` | 反向代理配置：只放行三条路径、加安全头与请求体上限（第 4 节），复制为 `Caddyfile` 后改域名 |
 | `backup.sh` | `backup.sh <data_dir> <backup_dir> [keep_days=30]`：`sqlite3 .backup` 在线一致性备份，删过期备份，打印备份文件路径 |
 | `restore.sh` | `restore.sh <backup_file> <data_dir>`：覆盖 `leads.db`、删 `-wal` / `-shm`、留底现有库；不停起容器，只提示下一步 |
 | `update.sh` | `update.sh [compose_dir]`：`git pull --ff-only` → 重建镜像 → 重建容器 → 等 `/health` 200（最多 60 秒） |
@@ -17,7 +17,7 @@
 | `cron.example` | 三条定时任务：每 5 分钟 `app.replay`、每日备份、每 5 分钟健康检查 |
 | `.gitignore` | 本目录的 `.env`、`Caddyfile`、`data/` 不进仓库 |
 
-compose 文件里四个可插值变量（写在本目录 `.env` 或 shell 环境里）：
+compose 文件里五个可插值变量（写在本目录 `.env` 或 shell 环境里）：
 
 | 变量 | 默认 | 说明 |
 |---|---|---|
@@ -25,6 +25,7 @@ compose 文件里四个可插值变量（写在本目录 `.env` 或 shell 环境
 | `TROMOX_BIND` | `127.0.0.1` | 宿主机绑定地址；公网流量一律经反向代理进入，不要改成 0.0.0.0 |
 | `TROMOX_HTTP_PORT` | `8000` | 宿主机端口 |
 | `TROMOX_DATA_DIR` | `./data` | 宿主机数据目录（SQLite + CSV）；服务器上建议放仓库之外 |
+| `TROMOX_FORWARDED_ALLOW_IPS` | `*` | uvicorn 信任哪些来源发来的 `X-Forwarded-For`；什么时候要改见第 4 节 |
 | `PIP_INDEX_URL` | PyPI 官方 | 只在构建镜像时用；国内网络构建慢就指向 PyPI 镜像的 `/simple`，境外服务器不需要 |
 
 ## 2. 首次部署（服务器）
@@ -78,7 +79,34 @@ cd /opt/tromox/app/05-integration/deploy
 
   **仍然是人工的**：第 3 项只验证了线索入库，**卡片是否 60 秒内到了销售群要自己看一眼**；第 6（备份恢复演练）、7（权限）、9（Botmaker 后台）脚本一律记 `SKIP`，照本节上面几条和 `../deployment.md` 第 6 节手动走。不给 `--compose-dir` 时（本机、或部署不是 compose 起的）第 5、8 项也记 `SKIP`，第 8 项会把该跑的删除命令连 `lead_id` 一起打出来，自己补一条；`--no-cleanup` 则是给了 compose 也不删，留着线索人工看卡片。
 
-## 4. 本机 smoke test
+## 4. 安全基线
+
+密钥校验（`auth-bm-token`）是主防线，下面几项是万一有人绕过前面时的减害措施，都写死在 `docker-compose.yml` 与 `Caddyfile.example` 里，照第 2 节起服务就已经生效，不用额外操作。
+
+**容器最小权限**（`webhook` 服务）：
+
+| 设置 | 作用 | 会不会碍事 |
+|---|---|---|
+| `read_only: true` | 根文件系统只读，被注入的代码写不进镜像里的任何路径 | 不会：要写的只有 `/srv/data` 卷（SQLite、CSV，CSV 的临时文件也落在同一目录）与下面的 `/tmp` |
+| `tmpfs: ["/tmp"]` | `/tmp` 单独给一块内存盘 | `app.demo` 等用到临时目录的命令照常；重启即清 |
+| `cap_drop: ["ALL"]` | 去掉全部 Linux capabilities | 不会：服务以 uid 10001 跑、只监听 8000，一个都不需要 |
+| `security_opt: ["no-new-privileges:true"]` | 容器内进程拿不到更高权限 | 不会：镜像里没有 setuid 程序 |
+| `pids_limit: 256` | 进程 / 线程上限 | 不会：正常负载远低于这个数；fork 炸弹拖不垮宿主机 |
+
+`caddy` 服务同样 `cap_drop: ALL`，只补回 `NET_BIND_SERVICE`（绑 80 / 443 要它）与 `no-new-privileges`。Caddy 要写证书，所以它不设只读根文件系统。
+
+改完 compose 想确认生效：`docker compose config` 看渲染结果，或 `docker inspect` 看容器。日常运维命令（`docker compose exec -T webhook python -m app.replay --export`、`app.forget`）都在只读根文件系统下能跑，上线演练（第 3 节）跑的就是这套配置。
+
+**Caddy 只放行三条路径**：`@app path /webhooks/botmaker /health /metrics`，其余一律 `respond 404`，扫描器探到的路径连上游都到不了。另外给放行的请求加了 `request_body { max_size 1MB }`（超限的体在代理这层就被拒，打不到服务）和四个安全头：`X-Content-Type-Options nosniff`、`X-Frame-Options DENY`、`Referrer-Policy no-referrer`、`Strict-Transport-Security max-age=31536000`，并删掉 `Server` 头不回显版本。以后新增对外路径，记得同时加进 `@app` 那一行，否则线上会收到 404。
+
+**`TROMOX_FORWARDED_ALLOW_IPS`（什么时候要改）**：`ALLOWED_IPS` 拦的是"来源 IP"，而服务在反向代理后面看到的对端是 Caddy。所以镜像里 uvicorn 带 `--proxy-headers` 启动，compose 把 `FORWARDED_ALLOW_IPS` 设成 `${TROMOX_FORWARDED_ALLOW_IPS:-*}` —— 只有来源在这个名单里时 `X-Forwarded-For` 才被采信，别人伪造这个头一律忽略。
+
+- 默认 `*` 的前提：8000 端口只绑 `127.0.0.1`（`TROMOX_BIND`），唯一入口是同一 compose 网络里的 Caddy，它的容器地址每次重建都变，写死没有意义。
+- 把 8000 暴露到公网（`TROMOX_BIND=0.0.0.0`）、或在宿主机上直接跑 Caddy / Nginx：必须改。在本目录 `.env` 里加 `TROMOX_FORWARDED_ALLOW_IPS=<代理的固定 IP>`（宿主机跑代理时常见是 Docker 网桥网关 `172.17.0.1`，`docker network inspect bridge` 可查）；不启用 `ALLOWED_IPS` 时也可以直接留空 `TROMOX_FORWARDED_ALLOW_IPS=`，谁的代理头都不信。
+- **要改的是 `TROMOX_FORWARDED_ALLOW_IPS`**：compose 里的 `environment` 优先级高于 `env_file`，在 `.env` 里直接写 `FORWARDED_ALLOW_IPS=` 不会生效。
+- 改完 `docker compose up -d webhook` 重建容器；回归用例见 `../webhook-service/tests/test_proxy_headers.py`（可信采信 / 无头按对端判 / 伪造被忽略三种情形）。
+
+## 5. 本机 smoke test
 
 不占 80/443，不碰仓库里的任何目录，用完整个删掉：
 
@@ -105,13 +133,13 @@ docker compose -p tromox-smoke down -v && rm -rf "$T"
 
 脚本单测不需要 Docker：`backup.sh` / `restore.sh` 对任意 SQLite 文件都能跑，`healthcheck-alert.sh` 对一个返回 503 的地址应退出 1 并在 stderr 打印 `tromox webhook down`。 设了 `TROMOX_METRICS_TOKEN` 时，对 `/metrics` 返回 `raw_events_unprocessed` 非 0 的地址应退出 1 并打印 `tromox webhook degraded`。
 
-## 5. 与 deployment.md 的对应
+## 6. 与 deployment.md 的对应
 
 | deployment.md | 本目录 |
 |---|---|
 | 4.2 安装 Docker、4.4 数据目录与启动 | `docker-compose.yml`、第 2 节第 2–3 步 |
 | 4.3 环境变量文件 | 第 2 节第 1 步 |
-| 4.5 反向代理与 TLS | `Caddyfile.example`、第 2 节第 4–5 步 |
+| 4.5 反向代理与 TLS | `Caddyfile.example`、第 2 节第 4–5 步、第 4 节 |
 | 5 定时任务 | `cron.example`、`healthcheck-alert.sh` |
 | 6 备份与恢复 | `backup.sh`、`restore.sh` |
 | 7 更新 | `update.sh` |
