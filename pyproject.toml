@@ -24,7 +24,7 @@ service = [
     "pydantic-settings>=2.2",
 ]
 cost = ["openpyxl>=3.1"]
-export = ["python-docx>=1.1", "markdown-it-py>=3"]  # scripts/export_client_docs.py (PDF also needs Chrome + npx)
+export = ["python-docx>=1.1", "markdown-it-py>=3", "pypdf>=4"]  # scripts/export_client_docs.py (PDF also needs Chrome + npx); pypdf reads the PDF back in tests
 dev = ["pytest>=7.4"]
 
 [tool.setuptools.packages.find]

@@ -23,7 +23,7 @@
 
 **客户**：`00-client/方案书.md` → `00-client/客户需提供清单.md` → `00-client/报价单.md` → `00-client/维护服务说明.md`；上线前读 `00-client/运维手册.md`、`00-client/销售接手SOP.md`、`00-client/培训计划.md`。
 
-**张宝文**：`99-internal/zhang-baowen-brief.md` → `00-client/方案书.md`（改一改转 Kim）→ `07-project/meeting-prep.md`（中秋碰面）→ `99-internal/pricing-internal.md` → `99-internal/open-questions.md` → `06-acceptance/acceptance-criteria.md`。
+**张宝文**：`99-internal/zhang-baowen-brief.md` → `99-internal/zhang-baowen-changelog-2026-09-22.md`（手上是 9/21 版时先看这份）→ `00-client/方案书.md`（改一改转 Kim）→ `07-project/meeting-prep.md`（中秋碰面）→ `99-internal/pricing-internal.md` → `99-internal/open-questions.md` → `06-acceptance/acceptance-criteria.md`。
 
 **集成工程师**：`SOURCES.md` → `01-design/architecture.md` → `01-design/adr/` → `01-design/lead-schema.md` → `01-design/conversation-flow.md`、`routing-rules.md` → `02-botmaker/trial-test-plan.md`（开工第一件事）→ `02-botmaker/setup-guide.md` → `04-eval/README.md` → `05-integration/webhook-service/README.md` → `06-acceptance/`。
 
@@ -40,7 +40,7 @@
 | `05-integration/` | FastAPI 回调服务、Botmaker API 笔记、部署说明 |
 | `06-acceptance/` | 验收标准（含机器可读阈值）、UAT 用例、上线检查表 |
 | `07-project/` | 时间计划、RACI、风险登记、碰面准备、第二阶段展望 |
-| `99-internal/` | 工作量、内部报价、待决问题、给张宝文的一页说明 |
+| `99-internal/` | 工作量、内部报价、待决问题、给张宝文的一页说明与 9/22 变更说明 |
 | `shared/tromox_lead/` | 线索数据结构与规则的唯一代码源头：pydantic 模型、枚举、国家 / 语言 / 短码 / 路由 / 标签规则 |
 | `shared/prompt_blocks/`、`shared/snippets/` | 两个 prompt 共用的抽取规则；报价单与工作量表共用的两档范围表 |
 | `scripts/` | 生成器与机器检查 |
