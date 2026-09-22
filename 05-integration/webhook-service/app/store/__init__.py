@@ -38,7 +38,7 @@ def build_sinks(names: list[str], store: SqliteStore, csv_path, *, settings: Set
             sinks.append(CsvExportSink(store, csv_path, min_interval_s=(
                 settings.csv_export_min_interval_s if settings is not None else DEFAULT_MIN_INTERVAL_S)))
         elif name == "feishu_bitable":
-            from .feishu_bitable import FeishuBitableSink
+            from .feishu_bitable import DEFAULT_BASE_URL, FeishuBitableSink
             missing = [env for attr, env in FEISHU_BITABLE_SETTINGS
                        if settings is None or not str(getattr(settings, attr, "") or "").strip()]
             if missing:
@@ -48,8 +48,17 @@ def build_sinks(names: list[str], store: SqliteStore, csv_path, *, settings: Set
                     + "; set them or remove feishu_bitable from STORAGE_BACKENDS"
                 )
             assert settings is not None
+            # Empty / blank (e.g. `FEISHU_BASE_URL=` left empty in .env) means the Feishu default;
+            # anything else must be an https origin, so a typo cannot send the mirror over plain HTTP.
+            base_url = str(settings.feishu_base_url or "").strip() or DEFAULT_BASE_URL
+            if not base_url.startswith("https://"):
+                raise ValueError(
+                    f"feishu_bitable storage needs FEISHU_BASE_URL to start with https:// (got {base_url!r});"
+                    " leave it empty for " + DEFAULT_BASE_URL
+                )
             sinks.append(FeishuBitableSink(settings.feishu_app_id, settings.feishu_app_secret,
-                                           settings.feishu_bitable_app_token, settings.feishu_bitable_table_id))
+                                           settings.feishu_bitable_app_token, settings.feishu_bitable_table_id,
+                                           base_url=base_url))
         elif name == "gsheets":
             from .gsheets import GoogleSheetsSink
             sinks.append(GoogleSheetsSink())

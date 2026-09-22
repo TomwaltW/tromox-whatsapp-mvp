@@ -14,7 +14,7 @@ import pytest
 from app.config import Settings
 from app.pipeline import Pipeline
 from app.store import SqliteStore, build_sinks
-from app.store.feishu_bitable import FeishuBitableError, FeishuBitableSink, lead_to_fields
+from app.store.feishu_bitable import DEFAULT_BASE_URL, FeishuBitableError, FeishuBitableSink, lead_to_fields
 from tromox_lead import B2BType, EscalationReason, Lead, Referral, Segment
 
 from webhook_test_helpers import NO_WAIT, RecordingNotifier, load_fixture
@@ -252,3 +252,50 @@ def test_settings_read_the_four_feishu_variables(monkeypatch, tmp_path):
                         database_path=tmp_path / "leads.db", csv_export_path=tmp_path / "leads.csv")
     assert (settings.feishu_app_id, settings.feishu_bitable_table_id) == ("cli_env", "tblENV")
     assert settings.storage_backend_list == ["sqlite", "csv", "feishu_bitable"]
+
+
+def _configured(settings, **overrides):
+    return settings.model_copy(update={"feishu_app_id": "cli", "feishu_app_secret": APP_SECRET,
+                                       "feishu_bitable_app_token": APP_TOKEN, "feishu_bitable_table_id": TABLE_ID,
+                                       **overrides})
+
+
+def test_feishu_base_url_carries_the_lark_domain_into_the_records_url_and_every_request(settings, tmp_path):
+    """海外 Lark 租户只改 FEISHU_BASE_URL，不改代码：记录接口与令牌接口都落在 Lark 域名下。"""
+    lark = _configured(settings, feishu_base_url="https://open.larksuite.com/")   # 尾部斜杠由 sink 去掉
+    sink = build_sinks(["feishu_bitable"], SqliteStore(settings.database_path), tmp_path / "x.csv", settings=lark)[0]
+    assert isinstance(sink, FeishuBitableSink)
+    assert sink._records_url.startswith(f"https://open.larksuite.com/open-apis/bitable/v1/apps/{APP_TOKEN}/")
+
+    fake, urls = FakeBitable(), []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        urls.append(str(request.url))
+        return fake.handler(request)
+
+    injected = FeishuBitableSink("cli", APP_SECRET, APP_TOKEN, TABLE_ID,
+                                 client=httpx.Client(transport=httpx.MockTransport(handler)),
+                                 base_url=lark.feishu_base_url)
+    injected.upsert_lead(_lead())
+    assert any("tenant_access_token" in url for url in urls)          # 令牌接口也走 Lark 域名
+    assert urls and all(url.startswith("https://open.larksuite.com/open-apis/") for url in urls)
+
+
+def test_feishu_base_url_defaults_to_feishu_cn_and_refuses_a_non_https_value(settings, tmp_path):
+    store = SqliteStore(settings.database_path)
+    full = _configured(settings)
+    assert full.feishu_base_url == DEFAULT_BASE_URL == "https://open.feishu.cn"
+    assert build_sinks(["feishu_bitable"], store, tmp_path / "x.csv", settings=full)[0]._base_url == DEFAULT_BASE_URL
+    blank = _configured(settings, feishu_base_url="   ")             # .env 里 FEISHU_BASE_URL= 留空
+    assert build_sinks(["feishu_bitable"], store, tmp_path / "x.csv", settings=blank)[0]._base_url == DEFAULT_BASE_URL
+    plain = _configured(settings, feishu_base_url="http://open.larksuite.com")
+    with pytest.raises(ValueError) as info:
+        build_sinks(["feishu_bitable"], store, tmp_path / "x.csv", settings=plain)
+    assert "FEISHU_BASE_URL" in str(info.value) and APP_SECRET not in str(info.value)
+
+
+def test_settings_read_feishu_base_url_from_the_environment(monkeypatch, tmp_path):
+    monkeypatch.setenv("FEISHU_BASE_URL", "https://open.larksuite.com")
+    settings = Settings(_env_file=None, botmaker_webhook_token="t",
+                        database_path=tmp_path / "leads.db", csv_export_path=tmp_path / "leads.csv")
+    assert settings.feishu_base_url == "https://open.larksuite.com"

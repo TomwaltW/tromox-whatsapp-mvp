@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     feishu_app_secret: str = ""
     feishu_bitable_app_token: str = ""        # feishu_bitable sink: which base and which table
     feishu_bitable_table_id: str = ""
+    feishu_base_url: str = "https://open.feishu.cn"   # feishu_bitable sink: open platform origin; Lark tenants use https://open.larksuite.com
 
     # --- notifications ------------------------------------------------------------------
     notifiers: str = ""

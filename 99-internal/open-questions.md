@@ -259,25 +259,25 @@
 | 189 | 所选厂商的实际月费是否落在 6 至 12 USD / 【待核实】 / 集成工程师 | `05-integration/deployment.md:152` | 集成工程师（沈思锴） |
 | 190 | Botmaker 单条回调失败的重试策略（决定更新窗口的宽严；熔断规则已知，SOURCES S-B5） / 【待核实】 / 集成工程师 | `05-integration/deployment.md:153` | 集成工程师（沈思锴） |
 | 191 | Botmaker webhook 功能的单价 / 【待核实】 / 集成工程师 | `05-integration/deployment.md:154` | 集成工程师（沈思锴） |
-| 192 | 接口路径、请求体与返回体按飞书开放平台公开文档整理（租户令牌、记录查询 records/search、记录创建、记录更新），未用真实租户跑通。尤其是查询接口的 filter 写法与「单选列自动补选项」的行为。【待核实】 | `05-integration/feishu-bitable-setup.md:78` | 集成工程师（沈思锴） |
-| 193 | 日期列接受毫秒时间戳、复选框列接受布尔、多选列接受字符串数组，是按文档写的；若某列类型建错（例如把日期建成文本），写入会报错码，日志里能看到。【待核实】 | `05-integration/feishu-bitable-setup.md:79` | 集成工程师（沈思锴） |
-| 194 | 频控：飞书对单个应用的写接口有每秒次数限制，MVP 的线索量远低于该限制；历史导入一次写几千行时要分批。【待核实】 | `05-integration/feishu-bitable-setup.md:81` | 集成工程师（沈思锴） |
-| 195 | 建在知识库里的多维表格，其网址 token 是知识库节点的，不能直接当 app_token；需要把表格移出知识库或换用节点接口取 app_token。【待核实】 | `05-integration/feishu-bitable-setup.md:82` | 集成工程师（沈思锴） |
+| 192 | 接口路径、请求体与返回体按飞书开放平台公开文档整理（租户令牌、记录查询 records/search、记录创建、记录更新），未用真实租户跑通。尤其是查询接口的 filter 写法与「单选列自动补选项」的行为。【待核实】 | `05-integration/feishu-bitable-setup.md:80` | 集成工程师（沈思锴） |
+| 193 | 日期列接受毫秒时间戳、复选框列接受布尔、多选列接受字符串数组，是按文档写的；若某列类型建错（例如把日期建成文本），写入会报错码，日志里能看到。【待核实】 | `05-integration/feishu-bitable-setup.md:81` | 集成工程师（沈思锴） |
+| 194 | 频控：飞书对单个应用的写接口有每秒次数限制，MVP 的线索量远低于该限制；历史导入一次写几千行时要分批。【待核实】 | `05-integration/feishu-bitable-setup.md:83` | 集成工程师（沈思锴） |
+| 195 | 建在知识库里的多维表格，其网址 token 是知识库节点的，不能直接当 app_token；需要把表格移出知识库或换用节点接口取 app_token。【待核实】 | `05-integration/feishu-bitable-setup.md:84` | 集成工程师（沈思锴） |
 | 196 | 假设：回调结构按 Botmaker 帮助中心示例建模（SOURCES S-B6），真实样本到手前标【待核实】；服务部署在境外，见 ../deployment.md；Botmaker API 端点与限流见 ../botmaker-api-notes.md。 | `05-integration/webhook-service/README.md:4` | 集成工程师（沈思锴） |
 | 197 | 状态回写 / 坐席消息出现时线索转 contacted；conversation-close 事件里的结束分类（typification）映射为线索状态，映射表见 ../botmaker-api-notes.md 第 6 节。【待核实】 | `05-integration/webhook-service/README.md:30` | 集成工程师（沈思锴） |
 | 198 | app/models.py / Botmaker v1.1 回调模型，宽松解析【待核实】 | `05-integration/webhook-service/README.md:40` | 集成工程师（沈思锴） |
 | 199 | fixtures/ / 6 个回调样例，顶层 _note 注明结构【待核实】 | `05-integration/webhook-service/README.md:46` | 集成工程师（沈思锴） |
-| 200 | BOTMAKER_CHAT_URL_TEMPLATE / （链接见出处） / 卡片上的"接手"链接【待核实】 | `05-integration/webhook-service/README.md:133` | 集成工程师（沈思锴） |
-| 201 | 真实回调的字段名与层级是否与 fixture 一致，尤其 contactId、customerId、messages[]._id_、variables。【待核实】 | `05-integration/webhook-service/README.md:170` | 集成工程师（沈思锴） |
-| 202 | 按钮点击在回调里的形态，以及变量是随用户消息、Bot 消息还是单独事件下发。【待核实】 | `05-integration/webhook-service/README.md:171` | 集成工程师（沈思锴） |
-| 203 | Botmaker 是否接受带下划线的变量名：已知变量 ID 不能含空格、连字符、星号（SOURCES S-B18），下划线原文未写。不接受时用驼峰，服务两种都认；流程、AI Agent 指令里的变量名与标签名要全仓跟着改。【待核实】 | `05-integration/webhook-service/README.md:172` | 集成工程师（沈思锴） |
-| 204 | 回调是否包含分配坐席类事件（assigned-to-agent、queue-set）；没有时线索在首条坐席消息出现时才转 contacted。【待核实】 | `05-integration/webhook-service/README.md:173` | 集成工程师（沈思锴） |
-| 205 | Botmaker 对单条回调失败的重试、间隔与超时策略（熔断规则已证实，见第 1 节"先落盘"一行）。【待核实】 | `05-integration/webhook-service/README.md:174` | 集成工程师（沈思锴） |
-| 206 | CTWA 广告 referral：回调字段表列有 messages[].whatsappReferral（sourceId、sourceURL、headline、body），JSON 示例里没有（SOURCES S-B12）。服务目前只认名为 referral 的对象，照字段表的写法到达时读不到；拿到真实样本核对后再决定是否解析，届时改 … | `05-integration/webhook-service/README.md:175` | 集成工程师（沈思锴） |
-| 207 | 卡片链接的实际地址格式（公开接口描述里出现过三种写法）。【待核实】 | `05-integration/webhook-service/README.md:176` | 集成工程师（沈思锴） |
-| 208 | 会话变量跨会话保留：流程需在新会话开场时重置 escalation_flag 与 escalation_reason，否则老客户再次来访会在第一条消息就触发一次通知。【待核实】已交接的线索不受此影响（不再因重判发卡）。 | `05-integration/webhook-service/README.md:177` | 集成工程师（沈思锴） |
-| 209 | contactId 是否永远是号码：Botmaker 的公开接口描述里已出现 BSUID（WhatsApp 的商家范围用户标识）相关字段与事件。若部分客户只给出标识而不给号码，"按号码判国家、按号码去重"对这部分客户不成立。服务的处理：WhatsApp 渠道的回调只要带 customerId，线索照常入库并照常通知销售，去重键改用 bm:… | `05-integration/webhook-service/README.md:178` | 集成工程师（沈思锴） |
-| 210 | 飞书多维表格镜像（feishu_bitable）的接口形态（租户令牌、records/search 按 lead_id 过滤、创建 / 更新记录、各列类型接受的值）按飞书开放平台公开文档整理，未用真实租户核实；拿到客户租户后按 05-integration/feishu-bitable-setup.md 第 6 节验一遍。镜像已改为响应后… | `05-integration/webhook-service/README.md:180` | 集成工程师（沈思锴） |
+| 200 | BOTMAKER_CHAT_URL_TEMPLATE / （链接见出处） / 卡片上的"接手"链接【待核实】 | `05-integration/webhook-service/README.md:134` | 集成工程师（沈思锴） |
+| 201 | 真实回调的字段名与层级是否与 fixture 一致，尤其 contactId、customerId、messages[]._id_、variables。【待核实】 | `05-integration/webhook-service/README.md:171` | 集成工程师（沈思锴） |
+| 202 | 按钮点击在回调里的形态，以及变量是随用户消息、Bot 消息还是单独事件下发。【待核实】 | `05-integration/webhook-service/README.md:172` | 集成工程师（沈思锴） |
+| 203 | Botmaker 是否接受带下划线的变量名：已知变量 ID 不能含空格、连字符、星号（SOURCES S-B18），下划线原文未写。不接受时用驼峰，服务两种都认；流程、AI Agent 指令里的变量名与标签名要全仓跟着改。【待核实】 | `05-integration/webhook-service/README.md:173` | 集成工程师（沈思锴） |
+| 204 | 回调是否包含分配坐席类事件（assigned-to-agent、queue-set）；没有时线索在首条坐席消息出现时才转 contacted。【待核实】 | `05-integration/webhook-service/README.md:174` | 集成工程师（沈思锴） |
+| 205 | Botmaker 对单条回调失败的重试、间隔与超时策略（熔断规则已证实，见第 1 节"先落盘"一行）。【待核实】 | `05-integration/webhook-service/README.md:175` | 集成工程师（沈思锴） |
+| 206 | CTWA 广告 referral：回调字段表列有 messages[].whatsappReferral（sourceId、sourceURL、headline、body），JSON 示例里没有（SOURCES S-B12）。服务目前只认名为 referral 的对象，照字段表的写法到达时读不到；拿到真实样本核对后再决定是否解析，届时改 … | `05-integration/webhook-service/README.md:176` | 集成工程师（沈思锴） |
+| 207 | 卡片链接的实际地址格式（公开接口描述里出现过三种写法）。【待核实】 | `05-integration/webhook-service/README.md:177` | 集成工程师（沈思锴） |
+| 208 | 会话变量跨会话保留：流程需在新会话开场时重置 escalation_flag 与 escalation_reason，否则老客户再次来访会在第一条消息就触发一次通知。【待核实】已交接的线索不受此影响（不再因重判发卡）。 | `05-integration/webhook-service/README.md:178` | 集成工程师（沈思锴） |
+| 209 | contactId 是否永远是号码：Botmaker 的公开接口描述里已出现 BSUID（WhatsApp 的商家范围用户标识）相关字段与事件。若部分客户只给出标识而不给号码，"按号码判国家、按号码去重"对这部分客户不成立。服务的处理：WhatsApp 渠道的回调只要带 customerId，线索照常入库并照常通知销售，去重键改用 bm:… | `05-integration/webhook-service/README.md:179` | 集成工程师（沈思锴） |
+| 210 | 飞书多维表格镜像（feishu_bitable）的接口形态（租户令牌、records/search 按 lead_id 过滤、创建 / 更新记录、各列类型接受的值）按飞书开放平台公开文档整理，未用真实租户核实；拿到客户租户后按 05-integration/feishu-bitable-setup.md 第 6 节验一遍。镜像已改为响应后… | `05-integration/webhook-service/README.md:181` | 集成工程师（沈思锴） |
 | 211 | 【待核实】 The structure follows the example in Botmaker's help centre (SOURCES S-B6) and has | `05-integration/webhook-service/app/models.py:3` | 集成工程师（沈思锴） |
 | 212 | referral: dict[str, Any] / None = None                          # 【待核实】 CTWA passthrough | `05-integration/webhook-service/app/models.py:30` | 集成工程师（沈思锴） |
 | 213 | referral: dict[str, Any] / None = None                          # 【待核实】 | `05-integration/webhook-service/app/models.py:66` | 集成工程师（沈思锴） |
@@ -649,7 +649,7 @@
 | 213 | 云厂商、机房地区、由谁开账号 / 【待客户确认】 / 客户、张宝文 | `05-integration/deployment.md:150` | 客户（经张宝文 / Kim 对接） |
 | 214 | 子域名与 DNS 解析由谁操作 / 【待客户确认】 / 客户 | `05-integration/deployment.md:151` | 客户（经张宝文 / Kim 对接） |
 | 215 | 通知渠道用飞书还是企业微信 / 【待客户确认】 / 客户销售 | `05-integration/deployment.md:155` | 客户（经张宝文 / Kim 对接） |
-| 216 | 海外租户（Lark）的开放平台域名不同，服务的 base_url 参数目前只在代码里可改，没有环境变量；客户若用 Lark 而不是飞书，要加一个配置项。【待客户确认】 | `05-integration/feishu-bitable-setup.md:80` | 客户（经张宝文 / Kim 对接） |
+| 216 | 海外租户（Lark）的开放平台域名不同：FEISHU_BASE_URL 填 open.larksuite.com（默认 open.feishu.cn）；客户用的是飞书还是 Lark 要客户说明。【待客户确认】 | `05-integration/feishu-bitable-setup.md:82` | 客户（经张宝文 / Kim 对接） |
 | 217 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 客户（经张宝文 / Kim 对接） |
 | 218 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 客户（经张宝文 / Kim 对接） |
 | 219 | 假设：在测试号或灰度入口上执行；测试人用自己的手机号，语种列为完整版的安排；精简版只保留 2 个语种，此处以英语加德语为例，第二语种【待客户确认】；示例里的公司与人名均为虚构；用例不涉及任何参数、价格、质保条款的具体内容。 | `06-acceptance/uat-test-cases.md:4` | 客户（经张宝文 / Kim 对接） |

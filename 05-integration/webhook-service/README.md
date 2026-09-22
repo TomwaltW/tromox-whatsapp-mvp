@@ -124,6 +124,7 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 | `FEISHU_APP_SECRET` | 空 | 飞书自建应用的 App Secret；密钥，只放 `.env` 或部署平台的密钥配置 |
 | `FEISHU_BITABLE_APP_TOKEN` | 空 | 多维表格网址 `/base/` 后的那段 |
 | `FEISHU_BITABLE_TABLE_ID` | 空 | 多维表格网址 `table=` 后的那段（`tbl` 开头） |
+| `FEISHU_BASE_URL` | `open.feishu.cn` | 飞书开放平台域名，默认国内飞书；海外 Lark 租户填 Lark 开放平台的域名 `open.larksuite.com`；留空即默认值，必须是 https 开头；只对 `feishu_bitable` 生效 |
 | `NOTIFIERS` | 空 | 逗号分隔：`feishu`、`wecom`、`generic`、`email`；为空则只记警告不通知 |
 | `FEISHU_WEBHOOK_URL`、`FEISHU_SIGNING_SECRET` | 空 | 飞书群自定义机器人地址；开启签名校验时填密钥 |
 | `WECOM_WEBHOOK_URL` | 空 | 企业微信群机器人地址 |

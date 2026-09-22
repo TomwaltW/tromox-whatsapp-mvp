@@ -44,6 +44,7 @@ from tromox_lead import LEAD_FIELDS, Lead
 
 from .base import MirrorError
 
+DEFAULT_BASE_URL = "https://open.feishu.cn"             # mainland Feishu; Lark tenants set FEISHU_BASE_URL
 DEFAULT_TIMEOUT = httpx.Timeout(10.0, connect=5.0)      # same values as notify/_http.py
 TOKEN_SAFETY_MARGIN_SECONDS = 300                       # refresh this long before Feishu says it expires
 TOKEN_INVALID_CODES = frozenset({99991661, 99991663})   # tenant token expired / invalid: refetch once
@@ -92,7 +93,7 @@ class FeishuBitableSink:
 
     def __init__(self, app_id: str, app_secret: str, app_token: str, table_id: str, *,
                  client: httpx.Client | None = None, clock: Callable[[], float] = time.time,
-                 base_url: str = "https://open.feishu.cn") -> None:
+                 base_url: str = DEFAULT_BASE_URL) -> None:
         self._app_id = app_id
         self._app_secret = app_secret
         self._base_url = base_url.rstrip("/")

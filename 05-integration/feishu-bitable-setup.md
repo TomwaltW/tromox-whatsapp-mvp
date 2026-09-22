@@ -56,6 +56,8 @@
 | `FEISHU_BITABLE_APP_TOKEN` | 表格网址 `/base/` 后的那段 |
 | `FEISHU_BITABLE_TABLE_ID` | 表格网址 `table=` 后的那段（`tbl` 开头） |
 
+可选：`FEISHU_BASE_URL`，开放平台域名，默认 open.feishu.cn；海外 Lark 租户填 open.larksuite.com（见第 7 节），留空即默认值。
+
 再把 `STORAGE_BACKENDS` 改成 `sqlite,csv,feishu_bitable`。服务的日志与错误信息不会输出 App Secret 与租户令牌。
 
 ## 6. 验证
@@ -77,6 +79,6 @@
 
 - 接口路径、请求体与返回体按飞书开放平台公开文档整理（租户令牌、记录查询 `records/search`、记录创建、记录更新），未用真实租户跑通。尤其是查询接口的 filter 写法与「单选列自动补选项」的行为。【待核实】
 - 日期列接受毫秒时间戳、复选框列接受布尔、多选列接受字符串数组，是按文档写的；若某列类型建错（例如把日期建成文本），写入会报错码，日志里能看到。【待核实】
-- 海外租户（Lark）的开放平台域名不同，服务的 `base_url` 参数目前只在代码里可改，没有环境变量；客户若用 Lark 而不是飞书，要加一个配置项。【待客户确认】
+- 海外租户（Lark）的开放平台域名不同：`FEISHU_BASE_URL` 填 open.larksuite.com（默认 open.feishu.cn）；客户用的是飞书还是 Lark 要客户说明。【待客户确认】
 - 频控：飞书对单个应用的写接口有每秒次数限制，MVP 的线索量远低于该限制；历史导入一次写几千行时要分批。【待核实】
 - 建在知识库里的多维表格，其网址 token 是知识库节点的，不能直接当 app_token；需要把表格移出知识库或换用节点接口取 app_token。【待核实】
