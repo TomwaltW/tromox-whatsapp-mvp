@@ -58,9 +58,9 @@
 
 | 标记 | 负责人 | 条数（去重后） |
 |---|---|---|
-| 【待核实】 | 集成工程师（沈思锴） | 262 |
+| 【待核实】 | 集成工程师（沈思锴） | 267 |
 | 【张宝文确认】 | 张宝文 | 85 |
-| 【待客户确认】 | 客户（经张宝文 / Kim 对接） | 228 |
+| 【待客户确认】 | 客户（经张宝文 / Kim 对接） | 229 |
 
 ## 3. 我要做的：平台、政策、价格类事实核实
 
@@ -259,77 +259,82 @@
 | 189 | 所选厂商的实际月费是否落在 6 至 12 USD / 【待核实】 / 集成工程师 | `05-integration/deployment.md:141` | 集成工程师（沈思锴） |
 | 190 | Botmaker 单条回调失败的重试策略（决定更新窗口的宽严；熔断规则已知，SOURCES S-B5） / 【待核实】 / 集成工程师 | `05-integration/deployment.md:142` | 集成工程师（沈思锴） |
 | 191 | Botmaker webhook 功能的单价 / 【待核实】 / 集成工程师 | `05-integration/deployment.md:143` | 集成工程师（沈思锴） |
-| 192 | 假设：回调结构按 Botmaker 帮助中心示例建模（SOURCES S-B6），真实样本到手前标【待核实】；服务部署在境外，见 ../deployment.md；Botmaker API 端点与限流见 ../botmaker-api-notes.md。 | `05-integration/webhook-service/README.md:4` | 集成工程师（沈思锴） |
-| 193 | 状态回写 / 坐席消息出现时线索转 contacted；conversation-close 事件里的结束分类（typification）映射为线索状态，映射表见 ../botmaker-api-notes.md 第 6 节。【待核实】 | `05-integration/webhook-service/README.md:29` | 集成工程师（沈思锴） |
-| 194 | app/models.py / Botmaker v1.1 回调模型，宽松解析【待核实】 | `05-integration/webhook-service/README.md:38` | 集成工程师（沈思锴） |
-| 195 | fixtures/ / 6 个回调样例，顶层 _note 注明结构【待核实】 | `05-integration/webhook-service/README.md:44` | 集成工程师（沈思锴） |
-| 196 | BOTMAKER_CHAT_URL_TEMPLATE / （链接见出处） / 卡片上的"接手"链接【待核实】 | `05-integration/webhook-service/README.md:118` | 集成工程师（沈思锴） |
-| 197 | 真实回调的字段名与层级是否与 fixture 一致，尤其 contactId、customerId、messages[]._id_、variables。【待核实】 | `05-integration/webhook-service/README.md:140` | 集成工程师（沈思锴） |
-| 198 | 按钮点击在回调里的形态，以及变量是随用户消息、Bot 消息还是单独事件下发。【待核实】 | `05-integration/webhook-service/README.md:141` | 集成工程师（沈思锴） |
-| 199 | Botmaker 是否接受带下划线的变量名：已知变量 ID 不能含空格、连字符、星号（SOURCES S-B18），下划线原文未写。不接受时用驼峰，服务两种都认；流程、AI Agent 指令里的变量名与标签名要全仓跟着改。【待核实】 | `05-integration/webhook-service/README.md:142` | 集成工程师（沈思锴） |
-| 200 | 回调是否包含分配坐席类事件（assigned-to-agent、queue-set）；没有时线索在首条坐席消息出现时才转 contacted。【待核实】 | `05-integration/webhook-service/README.md:143` | 集成工程师（沈思锴） |
-| 201 | Botmaker 对单条回调失败的重试、间隔与超时策略（熔断规则已证实，见第 1 节"先落盘"一行）。【待核实】 | `05-integration/webhook-service/README.md:144` | 集成工程师（沈思锴） |
-| 202 | CTWA 广告 referral：回调字段表列有 messages[].whatsappReferral（sourceId、sourceURL、headline、body），JSON 示例里没有（SOURCES S-B12）。服务目前只认名为 referral 的对象，照字段表的写法到达时读不到；拿到真实样本核对后再决定是否解析，届时改 … | `05-integration/webhook-service/README.md:145` | 集成工程师（沈思锴） |
-| 203 | 卡片链接的实际地址格式（公开接口描述里出现过三种写法）。【待核实】 | `05-integration/webhook-service/README.md:146` | 集成工程师（沈思锴） |
-| 204 | 会话变量跨会话保留：流程需在新会话开场时重置 escalation_flag 与 escalation_reason，否则老客户再次来访会在第一条消息就触发一次通知。【待核实】已交接的线索不受此影响（不再因重判发卡）。 | `05-integration/webhook-service/README.md:147` | 集成工程师（沈思锴） |
-| 205 | contactId 是否永远是号码：Botmaker 的公开接口描述里已出现 BSUID（WhatsApp 的商家范围用户标识）相关字段与事件。若部分客户只给出标识而不给号码，"按号码判国家、按号码去重"对这部分客户不成立。服务的处理：WhatsApp 渠道的回调只要带 customerId，线索照常入库并照常通知销售，去重键改用 bm:… | `05-integration/webhook-service/README.md:148` | 集成工程师（沈思锴） |
-| 206 | 【待核实】 The structure follows the example in Botmaker's help centre (SOURCES S-B6) and has | `05-integration/webhook-service/app/models.py:3` | 集成工程师（沈思锴） |
-| 207 | referral: dict[str, Any] / None = None                          # 【待核实】 CTWA passthrough | `05-integration/webhook-service/app/models.py:30` | 集成工程师（沈思锴） |
-| 208 | referral: dict[str, Any] / None = None                          # 【待核实】 | `05-integration/webhook-service/app/models.py:66` | 集成工程师（沈思锴） |
-| 209 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 集成工程师（沈思锴） |
-| 210 | ASSIGNMENT_EVENTS = {"assigned-to-agent", "queue-set"}  # 【待核实】 whether webhooks emit these | `05-integration/webhook-service/app/normalize.py:62` | 集成工程师（沈思锴） |
-| 211 | 【待核实】; individual variables win over it. Nullish values are dropped so they can | `05-integration/webhook-service/app/normalize.py:114` | 集成工程师（沈思锴） |
-| 212 | Botmaker's API already models as BSUID 【待核实】) being mistaken for a phone number. | `05-integration/webhook-service/app/normalize.py:149` | 集成工程师（沈思锴） |
-| 213 | """CTWA ad referral, if Botmaker passes it through 【待核实】 (top level or per message).""" | `05-integration/webhook-service/app/normalize.py:177` | 集成工程师（沈思锴） |
-| 214 | 【待核实】 - the lead is still recorded, keyed by Botmaker's customer id, with phone | `05-integration/webhook-service/app/normalize.py:240` | 集成工程师（沈思锴） |
-| 215 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 集成工程师（沈思锴） |
-| 216 | Meta 服务消息的支付方式已落实：Botmaker 书面确认由其结算，或客户已在 WhatsApp 商业账户上绑定（Meta 截止 2026-09-30，未绑定则 10/1 起用完每号码每月 1,000 条免费额度后服务消息停投）；由谁绑定【待核实】（SOURCES S-M9、S-M3） / Botmaker 书面答复或 Meta 后台… | `06-acceptance/go-live-checklist.md:16` | 集成工程师（沈思锴） |
-| 217 | 走 Coexistence 时：App 版本不低于 2.24.17；"至少每 14 天打开一次 App"已写入运营例行事项并指定责任人（主设备约 14 天不活跃会被断开；Meta 另写伴侣设备约 30 天不活跃也会断开，所指范围【待核实】）；客户知道并存号码不能用 API 注销，断开要在 App 里操作，断开后 15 分钟才能重新接入（S… | `06-acceptance/go-live-checklist.md:26` | 集成工程师（沈思锴） |
-| 218 | webhook 功能已在账户设置里开通（额外计费、默认关闭；单价未公开【待核实】，已取得 Botmaker 书面报价并经客户同意）；该 WhatsApp 渠道只挂了集成服务这 1 个 webhook；每条上线线路都已收到真实回调（SOURCES S-B5） / Botmaker webhook 页的成功计数；集成服务原始事件日志 | `06-acceptance/go-live-checklist.md:72` | 集成工程师（沈思锴） |
-| 219 | 能否办一张公司名下的国际信用卡用于 Botmaker 与 Meta 的账单？ / 第三方费用客户直付能否落地（Botmaker 只收信用卡或借记卡，SOURCES S-B3）；Meta 要求账户上有支付方式，否则 10/1 起每月免费额度用完后服务消息停投，经 Botmaker 接入时由谁绑定【待核实】（S-M9） | `07-project/meeting-prep.md:57` | 集成工程师（沈思锴） |
-| 220 | R02 / **计费变化**：2026-10-01 起窗口内回复按条计费（SOURCES S-M1）；每号码每月前 1,000 条服务消息免费已由 Meta 官方确认（S-M3，按号码按月重置、不结转），72 小时免费入口内的消息是否占这份额度仍是推断【待核实】；Botmaker 是否在 Meta 价格上加价、是否计入套餐对话数，原文未写… | `07-project/risk-register.md:11` | 集成工程师（沈思锴） |
-| 221 | R04 / **认证延误**：Meta 商家认证与显示名审核是关键路径上唯一不受控的环节；商家认证审核最长 14 个工作日（SOURCES S-M8） / 中至高 / 高 / 节前提交，不等开工；按清单一次备齐材料；被退回当天处理；退路已证实：未认证也能无上限回复客户主动发起的会话，入站链路可先上线，代价是主动发起每 24 小时最多 25… | `07-project/risk-register.md:13` | 集成工程师（沈思锴） |
-| 222 | R05 / **Botmaker 时差与支持**：主要市场在拉美，英、西、葡支持，美元计价；后台界面只有英、西、葡、法四种，没有中文；合同主体为 BOTMAKER INC 或其阿根廷、巴西关联公司，适用阿根廷法律；非拉美主体能否开票未确认【待核实】（S-B14） / 中 / 中 / 第 1 周用试用账号把关键问题验完；问题攒批书面提；必要… | `07-project/risk-register.md:14` | 集成工程师（沈思锴） |
-| 223 | R16 / **Coexistence 特有问题**：主设备约 14 天不活跃会被自动断开（S-B4、S-M6），Meta 另写伴侣设备约 30 天不活跃也会断开，所指范围【待核实】（S-M6）；并存号码不能用 API 注销，只能由客户在 App 里断开，断开后 15 分钟才能重新接入；接入后 24 小时内未完成历史同步须断开重走（S-M… | `07-project/risk-register.md:25` | 集成工程师（沈思锴） |
-| 224 | R20 / **Botmaker webhook 熔断与附加费**：webhook 是额外计费、默认关闭的功能，单价未公开；每个渠道最多挂 1 个；10 分钟内失败超过 100 次会熔断 10 分钟，这段时间的消息丢失，根本到不了集成服务；单条失败是否重试未公开（SOURCES S-B5） / 低至中 / 中 / 开通前书面问清单价【待核… | `07-project/risk-register.md:29` | 集成工程师（沈思锴） |
-| 225 | R21 / **Botmaker 数据条款**：官网写明 Co-pilot（坐席回复建议）用坐席与客户的对话训练 ChatGPT 模型；AI Agent 的对话是否用于训练、下游模型供应商是否训练，公开页面都没写，也没有公开的 DPA 与子处理方清单（SOURCES S-B17）；WhatsApp 条款禁止用业务数据训练 AI 模型（S-… | `07-project/risk-register.md:30` | 集成工程师（沈思锴） |
-| 226 | R22 / **内置模型不可指定**：Botmaker 3.0 版帮助文章写默认模型 "Open AI 5.4"、目前不能换模型，经典界面的文章则写可按 Bot 或 Agent 切换；新账号落在哪一代、能否指定模型未知（SOURCES S-B8）；不能指定时，路线 A"离线评测与生产同一模型"的前提不成立，离线评测结果只能近似生产 / 中… | `07-project/risk-register.md:31` | 集成工程师（沈思锴） |
-| 227 | R23 / **支付方式截止**：Meta 规定 2026-09-30 前账户上没有支付方式的，10/1 起每月免费额度（S-M3）用完后服务消息停投（SOURCES S-M9）；本项目经 Botmaker 接入，是由 Botmaker 结算还是要客户在 WABA 上自绑支付方式，未知【待核实】；漏绑的后果是每个号码当月 1,000 条免… | `07-project/risk-register.md:32` | 集成工程师（沈思锴） |
-| 228 | WhatsApp 消息费的支付方式：Meta 规定 10/1 起账户上没有支付方式的，每号码每月 1,000 条免费服务消息用完即停投（SOURCES S-M9）；经 Botmaker 接入时由谁绑定【待核实】，节前向 Botmaker 书面确认，接入当天落实（03-whatsapp/meta-onboarding-checklist.m… | `07-project/timeline.md:75` | 集成工程师（沈思锴） |
-| 229 | 你之前对客户说的"WhatsApp 可以和 Botmaker 共存"成立**：我核实过，Botmaker 帮助中心有官方的 Coexistence 接入文章。条件：App 版本要够新、至少每 14 天打开一次 App、模板只能从平台发、广播列表会停用。Meta 已取消 Coexistence 的国家限制（欧盟、英国等都已放开）；只有中国大… | `99-internal/zhang-baowen-brief.md:15` | 集成工程师（沈思锴） |
-| 230 | Botmaker 的 AI 是按 token 另外收费的，单价没公开。【待核实】 | `99-internal/zhang-baowen-brief.md:23` | 集成工程师（沈思锴） |
-| 231 | 另外两笔 Botmaker 侧的费用还不清楚，已列进要书面问 Botmaker 的清单：把线索推给我们线索库的 webhook 是额外付费功能，单价没公开；套餐超量单价官网两处写法不一样（每个对话 0.07 还是 0.025 USD），估算按贵的算。【待核实】 | `99-internal/zhang-baowen-brief.md:25` | 集成工程师（沈思锴） |
-| 232 | 结论标记：**已复核**＝在一手来源读到原文；**部分复核**＝仅第三方来源一致；**未能复核**＝未找到可靠来源，沿用原数字并标【待核实】；**有更新**＝与开工前掌握的信息不同。 | `SOURCES.md:5` | 集成工程师（沈思锴） |
-| 233 | "每号码每月前 1,000 条服务消息免费" **已由 Meta 官方定价页确认**（2026-09-10 更新）：按号码计，每月重置、不结转，自 2026-10-01 生效（S-M3）。首轮只在 BSP 文章里读到，是因为读到的是官方页面的旧快照。 / 成本模型的免费额度参数去掉【待核实】；免费额度为 0 的情景只保留作敏感性参考。 | `SOURCES.md:13` | 集成工程师（沈思锴） |
-| 234 | Botmaker 的生成式 AI **按 token 另行计费**，单价未公开；默认模型在帮助中心写作 "GPT-4 Mini"，可按 Bot 或按 Agent 切换；但 3.0 版文章写默认 "Open AI 5.4"、目前不能换模型，新账号是哪一代未知（S-B7、S-B8）。 / 路线 A 不是"零模型成本"；成本模型给区间并标【待核… | `SOURCES.md:14` | 集成工程师（沈思锴） |
-| 235 | Botmaker webhook 的鉴权头是 auth-bm-token，帮助中心给出了 v1.1 消息回调示例（S-B5、S-B6）；公开 API 描述文件给出了逐端点限流（S-B2）。 / 集成服务的 fixture 按该示例建模；真实样本到手前字段仍标【待核实】。 | `SOURCES.md:15` | 集成工程师（沈思锴） |
-| 236 | Botmaker 的 webhook 是**额外计费、默认关闭**的功能，每个渠道只能挂 1 个；10 分钟内失败超过 100 次会熔断 10 分钟，期间的消息丢失（S-B5）。 / 第三方费用多一项未知单价【待核实】；集成服务必须先应答再异步处理，健康检查要告警。 | `SOURCES.md:17` | 集成工程师（沈思锴） |
-| 237 | S-B3 / 套餐（USD/月）：Standard 149（3,000 个对话、10 个坐席）；Scale 249（5,000 个对话、20 个坐席）；Pro 499（10,000 个对话、50 个坐席）；Enterprise 面议。"Up to 300 free initial conversations"。通知类消息 "transpa… | `SOURCES.md:26` | 集成工程师（沈思锴） |
-| 238 | S-B5 / Webhook 在 Settings > Integrations > Botmaker API 中配置：回调 URL、可选安全 Token（随每次回调放在请求头 auth-bm-token）、渠道选择、消息类型勾选（Bot / 用户 / 坐席消息、消息状态、仅 HSM 状态、事件消息）、"包含变量"开关。**2026-09… | `SOURCES.md:28` | 集成工程师（沈思锴） |
-| 239 | S-B6 / Webhook 回调示例（v1.1 消息）：顶层 v、type（message / event）、chatPlatform、contactId、customerId、sessionId、whatsappNumber、firstName、lastName、chatChannelId、customerCreationTime、s… | `SOURCES.md:29` | 集成工程师（沈思锴） |
-| 240 | S-B7 / 生成式 AI 计费：按 token 计，"fixed price per block of 1,000,000 tokens"，单价随模型不同，文章未给数字；每次回复约带最近 20 条消息、指令、知识库命中段落；消耗明细在 Settings > Account > "Products and consumption"。建 A… | `SOURCES.md:30` | 集成工程师（沈思锴） |
-| 241 | S-B8 / 模型选择：Bot Designer 左侧工具栏 "Generative model"；AI Agent 配置最后一步可 "Use a different model"；未指定时默认 "GPT-4 Mini"（原文如此）；可选模型清单未公开。**2026-09-22 补充**：帮助中心 "Botmaker 3.0 - AI A… | `SOURCES.md:31` | 集成工程师（沈思锴） |
-| 242 | S-B9 / AI Agent 可按指令把用户信息写入变量，官方示例写法为 "store it in ${fullName}"。是否支持结构化（JSON）输出：文章未提。【待核实】需在试用账号验证（见 02-botmaker/trial-test-plan.md）。 / 部分复核 / （链接见出处） | `SOURCES.md:32` | 集成工程师（沈思锴） |
-| 243 | S-B10 / Code Actions：运行时 Node.js v22；外部 HTTP 用内置 rp（request-promise）；单次执行超时 90 秒；单次最多 200 个用户变量、每个变量值最大 100 KB；用 user.set / user.get 读写变量，result.text / result.gotoRule / … | `SOURCES.md:33` | 集成工程师（沈思锴） |
-| 244 | S-B12 / CTWA：Botmaker 有 "Click to WhatsApp Dashboards" 功能，会识别来源为广告 referral 的会话；开通要在 Business Manager 里把 Botmaker 加为只读合作伙伴。**2026-09-22 补充**：西语《Formatos ejemplo de Webhoo… | `SOURCES.md:35` | 集成工程师（沈思锴） |
-| 245 | S-B13 / 10/1 之后 Botmaker 如何向客户结算客服消息。"Messages sent as replies to user-initiated conversations or within the 24-hour window are free of charge" 这句旧口径出自**定价页**（en/es/pt 三版… | `SOURCES.md:36` | 集成工程师（沈思锴） |
-| 246 | S-B14 / 官网与帮助中心为英/西/葡三语。**2026-09-22 补充**：后台界面语言为英、西、葡、法四种（API 描述文件 AgentRequest.lang 枚举 en / es / pt / fr），机器人语言可选西、英、葡、法。合同主体：服务条款写 BOTMAKER INC（美国特拉华州公司）"or any of its… | `SOURCES.md:37` | 集成工程师（沈思锴） |
-| 247 | S-B15 / 从中国大陆访问 Botmaker 后台与 API 的稳定性：无法从本机验证。其对外 IP 属 Google Cloud 网段（推断），大陆直连大概率不稳定，需客户现有的合规跨境网络。【待核实】 / 未能复核（推断） / S-B11 | `SOURCES.md:38` | 集成工程师（沈思锴） |
-| 248 | S-B17 / AI 数据条款：官网 AI 页面原文 "Co-pilot uses all interactions between agents and users as training data to improve its response suggestions. These are used to refine ChatGPT… | `SOURCES.md:40` | 集成工程师（沈思锴） |
-| 249 | S-B18 / 变量与标签命名：西语、葡语版《¿Cómo crear variables?》（2025-07-10 更新，英文版正文为空）写变量 ID "no puede tener caracteres especiales como espacio, guión, asterisco, etc."；是否允许下划线、是否区分大小写、长度… | `SOURCES.md:41` | 集成工程师（沈思锴） |
-| 250 | S-M3 / **每个号码每月前 1,000 条服务消息免费**：官方定价页（2026-09-10 更新，changelog 同日条目）原文 "Each business phone number has one shared free tier of 1,000 delivered service messages per month"… | `SOURCES.md:49` | 集成工程师（沈思锴） |
-| 251 | S-M6 / Coexistence 官方要求：WhatsApp Business App 版本 2.24.17 及以上；同步接入前 180 天内的消息；并存号码吞吐固定 20 条/秒；"Messages sent by the business via the WhatsApp Business app will continue to… | `SOURCES.md:52` | 集成工程师（沈思锴） |
-| 252 | S-M7 / Coexistence 的国家限制**已全部取消**：官方 changelog 记录 2025-05-05 放开印度，2025-10-23 放开澳大利亚、日本、菲律宾、俄罗斯、韩国、土耳其、欧洲经济区、欧盟、英国，2026-04-15 放开尼日利亚、南非；S-M6 官方页面（2026-06-26 版）不再列任何不支持的国家。… | `SOURCES.md:53` | 集成工程师（沈思锴） |
-| 253 | S-M9 / 支付方式截止：non-template-messages 页原文，Solution Provider 或直连企业 "that does not have a payment method on file by September 30, 2026"，Meta 自 10/1 起停止投递服务消息；定价页 9/10 版补充为额度内… | `SOURCES.md:55` | 集成工程师（沈思锴） |
-| 254 | AI Agent 能否把抽取字段稳定写入变量；是否支持 JSON 输出 / 能按指令写变量（已复核）；稳定性与 JSON 输出**未能复核**，由试用账号 20 条样例决定路线 A/B。【待核实】 / S-B9 | `SOURCES.md:63` | 集成工程师（沈思锴） |
-| 255 | Webhook 事件类型与 payload；CTWA referral 是否透传 / 事件类型与 v1.1 示例已取得（部分复核）；referral：回调字段表列有 whatsappReferral（sourceId、sourceURL、headline、body），但 JSON 示例里没有，真实回调未见（部分复核）【待核实】。另：web… | `SOURCES.md:64` | 集成工程师（沈思锴） |
-| 256 | Code Actions 能否调外部 HTTP、超时与频率 / 能；超时 90 秒（已复核）；频率上限未能复核。【待核实】 / S-B10 | `SOURCES.md:65` | 集成工程师（沈思锴） |
-| 257 | Botmaker 侧 10/1 后客服消息的结算方式 / 10/1 起按条计费、按客户国家定价已由 Botmaker 帮助中心确认；是否加价、是否计入套餐对话数**未能复核**【待核实】。另：每条线路默认开启 Central 转接，须手动关闭。 / S-B13、S-B16 | `SOURCES.md:66` | 集成工程师（沈思锴） |
-| 258 | 界面语言、时区、发票/合同主体 / 时区在接入号码时设置（已复核）；后台界面英、西、葡、法四种语言（已复核，无中文）；合同主体为 BOTMAKER INC 或其阿根廷、巴西关联公司（已复核）；非拉美主体开票未能复核【待核实】。 / S-B4、S-B14 | `SOURCES.md:67` | 集成工程师（沈思锴） |
-| 259 | 中国大陆访问稳定性 / **未能复核**（推断需跨境网络）。【待核实】 / S-B15 | `SOURCES.md:68` | 集成工程师（沈思锴） |
-| 260 | FieldSpec("phone", "string (E.164) / null", SRC_SYSTEM, "客户 WhatsApp 号码，统一为 E.164（如 +4915112345678）；客户以用户名联系、平台只给出业务范围用户 ID 时为空【待核实】", label_column=True), | `shared/tromox_lead/fields.py:26` | 集成工程师（沈思锴） |
-| 261 | FieldSpec("referral", "object / null", SRC_SYSTEM, "Click-to-WhatsApp 广告 referral（source_id、source_url、headline 等）；是否透传【待核实】"), | `shared/tromox_lead/fields.py:43` | 集成工程师（沈思锴） |
-| 262 | """Click-to-WhatsApp ad referral. Whether Botmaker passes it through is 【待核实】.""" | `shared/tromox_lead/schema.py:44` | 集成工程师（沈思锴） |
+| 192 | 接口路径、请求体与返回体按飞书开放平台公开文档整理（租户令牌、记录查询 records/search、记录创建、记录更新），未用真实租户跑通。尤其是查询接口的 filter 写法与「单选列自动补选项」的行为。【待核实】 | `05-integration/feishu-bitable-setup.md:78` | 集成工程师（沈思锴） |
+| 193 | 日期列接受毫秒时间戳、复选框列接受布尔、多选列接受字符串数组，是按文档写的；若某列类型建错（例如把日期建成文本），写入会报错码，日志里能看到。【待核实】 | `05-integration/feishu-bitable-setup.md:79` | 集成工程师（沈思锴） |
+| 194 | 频控：飞书对单个应用的写接口有每秒次数限制，MVP 的线索量远低于该限制；历史导入一次写几千行时要分批。【待核实】 | `05-integration/feishu-bitable-setup.md:81` | 集成工程师（沈思锴） |
+| 195 | 建在知识库里的多维表格，其网址 token 是知识库节点的，不能直接当 app_token；需要把表格移出知识库或换用节点接口取 app_token。【待核实】 | `05-integration/feishu-bitable-setup.md:82` | 集成工程师（沈思锴） |
+| 196 | 假设：回调结构按 Botmaker 帮助中心示例建模（SOURCES S-B6），真实样本到手前标【待核实】；服务部署在境外，见 ../deployment.md；Botmaker API 端点与限流见 ../botmaker-api-notes.md。 | `05-integration/webhook-service/README.md:4` | 集成工程师（沈思锴） |
+| 197 | 状态回写 / 坐席消息出现时线索转 contacted；conversation-close 事件里的结束分类（typification）映射为线索状态，映射表见 ../botmaker-api-notes.md 第 6 节。【待核实】 | `05-integration/webhook-service/README.md:29` | 集成工程师（沈思锴） |
+| 198 | app/models.py / Botmaker v1.1 回调模型，宽松解析【待核实】 | `05-integration/webhook-service/README.md:38` | 集成工程师（沈思锴） |
+| 199 | fixtures/ / 6 个回调样例，顶层 _note 注明结构【待核实】 | `05-integration/webhook-service/README.md:44` | 集成工程师（沈思锴） |
+| 200 | BOTMAKER_CHAT_URL_TEMPLATE / （链接见出处） / 卡片上的"接手"链接【待核实】 | `05-integration/webhook-service/README.md:122` | 集成工程师（沈思锴） |
+| 201 | 真实回调的字段名与层级是否与 fixture 一致，尤其 contactId、customerId、messages[]._id_、variables。【待核实】 | `05-integration/webhook-service/README.md:144` | 集成工程师（沈思锴） |
+| 202 | 按钮点击在回调里的形态，以及变量是随用户消息、Bot 消息还是单独事件下发。【待核实】 | `05-integration/webhook-service/README.md:145` | 集成工程师（沈思锴） |
+| 203 | Botmaker 是否接受带下划线的变量名：已知变量 ID 不能含空格、连字符、星号（SOURCES S-B18），下划线原文未写。不接受时用驼峰，服务两种都认；流程、AI Agent 指令里的变量名与标签名要全仓跟着改。【待核实】 | `05-integration/webhook-service/README.md:146` | 集成工程师（沈思锴） |
+| 204 | 回调是否包含分配坐席类事件（assigned-to-agent、queue-set）；没有时线索在首条坐席消息出现时才转 contacted。【待核实】 | `05-integration/webhook-service/README.md:147` | 集成工程师（沈思锴） |
+| 205 | Botmaker 对单条回调失败的重试、间隔与超时策略（熔断规则已证实，见第 1 节"先落盘"一行）。【待核实】 | `05-integration/webhook-service/README.md:148` | 集成工程师（沈思锴） |
+| 206 | CTWA 广告 referral：回调字段表列有 messages[].whatsappReferral（sourceId、sourceURL、headline、body），JSON 示例里没有（SOURCES S-B12）。服务目前只认名为 referral 的对象，照字段表的写法到达时读不到；拿到真实样本核对后再决定是否解析，届时改 … | `05-integration/webhook-service/README.md:149` | 集成工程师（沈思锴） |
+| 207 | 卡片链接的实际地址格式（公开接口描述里出现过三种写法）。【待核实】 | `05-integration/webhook-service/README.md:150` | 集成工程师（沈思锴） |
+| 208 | 会话变量跨会话保留：流程需在新会话开场时重置 escalation_flag 与 escalation_reason，否则老客户再次来访会在第一条消息就触发一次通知。【待核实】已交接的线索不受此影响（不再因重判发卡）。 | `05-integration/webhook-service/README.md:151` | 集成工程师（沈思锴） |
+| 209 | contactId 是否永远是号码：Botmaker 的公开接口描述里已出现 BSUID（WhatsApp 的商家范围用户标识）相关字段与事件。若部分客户只给出标识而不给号码，"按号码判国家、按号码去重"对这部分客户不成立。服务的处理：WhatsApp 渠道的回调只要带 customerId，线索照常入库并照常通知销售，去重键改用 bm:… | `05-integration/webhook-service/README.md:152` | 集成工程师（沈思锴） |
+| 210 | 飞书多维表格镜像（feishu_bitable）的接口形态（租户令牌、records/search 按 lead_id 过滤、创建 / 更新记录、各列类型接受的值）按飞书开放平台公开文档整理，未用真实租户核实；拿到客户租户后按 05-integration/feishu-bitable-setup.md 第 6 节验一遍。【待核实】 | `05-integration/webhook-service/README.md:154` | 集成工程师（沈思锴） |
+| 211 | 【待核实】 The structure follows the example in Botmaker's help centre (SOURCES S-B6) and has | `05-integration/webhook-service/app/models.py:3` | 集成工程师（沈思锴） |
+| 212 | referral: dict[str, Any] / None = None                          # 【待核实】 CTWA passthrough | `05-integration/webhook-service/app/models.py:30` | 集成工程师（沈思锴） |
+| 213 | referral: dict[str, Any] / None = None                          # 【待核实】 | `05-integration/webhook-service/app/models.py:66` | 集成工程师（沈思锴） |
+| 214 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 集成工程师（沈思锴） |
+| 215 | ASSIGNMENT_EVENTS = {"assigned-to-agent", "queue-set"}  # 【待核实】 whether webhooks emit these | `05-integration/webhook-service/app/normalize.py:62` | 集成工程师（沈思锴） |
+| 216 | 【待核实】; individual variables win over it. Nullish values are dropped so they can | `05-integration/webhook-service/app/normalize.py:114` | 集成工程师（沈思锴） |
+| 217 | Botmaker's API already models as BSUID 【待核实】) being mistaken for a phone number. | `05-integration/webhook-service/app/normalize.py:149` | 集成工程师（沈思锴） |
+| 218 | """CTWA ad referral, if Botmaker passes it through 【待核实】 (top level or per message).""" | `05-integration/webhook-service/app/normalize.py:177` | 集成工程师（沈思锴） |
+| 219 | 【待核实】 - the lead is still recorded, keyed by Botmaker's customer id, with phone | `05-integration/webhook-service/app/normalize.py:240` | 集成工程师（沈思锴） |
+| 220 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 集成工程师（沈思锴） |
+| 221 | Meta 服务消息的支付方式已落实：Botmaker 书面确认由其结算，或客户已在 WhatsApp 商业账户上绑定（Meta 截止 2026-09-30，未绑定则 10/1 起用完每号码每月 1,000 条免费额度后服务消息停投）；由谁绑定【待核实】（SOURCES S-M9、S-M3） / Botmaker 书面答复或 Meta 后台… | `06-acceptance/go-live-checklist.md:16` | 集成工程师（沈思锴） |
+| 222 | 走 Coexistence 时：App 版本不低于 2.24.17；"至少每 14 天打开一次 App"已写入运营例行事项并指定责任人（主设备约 14 天不活跃会被断开；Meta 另写伴侣设备约 30 天不活跃也会断开，所指范围【待核实】）；客户知道并存号码不能用 API 注销，断开要在 App 里操作，断开后 15 分钟才能重新接入（S… | `06-acceptance/go-live-checklist.md:26` | 集成工程师（沈思锴） |
+| 223 | webhook 功能已在账户设置里开通（额外计费、默认关闭；单价未公开【待核实】，已取得 Botmaker 书面报价并经客户同意）；该 WhatsApp 渠道只挂了集成服务这 1 个 webhook；每条上线线路都已收到真实回调（SOURCES S-B5） / Botmaker webhook 页的成功计数；集成服务原始事件日志 | `06-acceptance/go-live-checklist.md:72` | 集成工程师（沈思锴） |
+| 224 | 能否办一张公司名下的国际信用卡用于 Botmaker 与 Meta 的账单？ / 第三方费用客户直付能否落地（Botmaker 只收信用卡或借记卡，SOURCES S-B3）；Meta 要求账户上有支付方式，否则 10/1 起每月免费额度用完后服务消息停投，经 Botmaker 接入时由谁绑定【待核实】（S-M9） | `07-project/meeting-prep.md:57` | 集成工程师（沈思锴） |
+| 225 | R02 / **计费变化**：2026-10-01 起窗口内回复按条计费（SOURCES S-M1）；每号码每月前 1,000 条服务消息免费已由 Meta 官方确认（S-M3，按号码按月重置、不结转），72 小时免费入口内的消息是否占这份额度仍是推断【待核实】；Botmaker 是否在 Meta 价格上加价、是否计入套餐对话数，原文未写… | `07-project/risk-register.md:11` | 集成工程师（沈思锴） |
+| 226 | R04 / **认证延误**：Meta 商家认证与显示名审核是关键路径上唯一不受控的环节；商家认证审核最长 14 个工作日（SOURCES S-M8） / 中至高 / 高 / 节前提交，不等开工；按清单一次备齐材料；被退回当天处理；退路已证实：未认证也能无上限回复客户主动发起的会话，入站链路可先上线，代价是主动发起每 24 小时最多 25… | `07-project/risk-register.md:13` | 集成工程师（沈思锴） |
+| 227 | R05 / **Botmaker 时差与支持**：主要市场在拉美，英、西、葡支持，美元计价；后台界面只有英、西、葡、法四种，没有中文；合同主体为 BOTMAKER INC 或其阿根廷、巴西关联公司，适用阿根廷法律；非拉美主体能否开票未确认【待核实】（S-B14） / 中 / 中 / 第 1 周用试用账号把关键问题验完；问题攒批书面提；必要… | `07-project/risk-register.md:14` | 集成工程师（沈思锴） |
+| 228 | R16 / **Coexistence 特有问题**：主设备约 14 天不活跃会被自动断开（S-B4、S-M6），Meta 另写伴侣设备约 30 天不活跃也会断开，所指范围【待核实】（S-M6）；并存号码不能用 API 注销，只能由客户在 App 里断开，断开后 15 分钟才能重新接入；接入后 24 小时内未完成历史同步须断开重走（S-M… | `07-project/risk-register.md:25` | 集成工程师（沈思锴） |
+| 229 | R20 / **Botmaker webhook 熔断与附加费**：webhook 是额外计费、默认关闭的功能，单价未公开；每个渠道最多挂 1 个；10 分钟内失败超过 100 次会熔断 10 分钟，这段时间的消息丢失，根本到不了集成服务；单条失败是否重试未公开（SOURCES S-B5） / 低至中 / 中 / 开通前书面问清单价【待核… | `07-project/risk-register.md:29` | 集成工程师（沈思锴） |
+| 230 | R21 / **Botmaker 数据条款**：官网写明 Co-pilot（坐席回复建议）用坐席与客户的对话训练 ChatGPT 模型；AI Agent 的对话是否用于训练、下游模型供应商是否训练，公开页面都没写，也没有公开的 DPA 与子处理方清单（SOURCES S-B17）；WhatsApp 条款禁止用业务数据训练 AI 模型（S-… | `07-project/risk-register.md:30` | 集成工程师（沈思锴） |
+| 231 | R22 / **内置模型不可指定**：Botmaker 3.0 版帮助文章写默认模型 "Open AI 5.4"、目前不能换模型，经典界面的文章则写可按 Bot 或 Agent 切换；新账号落在哪一代、能否指定模型未知（SOURCES S-B8）；不能指定时，路线 A"离线评测与生产同一模型"的前提不成立，离线评测结果只能近似生产 / 中… | `07-project/risk-register.md:31` | 集成工程师（沈思锴） |
+| 232 | R23 / **支付方式截止**：Meta 规定 2026-09-30 前账户上没有支付方式的，10/1 起每月免费额度（S-M3）用完后服务消息停投（SOURCES S-M9）；本项目经 Botmaker 接入，是由 Botmaker 结算还是要客户在 WABA 上自绑支付方式，未知【待核实】；漏绑的后果是每个号码当月 1,000 条免… | `07-project/risk-register.md:32` | 集成工程师（沈思锴） |
+| 233 | WhatsApp 消息费的支付方式：Meta 规定 10/1 起账户上没有支付方式的，每号码每月 1,000 条免费服务消息用完即停投（SOURCES S-M9）；经 Botmaker 接入时由谁绑定【待核实】，节前向 Botmaker 书面确认，接入当天落实（03-whatsapp/meta-onboarding-checklist.m… | `07-project/timeline.md:75` | 集成工程师（沈思锴） |
+| 234 | 你之前对客户说的"WhatsApp 可以和 Botmaker 共存"成立**：我核实过，Botmaker 帮助中心有官方的 Coexistence 接入文章。条件：App 版本要够新、至少每 14 天打开一次 App、模板只能从平台发、广播列表会停用。Meta 已取消 Coexistence 的国家限制（欧盟、英国等都已放开）；只有中国大… | `99-internal/zhang-baowen-brief.md:15` | 集成工程师（沈思锴） |
+| 235 | Botmaker 的 AI 是按 token 另外收费的，单价没公开。【待核实】 | `99-internal/zhang-baowen-brief.md:23` | 集成工程师（沈思锴） |
+| 236 | 另外两笔 Botmaker 侧的费用还不清楚，已列进要书面问 Botmaker 的清单：把线索推给我们线索库的 webhook 是额外付费功能，单价没公开；套餐超量单价官网两处写法不一样（每个对话 0.07 还是 0.025 USD），估算按贵的算。【待核实】 | `99-internal/zhang-baowen-brief.md:25` | 集成工程师（沈思锴） |
+| 237 | 结论标记：**已复核**＝在一手来源读到原文；**部分复核**＝仅第三方来源一致；**未能复核**＝未找到可靠来源，沿用原数字并标【待核实】；**有更新**＝与开工前掌握的信息不同。 | `SOURCES.md:5` | 集成工程师（沈思锴） |
+| 238 | "每号码每月前 1,000 条服务消息免费" **已由 Meta 官方定价页确认**（2026-09-10 更新）：按号码计，每月重置、不结转，自 2026-10-01 生效（S-M3）。首轮只在 BSP 文章里读到，是因为读到的是官方页面的旧快照。 / 成本模型的免费额度参数去掉【待核实】；免费额度为 0 的情景只保留作敏感性参考。 | `SOURCES.md:13` | 集成工程师（沈思锴） |
+| 239 | Botmaker 的生成式 AI **按 token 另行计费**，单价未公开；默认模型在帮助中心写作 "GPT-4 Mini"，可按 Bot 或按 Agent 切换；但 3.0 版文章写默认 "Open AI 5.4"、目前不能换模型，新账号是哪一代未知（S-B7、S-B8）。 / 路线 A 不是"零模型成本"；成本模型给区间并标【待核… | `SOURCES.md:14` | 集成工程师（沈思锴） |
+| 240 | Botmaker webhook 的鉴权头是 auth-bm-token，帮助中心给出了 v1.1 消息回调示例（S-B5、S-B6）；公开 API 描述文件给出了逐端点限流（S-B2）。 / 集成服务的 fixture 按该示例建模；真实样本到手前字段仍标【待核实】。 | `SOURCES.md:15` | 集成工程师（沈思锴） |
+| 241 | Botmaker 的 webhook 是**额外计费、默认关闭**的功能，每个渠道只能挂 1 个；10 分钟内失败超过 100 次会熔断 10 分钟，期间的消息丢失（S-B5）。 / 第三方费用多一项未知单价【待核实】；集成服务必须先应答再异步处理，健康检查要告警。 | `SOURCES.md:17` | 集成工程师（沈思锴） |
+| 242 | S-B3 / 套餐（USD/月）：Standard 149（3,000 个对话、10 个坐席）；Scale 249（5,000 个对话、20 个坐席）；Pro 499（10,000 个对话、50 个坐席）；Enterprise 面议。"Up to 300 free initial conversations"。通知类消息 "transpa… | `SOURCES.md:26` | 集成工程师（沈思锴） |
+| 243 | S-B5 / Webhook 在 Settings > Integrations > Botmaker API 中配置：回调 URL、可选安全 Token（随每次回调放在请求头 auth-bm-token）、渠道选择、消息类型勾选（Bot / 用户 / 坐席消息、消息状态、仅 HSM 状态、事件消息）、"包含变量"开关。**2026-09… | `SOURCES.md:28` | 集成工程师（沈思锴） |
+| 244 | S-B6 / Webhook 回调示例（v1.1 消息）：顶层 v、type（message / event）、chatPlatform、contactId、customerId、sessionId、whatsappNumber、firstName、lastName、chatChannelId、customerCreationTime、s… | `SOURCES.md:29` | 集成工程师（沈思锴） |
+| 245 | S-B7 / 生成式 AI 计费：按 token 计，"fixed price per block of 1,000,000 tokens"，单价随模型不同，文章未给数字；每次回复约带最近 20 条消息、指令、知识库命中段落；消耗明细在 Settings > Account > "Products and consumption"。建 A… | `SOURCES.md:30` | 集成工程师（沈思锴） |
+| 246 | S-B8 / 模型选择：Bot Designer 左侧工具栏 "Generative model"；AI Agent 配置最后一步可 "Use a different model"；未指定时默认 "GPT-4 Mini"（原文如此）；可选模型清单未公开。**2026-09-22 补充**：帮助中心 "Botmaker 3.0 - AI A… | `SOURCES.md:31` | 集成工程师（沈思锴） |
+| 247 | S-B9 / AI Agent 可按指令把用户信息写入变量，官方示例写法为 "store it in ${fullName}"。是否支持结构化（JSON）输出：文章未提。【待核实】需在试用账号验证（见 02-botmaker/trial-test-plan.md）。 / 部分复核 / （链接见出处） | `SOURCES.md:32` | 集成工程师（沈思锴） |
+| 248 | S-B10 / Code Actions：运行时 Node.js v22；外部 HTTP 用内置 rp（request-promise）；单次执行超时 90 秒；单次最多 200 个用户变量、每个变量值最大 100 KB；用 user.set / user.get 读写变量，result.text / result.gotoRule / … | `SOURCES.md:33` | 集成工程师（沈思锴） |
+| 249 | S-B12 / CTWA：Botmaker 有 "Click to WhatsApp Dashboards" 功能，会识别来源为广告 referral 的会话；开通要在 Business Manager 里把 Botmaker 加为只读合作伙伴。**2026-09-22 补充**：西语《Formatos ejemplo de Webhoo… | `SOURCES.md:35` | 集成工程师（沈思锴） |
+| 250 | S-B13 / 10/1 之后 Botmaker 如何向客户结算客服消息。"Messages sent as replies to user-initiated conversations or within the 24-hour window are free of charge" 这句旧口径出自**定价页**（en/es/pt 三版… | `SOURCES.md:36` | 集成工程师（沈思锴） |
+| 251 | S-B14 / 官网与帮助中心为英/西/葡三语。**2026-09-22 补充**：后台界面语言为英、西、葡、法四种（API 描述文件 AgentRequest.lang 枚举 en / es / pt / fr），机器人语言可选西、英、葡、法。合同主体：服务条款写 BOTMAKER INC（美国特拉华州公司）"or any of its… | `SOURCES.md:37` | 集成工程师（沈思锴） |
+| 252 | S-B15 / 从中国大陆访问 Botmaker 后台与 API 的稳定性：无法从本机验证。其对外 IP 属 Google Cloud 网段（推断），大陆直连大概率不稳定，需客户现有的合规跨境网络。【待核实】 / 未能复核（推断） / S-B11 | `SOURCES.md:38` | 集成工程师（沈思锴） |
+| 253 | S-B17 / AI 数据条款：官网 AI 页面原文 "Co-pilot uses all interactions between agents and users as training data to improve its response suggestions. These are used to refine ChatGPT… | `SOURCES.md:40` | 集成工程师（沈思锴） |
+| 254 | S-B18 / 变量与标签命名：西语、葡语版《¿Cómo crear variables?》（2025-07-10 更新，英文版正文为空）写变量 ID "no puede tener caracteres especiales como espacio, guión, asterisco, etc."；是否允许下划线、是否区分大小写、长度… | `SOURCES.md:41` | 集成工程师（沈思锴） |
+| 255 | S-M3 / **每个号码每月前 1,000 条服务消息免费**：官方定价页（2026-09-10 更新，changelog 同日条目）原文 "Each business phone number has one shared free tier of 1,000 delivered service messages per month"… | `SOURCES.md:49` | 集成工程师（沈思锴） |
+| 256 | S-M6 / Coexistence 官方要求：WhatsApp Business App 版本 2.24.17 及以上；同步接入前 180 天内的消息；并存号码吞吐固定 20 条/秒；"Messages sent by the business via the WhatsApp Business app will continue to… | `SOURCES.md:52` | 集成工程师（沈思锴） |
+| 257 | S-M7 / Coexistence 的国家限制**已全部取消**：官方 changelog 记录 2025-05-05 放开印度，2025-10-23 放开澳大利亚、日本、菲律宾、俄罗斯、韩国、土耳其、欧洲经济区、欧盟、英国，2026-04-15 放开尼日利亚、南非；S-M6 官方页面（2026-06-26 版）不再列任何不支持的国家。… | `SOURCES.md:53` | 集成工程师（沈思锴） |
+| 258 | S-M9 / 支付方式截止：non-template-messages 页原文，Solution Provider 或直连企业 "that does not have a payment method on file by September 30, 2026"，Meta 自 10/1 起停止投递服务消息；定价页 9/10 版补充为额度内… | `SOURCES.md:55` | 集成工程师（沈思锴） |
+| 259 | AI Agent 能否把抽取字段稳定写入变量；是否支持 JSON 输出 / 能按指令写变量（已复核）；稳定性与 JSON 输出**未能复核**，由试用账号 20 条样例决定路线 A/B。【待核实】 / S-B9 | `SOURCES.md:63` | 集成工程师（沈思锴） |
+| 260 | Webhook 事件类型与 payload；CTWA referral 是否透传 / 事件类型与 v1.1 示例已取得（部分复核）；referral：回调字段表列有 whatsappReferral（sourceId、sourceURL、headline、body），但 JSON 示例里没有，真实回调未见（部分复核）【待核实】。另：web… | `SOURCES.md:64` | 集成工程师（沈思锴） |
+| 261 | Code Actions 能否调外部 HTTP、超时与频率 / 能；超时 90 秒（已复核）；频率上限未能复核。【待核实】 / S-B10 | `SOURCES.md:65` | 集成工程师（沈思锴） |
+| 262 | Botmaker 侧 10/1 后客服消息的结算方式 / 10/1 起按条计费、按客户国家定价已由 Botmaker 帮助中心确认；是否加价、是否计入套餐对话数**未能复核**【待核实】。另：每条线路默认开启 Central 转接，须手动关闭。 / S-B13、S-B16 | `SOURCES.md:66` | 集成工程师（沈思锴） |
+| 263 | 界面语言、时区、发票/合同主体 / 时区在接入号码时设置（已复核）；后台界面英、西、葡、法四种语言（已复核，无中文）；合同主体为 BOTMAKER INC 或其阿根廷、巴西关联公司（已复核）；非拉美主体开票未能复核【待核实】。 / S-B4、S-B14 | `SOURCES.md:67` | 集成工程师（沈思锴） |
+| 264 | 中国大陆访问稳定性 / **未能复核**（推断需跨境网络）。【待核实】 / S-B15 | `SOURCES.md:68` | 集成工程师（沈思锴） |
+| 265 | FieldSpec("phone", "string (E.164) / null", SRC_SYSTEM, "客户 WhatsApp 号码，统一为 E.164（如 +4915112345678）；客户以用户名联系、平台只给出业务范围用户 ID 时为空【待核实】", label_column=True), | `shared/tromox_lead/fields.py:26` | 集成工程师（沈思锴） |
+| 266 | FieldSpec("referral", "object / null", SRC_SYSTEM, "Click-to-WhatsApp 广告 referral（source_id、source_url、headline 等）；是否透传【待核实】"), | `shared/tromox_lead/fields.py:43` | 集成工程师（沈思锴） |
+| 267 | """Click-to-WhatsApp ad referral. Whether Botmaker passes it through is 【待核实】.""" | `shared/tromox_lead/schema.py:44` | 集成工程师（沈思锴） |
 
 ## 4. 张宝文要定的：商务数字与承诺
 
@@ -642,18 +647,19 @@
 | 211 | 云厂商、机房地区、由谁开账号 / 【待客户确认】 / 客户、张宝文 | `05-integration/deployment.md:139` | 客户（经张宝文 / Kim 对接） |
 | 212 | 子域名与 DNS 解析由谁操作 / 【待客户确认】 / 客户 | `05-integration/deployment.md:140` | 客户（经张宝文 / Kim 对接） |
 | 213 | 通知渠道用飞书还是企业微信 / 【待客户确认】 / 客户销售 | `05-integration/deployment.md:144` | 客户（经张宝文 / Kim 对接） |
-| 214 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 客户（经张宝文 / Kim 对接） |
-| 215 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 客户（经张宝文 / Kim 对接） |
-| 216 | 假设：在测试号或灰度入口上执行；测试人用自己的手机号，语种列为完整版的安排；精简版只保留 2 个语种，此处以英语加德语为例，第二语种【待客户确认】；示例里的公司与人名均为虚构；用例不涉及任何参数、价格、质保条款的具体内容。 | `06-acceptance/uat-test-cases.md:4` | 客户（经张宝文 / Kim 对接） |
-| 217 | U19 / 营销同意步骤 / DE / C 端问题解决后出现同意询问；会话一按 "Yes, keep me posted"，会话二按 "No, thanks" / 会话一 consent_marketing true；会话二 false；未询问的其他线索为空 / 记录后结束会话 / 无卡片 / 三种取值都正确；该步骤是否启用【待客户确认】… | `06-acceptance/uat-test-cases.md:36` | 客户（经张宝文 / Kim 对接） |
-| 218 | 德语 DE / U02、U06、U19、U20 / 保留（以德语为例，第二语种【待客户确认】） | `06-acceptance/uat-test-cases.md:65` | 客户（经张宝文 / Kim 对接） |
-| 219 | 假设：碰面约 2 小时；对方到场的有 Kim（海外社媒运营）、至少一位销售负责人，最好有一位能拍板账号与付款的领导【待客户确认】。 | `07-project/meeting-prep.md:4` | 客户（经张宝文 / Kim 对接） |
-| 220 | 假设：摩兽业务/FDE 一方以 Kim 为对接人；摩兽销售由销售主管代表【待客户确认】；工作项与周次对应 timeline.md。 | `07-project/raci.md:5` | 客户（经张宝文 / Kim 对接） |
-| 221 | R10 / **隐私合规**：客户中有欧盟用户；线索与通知会进入境内协作工具 / 中 / 高 / 开场即告知 AI 身份与隐私政策链接；只存业务必需字段；通知里号码打码；删除请求有流程；数据保留期限与跨境安排提交客户法务复核【待客户确认】 / 摩兽业务（法务对接）；集成工程师（技术措施） / 03-whatsapp/compliance.… | `07-project/risk-register.md:19` | 客户（经张宝文 / Kim 对接） |
-| 222 | 代写 FAQ 内容与专业翻译（Bot 话术的多语种版本由 AI 初译、客户审校）。【待客户确认】 | `99-internal/pricing-internal.md:55` | 客户（经张宝文 / Kim 对接） |
-| 223 | 车型名称（家族） / MC10（含 TrailX、StreetX）、UKKO（含 Ukko S+、UkkoPro）、M05、MINO（含 Mino B）、M03、Pesgo（含 Plus、C）。现售清单以客户提供为准【待客户确认】。 / （链接见出处） ； （链接见出处） | `SOURCES.md:76` | 客户（经张宝文 / Kim 对接） |
-| 224 | 市场与网络 / 官网 FAQ 提到中国、意大利、欧洲、日本、韩国、澳大利亚、北美；另有美国站、南非站、菲律宾经销商站；欧洲站有 "Dealer Partnership Program" 与 "EU Warehouse Support"；总部杭州，欧洲服务中心在比利时鲁汶。各国经销商名单【待客户确认】。 / 同上；搜索结果中的 tromox… | `SOURCES.md:77` | 客户（经张宝文 / Kim 对接） |
-| 225 | 经销申请 / 官网设经销商/分销商申请表单；FAQ 写明希望申请方"已有至少 1 年的既有架构"、有二级网络更佳。有效线索标准以销售填写的为准【待客户确认】。 / （链接见出处） | `SOURCES.md:78` | 客户（经张宝文 / Kim 对接） |
-| 226 | ISO 639-1 codes the MVP bot is expected to handle. Final list is 【待客户确认】. | `shared/tromox_lead/enums.py:92` | 客户（经张宝文 / Kim 对接） |
-| 227 | FieldSpec("ai_summary", "string", SRC_AI, "给销售看的一两句话摘要（默认简体中文【待客户确认】）", ai_extracted=True), | `shared/tromox_lead/fields.py:46` | 客户（经张宝文 / Kim 对接） |
-| 228 | line-up must be confirmed by the client 【待客户确认】. | `shared/tromox_lead/products.py:5` | 客户（经张宝文 / Kim 对接） |
+| 214 | 海外租户（Lark）的开放平台域名不同，服务的 base_url 参数目前只在代码里可改，没有环境变量；客户若用 Lark 而不是飞书，要加一个配置项。【待客户确认】 | `05-integration/feishu-bitable-setup.md:80` | 客户（经张宝文 / Kim 对接） |
+| 215 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 客户（经张宝文 / Kim 对接） |
+| 216 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 客户（经张宝文 / Kim 对接） |
+| 217 | 假设：在测试号或灰度入口上执行；测试人用自己的手机号，语种列为完整版的安排；精简版只保留 2 个语种，此处以英语加德语为例，第二语种【待客户确认】；示例里的公司与人名均为虚构；用例不涉及任何参数、价格、质保条款的具体内容。 | `06-acceptance/uat-test-cases.md:4` | 客户（经张宝文 / Kim 对接） |
+| 218 | U19 / 营销同意步骤 / DE / C 端问题解决后出现同意询问；会话一按 "Yes, keep me posted"，会话二按 "No, thanks" / 会话一 consent_marketing true；会话二 false；未询问的其他线索为空 / 记录后结束会话 / 无卡片 / 三种取值都正确；该步骤是否启用【待客户确认】… | `06-acceptance/uat-test-cases.md:36` | 客户（经张宝文 / Kim 对接） |
+| 219 | 德语 DE / U02、U06、U19、U20 / 保留（以德语为例，第二语种【待客户确认】） | `06-acceptance/uat-test-cases.md:65` | 客户（经张宝文 / Kim 对接） |
+| 220 | 假设：碰面约 2 小时；对方到场的有 Kim（海外社媒运营）、至少一位销售负责人，最好有一位能拍板账号与付款的领导【待客户确认】。 | `07-project/meeting-prep.md:4` | 客户（经张宝文 / Kim 对接） |
+| 221 | 假设：摩兽业务/FDE 一方以 Kim 为对接人；摩兽销售由销售主管代表【待客户确认】；工作项与周次对应 timeline.md。 | `07-project/raci.md:5` | 客户（经张宝文 / Kim 对接） |
+| 222 | R10 / **隐私合规**：客户中有欧盟用户；线索与通知会进入境内协作工具 / 中 / 高 / 开场即告知 AI 身份与隐私政策链接；只存业务必需字段；通知里号码打码；删除请求有流程；数据保留期限与跨境安排提交客户法务复核【待客户确认】 / 摩兽业务（法务对接）；集成工程师（技术措施） / 03-whatsapp/compliance.… | `07-project/risk-register.md:19` | 客户（经张宝文 / Kim 对接） |
+| 223 | 代写 FAQ 内容与专业翻译（Bot 话术的多语种版本由 AI 初译、客户审校）。【待客户确认】 | `99-internal/pricing-internal.md:55` | 客户（经张宝文 / Kim 对接） |
+| 224 | 车型名称（家族） / MC10（含 TrailX、StreetX）、UKKO（含 Ukko S+、UkkoPro）、M05、MINO（含 Mino B）、M03、Pesgo（含 Plus、C）。现售清单以客户提供为准【待客户确认】。 / （链接见出处） ； （链接见出处） | `SOURCES.md:76` | 客户（经张宝文 / Kim 对接） |
+| 225 | 市场与网络 / 官网 FAQ 提到中国、意大利、欧洲、日本、韩国、澳大利亚、北美；另有美国站、南非站、菲律宾经销商站；欧洲站有 "Dealer Partnership Program" 与 "EU Warehouse Support"；总部杭州，欧洲服务中心在比利时鲁汶。各国经销商名单【待客户确认】。 / 同上；搜索结果中的 tromox… | `SOURCES.md:77` | 客户（经张宝文 / Kim 对接） |
+| 226 | 经销申请 / 官网设经销商/分销商申请表单；FAQ 写明希望申请方"已有至少 1 年的既有架构"、有二级网络更佳。有效线索标准以销售填写的为准【待客户确认】。 / （链接见出处） | `SOURCES.md:78` | 客户（经张宝文 / Kim 对接） |
+| 227 | ISO 639-1 codes the MVP bot is expected to handle. Final list is 【待客户确认】. | `shared/tromox_lead/enums.py:92` | 客户（经张宝文 / Kim 对接） |
+| 228 | FieldSpec("ai_summary", "string", SRC_AI, "给销售看的一两句话摘要（默认简体中文【待客户确认】）", ai_extracted=True), | `shared/tromox_lead/fields.py:46` | 客户（经张宝文 / Kim 对接） |
+| 229 | line-up must be confirmed by the client 【待客户确认】. | `shared/tromox_lead/products.py:5` | 客户（经张宝文 / Kim 对接） |

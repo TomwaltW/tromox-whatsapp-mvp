@@ -35,7 +35,8 @@ def create_app(settings: Settings | None = None, *, notifiers: list[Notifier] | 
         store = SqliteStore(settings.database_path)
         pipeline = Pipeline(
             settings, store,
-            sinks if sinks is not None else build_sinks(settings.storage_backend_list, store, settings.csv_export_path),
+            sinks if sinks is not None else build_sinks(settings.storage_backend_list, store, settings.csv_export_path,
+                                                        settings=settings),
             notifiers if notifiers is not None else build_notifiers(settings),
             retry_policy=retry_policy or RetryPolicy(),
         )

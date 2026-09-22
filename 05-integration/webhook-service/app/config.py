@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     csv_export_path: Path = Path("data/leads.csv")
     storage_backends: str = "sqlite,csv"
     keep_raw_payloads: bool = False           # trial only: keep raw callbacks to capture real samples
+    feishu_app_id: str = ""                   # feishu_bitable sink: self-built app credentials
+    feishu_app_secret: str = ""
+    feishu_bitable_app_token: str = ""        # feishu_bitable sink: which base and which table
+    feishu_bitable_table_id: str = ""
 
     # --- notifications ------------------------------------------------------------------
     notifiers: str = ""
