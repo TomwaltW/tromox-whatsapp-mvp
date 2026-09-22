@@ -25,9 +25,10 @@ flowchart LR
 | 幂等 | 消息回调按 `messages[]._id_` 识别重复，其余按内容哈希；同一回调重发返回 `duplicate`，不会产生第二条线索或第二次通知。 |
 | 归一化 | 全部规则来自共享包 `tromox_lead`：号码转 E.164、国家取号码国家码、首条消息解析来源短码、`language` 变量缺失时用确定性语言检测兜底、会话变量转线索字段（下划线与驼峰写法都认）、路由规则、按 `TAG_TIER` 生成标签。 |
 | 合并 | 一个号码一条线索；空值不覆盖已有值，`unknown` 不覆盖已知的 B2B / B2C；来源短码取首次触达；`first_message_ts` / `last_message_ts` 只看客户消息。读改写在 `BEGIN IMMEDIATE` 事务内完成，同号码并发回调不丢更新。CSV 镜像写后合并：单条回调立即写，一阵回调在 `CSV_EXPORT_MIN_INTERVAL_S`（默认 5 秒）内只写一次，服务退出前补写。 |
+| 镜像 | 远程 sink（飞书多维表格）不在请求路径里调用：入库后只往 `mirror_outbox` 表登记一行待发（同一线索同一 sink 只留一行），HTTP 响应发出之后由后台任务按指数退避重试 3 次发送，发的是发送时刻账本里的最新状态；失败留给 `python -m app.replay` 继续重试，计数见 `/metrics` 的 `mirror_outbox_pending` 与 `mirror_outbox_failed_24h`。本地 sink（CSV 镜像）是写本机文件，照旧在请求路径里同步写。理由同"先落盘"一行：飞书一次上传是令牌 + 查找 + 创建三次 HTTP、每次超时 10 秒，放在请求路径里会把对 Botmaker 的应答拖到几十秒。 |
 | 通知 | `escalation_flag` 为真时，按 `(lead_id, escalation_reason, sessionId)` 只通知一次；坐席发起、没有客户消息的回调（如窗口关闭后销售发模板）不通知；线索已交接（`handed_off` / `contacted`）后，`b2b_qualified` 的重判不再通知，其他原因照常（判定在 `app/normalize.py` 的 `notification_suppressed`，存库的 `escalation_flag` / `escalation_reason` 仍按规则层写）；在 HTTP 响应发出之后由后台任务发送，失败按指数退避重试 3 次，结果记入 `notifications` 表，失败不会让 webhook 返回 5xx。通知慢或失败都不拖累对 Botmaker 的应答（熔断见"先落盘"一行）。 |
 | 状态回写 | 坐席消息出现时线索转 `contacted`；`conversation-close` 事件里的结束分类（typification）映射为线索状态，映射表见 `../botmaker-api-notes.md` 第 6 节。【待核实】 |
-| 指标 | `GET /metrics`（同 Token 鉴权：无配置 503、不对或缺 401；不套 `ALLOWED_IPS`，调用方是服务器自己的 cron）返回最近 24 小时的处理结果分布、通知状态分布、未处理原始事件数、最后一次回调时间与线索总数，只读 SQLite；`?hours=` 可改窗口，范围 1–168，越界返回 400。健康告警脚本据此告警，见 `../deploy/README.md` 第 3 节。 |
+| 指标 | `GET /metrics`（同 Token 鉴权：无配置 503、不对或缺 401；不套 `ALLOWED_IPS`，调用方是服务器自己的 cron）返回最近 24 小时的处理结果分布、通知状态分布、未处理原始事件数、待发与已失败的镜像数、最后一次回调时间与线索总数，只读 SQLite；`?hours=` 可改窗口，范围 1–168，越界返回 400。健康告警脚本据此告警，见 `../deploy/README.md` 第 3 节。 |
 
 ## 2. 目录
 
@@ -140,11 +141,12 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 ## 7. 运维
 
 ```bash
-../../.venv/bin/python -m app.replay            # 重放未处理完的回调，重试失败或未发出的通知
+../../.venv/bin/python -m app.replay            # 重放未处理完的回调，重试失败或未发出的通知，重试未发出的镜像
 ../../.venv/bin/python -m app.replay --export   # 另外重写一次 CSV
 ```
 
 - 重放与重试都是幂等的，可以放进 cron（建议每 5 分钟一次）。
+- 镜像重试：`mirror_outbox` 里还是 `pending` 的行按线索逐条补发（飞书挂掉那段时间的镜像就靠这一步补回来）；`attempts` 累计到 `--max-attempts`（默认 10）之后不再自动重试，要人工看 `last_error`。
 - `/health` 要接告警（做法见 `../deployment.md` 第 5 节）：熔断期间的回调、单条失败后没重发的回调都没落盘，`app.replay` 补不回，只能按 `../botmaker-api-notes.md` 第 7 节对账。
 - `notifications.status`：`pending` 已登记未发送、`sent` 全部渠道成功、`partial` 部分成功、`failed` 全部失败、`skipped` 未配置通知渠道。
 - 备份只需备份 SQLite 文件，做法见 `../deployment.md`。
@@ -173,7 +175,7 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 8. 会话变量跨会话保留：流程需在新会话开场时重置 `escalation_flag` 与 `escalation_reason`，否则老客户再次来访会在第一条消息就触发一次通知。【待核实】已交接的线索不受此影响（不再因重判发卡）。
 9. `contactId` 是否永远是号码：Botmaker 的公开接口描述里已出现 BSUID（WhatsApp 的商家范围用户标识）相关字段与事件。若部分客户只给出标识而不给号码，"按号码判国家、按号码去重"对这部分客户不成立。服务的处理：WhatsApp 渠道的回调只要带 `customerId`，线索照常入库并照常通知销售，去重键改用 `bm:<customerId>`，`phone` 与 `country_by_phone` 留空（绝不从标识里猜号码），通知卡片提示"国家需向客户确认"；之后若同一客户的号码出现，会补写到同一条线索上。既无号码也无 `customerId`、或来自其他渠道的回调才跳过（结果 `skipped_no_contact`）。真实回调里 BSUID 的形态【待核实】。
 10. 已知限制：所有接管原因都通知到同一组渠道；如需把投诉、质保类单独发给售后群，需要按 `escalation_reason` 分流通知（二期）。
-11. 飞书多维表格镜像（`feishu_bitable`）的接口形态（租户令牌、`records/search` 按 `lead_id` 过滤、创建 / 更新记录、各列类型接受的值）按飞书开放平台公开文档整理，未用真实租户核实；拿到客户租户后按 `05-integration/feishu-bitable-setup.md` 第 6 节验一遍。【待核实】
+11. 飞书多维表格镜像（`feishu_bitable`）的接口形态（租户令牌、`records/search` 按 `lead_id` 过滤、创建 / 更新记录、各列类型接受的值）按飞书开放平台公开文档整理，未用真实租户核实；拿到客户租户后按 `05-integration/feishu-bitable-setup.md` 第 6 节验一遍。镜像已改为响应后异步（见第 1 节"镜像"一行），所以这里验不通也只会让 `mirror_outbox` 堆积，不会拖慢或拖垮回调应答。【待核实】
 
 ## 9. UAT 回放
 

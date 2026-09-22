@@ -198,18 +198,26 @@ def test_http_and_token_failures_raise_without_secret():
 
 
 def test_sink_failure_never_blocks_the_ledger(settings):
+    """Bitable 是远程 sink：请求路径里一次 HTTP 都不发，失败只留在 mirror_outbox 里等重试。"""
     store = SqliteStore(settings.database_path)
     broken = FeishuBitableSink("cli", APP_SECRET, APP_TOKEN, TABLE_ID,
                                client=httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(500))))
     pipeline = Pipeline(settings, store, [broken], [RecordingNotifier()], retry_policy=NO_WAIT)
     result = pipeline.handle(load_fixture("uat/U01a.json"))
     assert result.outcome == "lead_upserted" and len(store.list_leads()) == 1
+    assert result.mirror_queued is True
+    assert pipeline.mirror(result.lead_id) == {"feishu_bitable": "failed"}       # 响应之后才去碰网络
+    row, = store.pending_mirrors(result.lead_id)
+    assert row.attempts == 1 and "feishu_bitable:" in (row.last_error or "") and APP_SECRET not in (row.last_error or "")
 
     fake = FakeBitable()
-    good = Pipeline(settings, SqliteStore(settings.database_path.with_name("good.db")), [_sink(fake)],
-                    [RecordingNotifier()], retry_policy=NO_WAIT)
-    assert good.handle(load_fixture("uat/U01a.json")).outcome == "lead_upserted"
+    good_store = SqliteStore(settings.database_path.with_name("good.db"))
+    good = Pipeline(settings, good_store, [_sink(fake)], [RecordingNotifier()], retry_policy=NO_WAIT)
+    good_result = good.handle(load_fixture("uat/U01a.json"))
+    assert good_result.outcome == "lead_upserted" and fake.data_calls() == []    # 还没发
+    assert good.mirror(good_result.lead_id) == {"feishu_bitable": "sent"}
     assert fake.data_calls() == [("POST", "search"), ("POST", "records")]
+    assert good_store.pending_mirrors(good_result.lead_id) == []
 
 
 def test_build_sinks_keeps_the_old_signature_and_refuses_a_half_configured_bitable(settings, tmp_path):
