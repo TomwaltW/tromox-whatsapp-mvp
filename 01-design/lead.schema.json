@@ -213,6 +213,18 @@
       "default": null,
       "title": "Contact Name"
     },
+    "profile_name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Profile Name"
+    },
     "company": {
       "anyOf": [
         {

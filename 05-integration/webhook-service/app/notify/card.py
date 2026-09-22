@@ -89,7 +89,10 @@ def build_card(lead: Lead, *, customer_id: str | None, mask: bool, chat_url_temp
     priority = next((t.removeprefix("prio_") for t in lead.tags if t.startswith("prio_")), "")
     reason = REASON_ZH.get(lead.escalation_reason, "") if lead.escalation_reason else ""
 
-    who = " / ".join(part for part in (lead.company, lead.contact_name, lead.role) if part) or "未提供"
+    # AI-extracted company / contact first; the WhatsApp profile name only when both are missing
+    # (it is a display fallback, never a qualification signal).
+    name = lead.contact_name or (lead.profile_name if not lead.company else None)
+    who = " / ".join(part for part in (lead.company, name, lead.role) if part) or "未提供"
     source = lead.source_code or ""
     if lead.source_channel.value != "unknown":
         source = f"{lead.source_channel.value}" + (f"（{lead.source_code}）" if lead.source_code else "")

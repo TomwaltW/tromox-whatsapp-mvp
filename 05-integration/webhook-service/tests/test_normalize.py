@@ -54,7 +54,7 @@ def test_first_message_short_code_country_language_and_fallback_name():
     assert lead.phone == DE_PHONE and lead.country_by_phone == "DE" and lead.country_stated is None
     assert (lead.source_code, lead.source_channel) == ("IG-2609", SourceChannel.INSTAGRAM)
     assert lead.language == "en"                       # rule-based fallback: no `language` variable yet
-    assert lead.contact_name == "Jonas K"              # WhatsApp profile name as a fallback
+    assert lead.profile_name == "Jonas K" and lead.contact_name is None   # profile name is display-only, not a contact
     assert lead.segment is Segment.UNKNOWN and lead.status is LeadStatus.NEW
     assert lead.escalation_flag is False and lead.escalation_reason is None
     assert lead.first_message_ts == lead.last_message_ts == datetime(2026, 11, 4, 19, 12, 3, 120000, tzinfo=timezone.utc)
@@ -67,7 +67,8 @@ def test_qualified_b2b_merges_into_the_same_lead():
     assert lead.lead_id == first.lead_id
     assert lead.segment is Segment.B2B and lead.b2b_type is B2BType.DISTRIBUTOR and lead.b2c_intent is None
     assert lead.country_stated == "DE" and lead.city_region == "Hamburg"
-    assert lead.company == "Nordrad Mobility GmbH" and lead.contact_name == "Jonas Keller"  # AI value beats the fallback
+    assert lead.company == "Nordrad Mobility GmbH" and lead.contact_name == "Jonas Keller"  # AI value; profile name kept apart
+    assert lead.profile_name == "Jonas K"
     assert lead.product_interest == ["MC10", "UKKO"] and lead.volume == "about 40 units per year"
     assert lead.ai_confidence == pytest.approx(0.95)
     assert lead.escalation_flag and lead.escalation_reason is EscalationReason.B2B_QUALIFIED

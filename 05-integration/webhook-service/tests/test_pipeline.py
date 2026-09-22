@@ -61,6 +61,84 @@ def test_b2c_faq_does_not_notify(client, notifier):
     assert body["status"] == "lead_upserted" and body["notification_queued"] is False and notifier.calls == 0
 
 
+def _u18_follow_up(session: str, msg_id: str, date: str, text: str, variables: dict, sender: str = "user") -> dict:
+    """A later callback of the U18 customer (same number) in a new session."""
+    payload = load_fixture("uat/U18d.json")
+    payload["sessionId"] = payload["sessionCreationTime"] = session
+    payload["messages"] = [{"_id_": msg_id, "date": date, "from": sender, "message": text}]
+    payload["variables"] = variables
+    return payload
+
+
+def _lead(client: TestClient):
+    leads = client.app.state.pipeline.store.list_leads()
+    assert len(leads) == 1
+    return leads[0]
+
+
+def test_agent_initiated_callback_does_not_notify_but_still_merges(client, notifier):
+    # U18a qualifies the lead (1 card); U18c is the salesperson's template in a new session:
+    # agent message only, no customer message, variables empty. Stored flag stays true.
+    _post(client, "uat/U18a.json")
+    body = _post(client, "uat/U18c.json")
+    assert body["status"] == "lead_upserted" and body["notification_queued"] is False
+    lead = _lead(client)
+    assert lead.status is LeadStatus.CONTACTED and lead.assigned_to == "Li Wei"
+    assert lead.escalation_flag is True and lead.escalation_reason.value == "b2b_qualified"
+    assert notifier.calls == 1 and _rows(client, "SELECT COUNT(*) FROM notifications")[0][0] == 1
+
+
+def test_b2b_requalification_after_handoff_does_not_notify(client, notifier):
+    # U18a (card) -> U18b assigned (handed_off) -> customer replies in a NEW session with the flag
+    # reset by the flow: the rules re-derive b2b_qualified, the stored flag is written, no second card.
+    _post(client, "uat/U18a.json")
+    _post(client, "uat/U18b.json")
+    assert _lead(client).status is LeadStatus.HANDED_OFF
+    body = _post(client, _u18_follow_up("TRXUAT18C1_2026-11-12T08:00:00.000Z", "TRXUATU18Q001", "2026-11-12T08:00:10.000Z",
+                                        "Great, please send the dealer price list.",
+                                        {"escalation_flag": "false", "escalation_reason": ""}))
+    assert body["notification_queued"] is False
+    lead = _lead(client)
+    assert lead.escalation_flag is True and lead.escalation_reason.value == "b2b_qualified"
+    assert notifier.calls == 1
+
+
+def test_human_requested_after_handoff_still_notifies(client, notifier):
+    _post(client, "uat/U18a.json")
+    _post(client, "uat/U18b.json")
+    body = _post(client, _u18_follow_up("TRXUAT18C1_2026-11-11T12:00:00.000Z", "TRXUATU18H001", "2026-11-11T12:00:05.000Z",
+                                        "I need to speak to a real person now.",
+                                        {"escalation_flag": "true", "escalation_reason": "human_requested"}))
+    assert body["notification_queued"] is True
+    lead = _lead(client)
+    assert lead.status is LeadStatus.HANDED_OFF and lead.escalation_reason.value == "human_requested"
+    assert notifier.calls == 2
+
+
+def test_closed_lead_returning_with_full_fields_notifies_again(client, notifier):
+    _post(client, "uat/U18a.json")
+    close = load_fixture("event_conversation_close.json")
+    close["contactId"] = close["chatIdInChatPlatform"] = "4917604069023"
+    close["customerId"] = "TRXUAT18C1"
+    close["events"][0]["info"] = [{"name": "typification", "value": "lost"}, {"name": "agentName", "value": "Li Wei"}]
+    _post(client, close)
+    assert _lead(client).status is LeadStatus.CLOSED_LOST
+    body = _post(client, _u18_follow_up("TRXUAT18C1_2026-12-01T09:00:00.000Z", "TRXUATU18R001", "2026-12-01T09:00:05.000Z",
+                                        "Hi again, we would like to reopen the dealer discussion.",
+                                        load_fixture("uat/U18a.json")["variables"]))
+    assert body["notification_queued"] is True                 # a closed lead coming back is a new enquiry
+    assert _lead(client).status is LeadStatus.CLOSED_LOST and notifier.calls == 2
+
+
+def test_bot_only_callback_with_variables_still_notifies(client, notifier):
+    # Guard: variables may arrive on a bot message; only agent-initiated callbacks are withheld.
+    _post(client, "uat/U18a.json")
+    body = _post(client, _u18_follow_up("TRXUAT18C1_2026-11-10T15:00:00.000Z", "TRXUATU18BOT1", "2026-11-10T15:00:05.000Z",
+                                        "Thanks, a sales colleague will contact you.",
+                                        load_fixture("uat/U18a.json")["variables"], sender="bot"))
+    assert body["notification_queued"] is True and notifier.calls == 2
+
+
 def test_contact_without_phone_number_is_recorded_by_customer_id_not_guessed(client, notifier):
     payload = load_fixture("message_with_variables_b2b.json")
     payload["contactId"] = "US.ab12025550143"          # an id that merely contains digits

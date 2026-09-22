@@ -21,30 +21,31 @@
 | 3 | `country_by_phone` | string (ISO 3166-1 alpha-2) | 规则 | 由号码国家码判定的国家，不让 AI 猜 |  |  |
 | 4 | `country_stated` | string (ISO 3166-1 alpha-2) \| null | AI 抽取 | 客户自述的国家/市场；仅对 B 端追问确认 | 是 |  |
 | 5 | `language` | string (ISO 639-1) | AI 抽取（规则兜底） | 客户首条消息的语言 | 是 | 是 |
-| 6 | `contact_name` | string \| null | AI 抽取（系统兜底：WhatsApp 昵称） | 联系人姓名 | 是 |  |
-| 7 | `company` | string \| null | AI 抽取 | 公司/门店名称 | 是 |  |
-| 8 | `role` | string \| null | AI 抽取 | 职位或身份（如 owner、purchasing manager） | 是 |  |
-| 9 | `segment` | enum: B2B \| B2C \| unknown | 按钮（自由文本时 AI 抽取） | B 端 / C 端 / 未知 | 是 | 是 |
-| 10 | `b2b_type` | enum: dealer \| distributor \| fleet \| importer \| other \| null | AI 抽取 | B 端类型；非 B 端为 null | 是 | 是 |
-| 11 | `b2c_intent` | enum: buy \| support \| parts \| warranty \| test_ride \| other \| null | AI 抽取 | C 端意图；非 C 端为 null | 是 | 是 |
-| 12 | `product_interest` | string[]（产品代码） | AI 抽取 | 感兴趣的车型代码，按产品目录归一化 | 是 | 是 |
-| 13 | `volume` | string \| null | AI 抽取 | 意向数量/频次的原话摘要（如 "20 units / quarter"） | 是 |  |
-| 14 | `city_region` | string \| null | AI 抽取 | 城市或地区 | 是 |  |
-| 15 | `existing_dealer_relationship` | string \| null | AI 抽取 | 现有经销关系简述（已代理品牌、是否已是摩兽经销商等） | 是 |  |
-| 16 | `source_channel` | enum: instagram \| facebook \| tiktok \| youtube \| website \| ctwa_ad \| offline_qr \| other \| unknown | 规则 | 来源渠道，由短码前缀或广告 referral 判定 |  |  |
-| 17 | `source_code` | string \| null | 规则 | 首条消息中的来源短码（如 IG-2609） |  |  |
-| 18 | `referral` | object \| null | 系统 | Click-to-WhatsApp 广告 referral（source_id、source_url、headline 等）；是否透传【待核实】 |  |  |
-| 19 | `first_message_ts` | datetime (UTC, ISO 8601) | 系统 | 首条消息时间 |  |  |
-| 20 | `last_message_ts` | datetime (UTC, ISO 8601) | 系统 | 客户最后一条消息时间；24 小时客服窗口以此起算 |  |  |
-| 21 | `ai_summary` | string | AI 抽取 | 给销售看的一两句话摘要（默认简体中文【待客户确认】） | 是 |  |
-| 22 | `ai_confidence` | number 0-1 | AI 抽取 | 模型对 segment 判断的自评置信度；低于 0.6 触发人工 | 是 |  |
-| 23 | `escalation_flag` | boolean | AI 抽取 + 规则 | 是否需要人工接管 | 是 | 是 |
-| 24 | `escalation_reason` | enum: human_requested \| b2b_qualified \| low_confidence \| complaint_warranty_legal_safety \| price_negotiation \| not_understood_twice \| null | AI 抽取 + 规则 | 接管原因 | 是 | 是 |
-| 25 | `assigned_to` | string \| null | 系统 | 接手的销售/坐席（来自 Botmaker 分配事件） |  |  |
-| 26 | `status` | enum: new \| qualified \| handed_off \| contacted \| closed_won \| closed_lost \| nurture \| invalid | 系统 + 人工 | 线索状态；销售结束会话时回写 |  |  |
-| 27 | `tags` | string[] | 规则 | 按 tag-taxonomy.md 由字段生成的标签 |  |  |
-| 28 | `consent_marketing` | boolean \| null | 按钮 | 是否同意接收营销类消息；未询问为 null |  |  |
-| 29 | `notes` | string \| null | 人工 | 销售备注 |  |  |
+| 6 | `contact_name` | string \| null | AI 抽取 | 联系人姓名（AI 从对话里抽取；WhatsApp 资料名不写入此字段） | 是 |  |
+| 7 | `profile_name` | string \| null | 系统 | WhatsApp 资料名（firstName + lastName），只作显示兜底，不参与合格判定 |  |  |
+| 8 | `company` | string \| null | AI 抽取 | 公司/门店名称 | 是 |  |
+| 9 | `role` | string \| null | AI 抽取 | 职位或身份（如 owner、purchasing manager） | 是 |  |
+| 10 | `segment` | enum: B2B \| B2C \| unknown | 按钮（自由文本时 AI 抽取） | B 端 / C 端 / 未知 | 是 | 是 |
+| 11 | `b2b_type` | enum: dealer \| distributor \| fleet \| importer \| other \| null | AI 抽取 | B 端类型；非 B 端为 null | 是 | 是 |
+| 12 | `b2c_intent` | enum: buy \| support \| parts \| warranty \| test_ride \| other \| null | AI 抽取 | C 端意图；非 C 端为 null | 是 | 是 |
+| 13 | `product_interest` | string[]（产品代码） | AI 抽取 | 感兴趣的车型代码，按产品目录归一化 | 是 | 是 |
+| 14 | `volume` | string \| null | AI 抽取 | 意向数量/频次的原话摘要（如 "20 units / quarter"） | 是 |  |
+| 15 | `city_region` | string \| null | AI 抽取 | 城市或地区 | 是 |  |
+| 16 | `existing_dealer_relationship` | string \| null | AI 抽取 | 现有经销关系简述（已代理品牌、是否已是摩兽经销商等） | 是 |  |
+| 17 | `source_channel` | enum: instagram \| facebook \| tiktok \| youtube \| website \| ctwa_ad \| offline_qr \| other \| unknown | 规则 | 来源渠道，由短码前缀或广告 referral 判定 |  |  |
+| 18 | `source_code` | string \| null | 规则 | 首条消息中的来源短码（如 IG-2609） |  |  |
+| 19 | `referral` | object \| null | 系统 | Click-to-WhatsApp 广告 referral（source_id、source_url、headline 等）；是否透传【待核实】 |  |  |
+| 20 | `first_message_ts` | datetime (UTC, ISO 8601) | 系统 | 首条消息时间 |  |  |
+| 21 | `last_message_ts` | datetime (UTC, ISO 8601) | 系统 | 客户最后一条消息时间；24 小时客服窗口以此起算 |  |  |
+| 22 | `ai_summary` | string | AI 抽取 | 给销售看的一两句话摘要（默认简体中文【待客户确认】） | 是 |  |
+| 23 | `ai_confidence` | number 0-1 | AI 抽取 | 模型对 segment 判断的自评置信度；低于 0.6 触发人工 | 是 |  |
+| 24 | `escalation_flag` | boolean | AI 抽取 + 规则 | 是否需要人工接管 | 是 | 是 |
+| 25 | `escalation_reason` | enum: human_requested \| b2b_qualified \| low_confidence \| complaint_warranty_legal_safety \| price_negotiation \| not_understood_twice \| null | AI 抽取 + 规则 | 接管原因 | 是 | 是 |
+| 26 | `assigned_to` | string \| null | 系统 | 接手的销售/坐席（来自 Botmaker 分配事件） |  |  |
+| 27 | `status` | enum: new \| qualified \| handed_off \| contacted \| closed_won \| closed_lost \| nurture \| invalid | 系统 + 人工 | 线索状态；销售结束会话时回写 |  |  |
+| 28 | `tags` | string[] | 规则 | 按 tag-taxonomy.md 由字段生成的标签 |  |  |
+| 29 | `consent_marketing` | boolean \| null | 按钮 | 是否同意接收营销类消息；未询问为 null |  |  |
+| 30 | `notes` | string \| null | 人工 | 销售备注 |  |  |
 <!-- END GENERATED: lead-fields-table -->
 
 ## 3. AI 抽取块（固定 JSON）

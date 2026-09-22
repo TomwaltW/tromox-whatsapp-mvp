@@ -161,6 +161,7 @@ class Lead(BaseModel):
     country_stated: str | None = None
     language: str = "und"
     contact_name: str | None = None
+    profile_name: str | None = None  # WhatsApp profile name (firstName + lastName): display fallback only
     company: str | None = None
     role: str | None = None
     segment: Segment = Segment.UNKNOWN

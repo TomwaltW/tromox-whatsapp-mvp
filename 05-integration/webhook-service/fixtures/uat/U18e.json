@@ -1,0 +1,30 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U18（第 e 条回调）：客户在再下一个新会话里回复（第三个 sessionId）；流程开场已把 escalation_flag 重置为 false，规则层会因字段齐全重新补 b2b_qualified，但线索已交接（contacted），不再领通知。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069023",
+  "whatsappNumber": "4917604069023",
+  "customerId": "TRXUAT18C1",
+  "sessionId": "TRXUAT18C1_2026-11-12T08:00:00.000Z",
+  "sessionCreationTime": "2026-11-12T08:00:00.000Z",
+  "customerCreationTime": "2026-11-10T09:30:00.000Z",
+  "firstName": "Felix",
+  "lastName": "B",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU18E001",
+      "date": "2026-11-12T08:00:10.000Z",
+      "from": "user",
+      "fromName": "Felix B",
+      "message": "Great, please send the dealer price list.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}
