@@ -9,6 +9,9 @@
 - `raw_events_unprocessed`：`raw_events.processed = 0` 的行数（回放没跟上 / 处理一直失败的堆积）；
 - `mirror_outbox_pending`：`mirror_outbox` 里 `status='pending'` 的行数（远程 sink 还没收到的镜像）；
 - `mirror_outbox_failed_24h`：窗口内 `updated_at`、`attempts >= 1` 且仍 `pending` 的行数（试过且失败的）；
+- `mirror_outbox_exhausted`：`attempts >= 10` 且仍 `pending` 的行数（用满重试预算、已不再自动重试，
+  口径与 `pending_mirrors(max_attempts=10)` 的默认上限一致）。这些行要人工看 `last_error`、排除原因后用
+  `python -m app.replay --reset-mirrors` 重置；不看窗口，因为卡住就是一直卡着；
 - `last_callback_at`：`raw_events.received_at` 最大值，没有则 null；
 - `leads_total`：`leads` 行数。
 
@@ -24,6 +27,7 @@ from typing import Any
 NOTIFICATION_STATUSES = ("sent", "partial", "failed", "pending", "skipped")
 OUTCOMES = ("lead_upserted",)
 MIN_HOURS, MAX_HOURS, DEFAULT_HOURS = 1, 168, 24
+MIRROR_MAX_ATTEMPTS = 10   # 与 SqliteStore.pending_mirrors / app.replay 的默认上限一致
 
 
 def _utc(now: datetime | None) -> datetime:
@@ -40,6 +44,7 @@ def _empty(now: datetime, hours: int) -> dict[str, Any]:
         "raw_events_unprocessed": 0,
         "mirror_outbox_pending": 0,
         "mirror_outbox_failed_24h": 0,
+        "mirror_outbox_exhausted": 0,
         "last_callback_at": None,
         "leads_total": 0,
     }
@@ -83,6 +88,9 @@ def collect(db_path: Path | str, *, hours: int = DEFAULT_HOURS, now: datetime | 
         result["mirror_outbox_failed_24h"] = _scalar(
             conn, "SELECT COUNT(*) FROM mirror_outbox WHERE status = 'pending' AND attempts >= 1 AND updated_at >= ?",
             (since,))
+        result["mirror_outbox_exhausted"] = _scalar(
+            conn, "SELECT COUNT(*) FROM mirror_outbox WHERE status = 'pending' AND attempts >= ?",
+            (MIRROR_MAX_ATTEMPTS,))
         result["last_callback_at"] = conn.execute("SELECT MAX(received_at) FROM raw_events").fetchone()[0]
         result["leads_total"] = conn.execute("SELECT COUNT(*) FROM leads").fetchone()[0]
     finally:

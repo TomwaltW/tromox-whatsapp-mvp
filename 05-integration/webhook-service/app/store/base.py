@@ -43,6 +43,7 @@ class MirrorRow:
     status: str          # pending | sent
     attempts: int
     last_error: str | None
+    updated_at: str      # 行的版本号：发送完成时按它做条件更新，不同值 = 期间来过新回调
 
 
 @runtime_checkable
