@@ -36,15 +36,15 @@
 | `01-design/` | 架构、会话流程、路由规则、线索数据结构、标签体系、来源追踪、六条 ADR |
 | `02-botmaker/` | 配置指南、AI Agent system prompt、知识库模板、试用账号测试计划、再触达模板、需要 Botmaker 书面答复的问题清单（含英文邮件稿） |
 | `03-whatsapp/` | Meta 接入清单、成本模型（CSV + 脚本 + 结果 + xlsx）、合规要点 |
-| `04-eval/` | 离线评测工具：标注指南、标注模板、合成样本、分类 prompt、评测包、历史咨询导入器（`eval.import_history`）、测试 |
-| `05-integration/` | FastAPI 回调服务（含调优期周报 `app.report`、演示卡片 `app.demo`、飞书多维表格 sink）、Botmaker API 笔记、部署说明与部署套件（`deploy/`）、飞书多维表格设置说明 |
+| `04-eval/` | 离线评测工具：标注指南、标注模板、合成样本、分类 prompt、评测包、历史咨询导入器（`eval.import_history`）、双人标注一致性（`eval.agreement`）、测试 |
+| `05-integration/` | FastAPI 回调服务（含调优期周报 `app.report`、演示卡片 `app.demo`、删除请求命令 `app.forget`、`/metrics` 指标端点、飞书多维表格 sink、并发压测 `tools/loadtest.py`）、Botmaker API 笔记、部署说明与部署套件（`deploy/`）、飞书多维表格设置说明 |
 | `06-acceptance/` | 验收标准（含机器可读阈值）、UAT 用例、上线检查表 |
 | `07-project/` | 时间计划、RACI、风险登记、碰面准备、第二阶段展望 |
 | `99-internal/` | 工作量、内部报价、待决问题、给张宝文的一页说明与 9/22 变更说明 |
 | `shared/tromox_lead/` | 线索数据结构与规则的唯一代码源头：pydantic 模型、枚举、国家 / 语言 / 短码 / 路由 / 标签规则 |
 | `shared/prompt_blocks/`、`shared/snippets/` | 两个 prompt 共用的抽取规则；报价单与工作量表共用的两档范围表 |
-| `scripts/` | 生成器与机器检查；客户文档导出；UAT 执行记录表生成器（`gen_uat_sheet.py`） |
-| `tests/` | 根目录测试：数据结构一致性、成本模型、文档导出、UAT 记录表 |
+| `scripts/` | 生成器与机器检查；客户文档导出；UAT 执行记录表生成器（`gen_uat_sheet.py`）；试用样例包生成器（`gen_trial_kit.py`） |
+| `tests/` | 根目录测试：数据结构一致性、成本模型、文档导出、UAT 记录表、试用样例包 |
 
 ## 5. 单一源头
 
