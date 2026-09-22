@@ -37,8 +37,10 @@ flowchart TD
         NORM["归一化：E.164、国家、语言、短码、线索字段"]
         DB["线索库：SQLite 与 CSV"]
         NT["通知适配器"]
+        MET["指标 /metrics：健康告警取数"]
     end
     GRP["销售群：飞书或企业微信"]
+    BIT["飞书多维表格镜像：可选"]
     S1 --> WA
     S2 --> WA
     WA --> F1
@@ -52,6 +54,8 @@ flowchart TD
     WH --> NORM
     NORM --> DB
     NORM --> NT
+    DB --> MET
+    DB -.->|"写 outbox，响应后后台发送"| BIT
     NT --> GRP
     GRP -.->|"点卡片链接回 Botmaker"| HUM
 ```
@@ -128,6 +132,16 @@ flowchart TD
 | 销售群通知 | 60 秒内把 B 端线索摘要推给销售；号码默认打码 | 客户现有协作工具【待客户确认】 | 选型见 `adr/0005-notification-channel.md` |
 | 离线评测工具 | 用标注数据度量分类质量，管 prompt 版本 | 本仓库 | `04-eval/` |
 | 共享规则包 | 字段、枚举、国家、语言、短码、升级规则的唯一实现 | 本仓库 | `shared/tromox_lead/`，评测与生产共用 |
+| 指标端点 `/metrics` | 按同一个 Token 鉴权，返回最近 24 小时的处理结果、通知状态、未处理回调与待发镜像的计数 | 客户（随集成服务部署） | 口径见 `05-integration/webhook-service/README.md` 第 1 节「指标」一行 |
+| 镜像 outbox（远程 sink 异步） | 线索入库后只登记一行待发，HTTP 响应发出之后由后台任务发送远程镜像，失败留给 `app.replay` 重试 | 同上 | 决策见 `adr/0007-remote-mirror-async-outbox.md` |
+| 周报 `app.report`（可推送） | 从线索库出每周六项指标的 Markdown 与 JSON，加 `--post` 把摘要推到销售群 | 本仓库，跑在客户的 VPS 上 | 指标口径与 cron 写法见 `05-integration/webhook-service/README.md` 第 10 节 |
+| 演示卡片 `app.demo` | Botmaker 开通前离线回放 UAT 用例，产出销售群卡片样张给客户看 | 本仓库 | 产物清单见 `05-integration/webhook-service/README.md` 第 11 节 |
+| 删除请求 `app.forget` | 按号码或 `lead_id` 把一个联系人从账本、CSV 与镜像里一次删净；先预演再确认 | 客户运维 | 合规承诺见 `03-whatsapp/compliance.md`，用法见 `05-integration/webhook-service/README.md` 第 7 节 |
+| 数据保留 `app.retention` | 保留期到期的线索、原始事件与孤儿通知按月批量清理，走 `app.forget` 同一条删除路径 | 客户运维 | 用法见 `05-integration/webhook-service/README.md` 第 12 节 |
+| 原始样本导出 `app.samples` | 试用期把原始回调脱敏导出，另出结构摘要与 fixture 的键差异，用来关掉待核实项 | 本仓库 | 用法见 `05-integration/webhook-service/README.md` 第 9 节 |
+| 部署套件 `deploy/` | compose、Caddy、备份 / 恢复 / 更新 / 健康告警脚本，以及上线演练 `rehearsal.sh` | 客户（部署在客户付费的 VPS 上） | 操作见 `05-integration/deploy/README.md`，选型见 `05-integration/deployment.md` |
+| CSV 镜像（写后合并） | 每次入库刷新一份 CSV 给运营与销售用表格软件打开；一阵回调在最小间隔内只写一次，退出前补写 | 客户 | 见 `05-integration/webhook-service/README.md` 第 1 节「合并」一行 |
+| 飞书多维表格镜像（可选） | 按 `lead_id` 找行，一条线索永远一行；账本仍是 SQLite，镜像失败不影响入库与通知 | 客户（客户的飞书租户） | 建表与四个变量见 `05-integration/feishu-bitable-setup.md` |
 
 ## 5. 数据流（一次 B 端咨询）
 
@@ -137,11 +151,16 @@ flowchart TD
 4. 客户回复；AI Agent 抽取字段写入变量，缺必填项最多再追问两次。
 5. 字段收齐，触发 `b2b_qualified`：Bot 发交接话术，对该会话停用 AI，建工单，进销售队列。
 6. Botmaker 把消息与变量回调到集成服务；服务先落原始事件，再归一化、按号码合并线索、生成标签、入库。
+
+6a. 远程镜像（飞书多维表格）不在请求路径里：入库后只往 `mirror_outbox` 登记一行待发，HTTP 响应发出之后由后台任务发送，失败留给 `app.replay` 继续重试（决策见 `adr/0007-remote-mirror-async-outbox.md`）；CSV 镜像写的是本机文件，仍在请求路径里同步写，写后合并。
+
 7. 升级标记首次变为真，通知适配器向销售群发摘要卡片；从字段确认到卡片送达不超过 60 秒。
 8. 销售点卡片里的链接回到 Botmaker，用公司号在 24 小时窗口内接着聊。
 9. 销售结束会话时选择结束分类；事件回调到集成服务，回写线索 `status`。
 
 C 端咨询在第 3 步之后由 AI Agent 依据知识库作答，通常不产生销售通知；只在触发升级原因时进入第 5 步。
+
+运维视角：上面这条链路每天靠四件事看住。健康告警脚本每 5 分钟查一次 `/health` 与 `/metrics`，回调堆着没处理、通知失败或镜像积压就报警（`05-integration/deploy/README.md` 第 3 节）。调优期每周一自动推一份周报到销售群，照六项指标复盘误判。客户提出删除请求时跑 `app.forget` 删一条，保留期到期由每月一次的 `app.retention` 批量删。试用期先打开原始回调保留，用 `app.samples` 把脱敏样本导出来，核对真实回调结构与 fixture 的差异，再逐条关掉第 8 节的待核实项。
 
 ## 6. 资产与内容放在哪里
 
@@ -176,4 +195,5 @@ C 端咨询在第 3 步之后由 AI Agent 依据知识库作答，通常不产�
 | Code Action 调用频率上限 | 【待核实】SOURCES S-B10 |
 | Click-to-WhatsApp referral：字段表已列 `whatsappReferral`，JSON 示例没有，待真实样本核对；集成服务目前只认 `referral` 键 | 【待核实】SOURCES S-B12 |
 | 销售所在网络能否稳定打开 Botmaker 坐席界面 | 【待核实】SOURCES S-B15 |
+| 飞书多维表格接口形态（租户令牌、按 `lead_id` 查找、创建与更新记录、各列类型接受的值）未用真实租户核对 | 【待核实】 |
 | 销售群用哪种协作工具 | 【待客户确认】 |
