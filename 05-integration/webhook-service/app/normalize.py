@@ -197,9 +197,15 @@ class MessageFacts:
 
     user_messages: list[tuple[datetime | None, str]] = field(default_factory=list)
     agent: str | None = None
+    agent_message_count: int = 0  # `from: agent` messages, whether or not the operator is named
     variables: dict[str, Any] = field(default_factory=dict)
     referral: Referral | None = None
     profile_name: str | None = None
+
+    @property
+    def agent_initiated(self) -> bool:
+        """Only the salesperson spoke (e.g. a template sent after the 24 h window closed)."""
+        return self.agent_message_count > 0 and not self.user_messages
 
     @property
     def first_user_text(self) -> str | None:
@@ -221,6 +227,7 @@ def collect_message_facts(payload: BotmakerWebhook) -> MessageFacts:
         if sender == "user":
             facts.user_messages.append((parse_ts(message.date), message.message or ""))
         elif sender == "agent":
+            facts.agent_message_count += 1
             facts.agent = message.operator_id or message.from_name or facts.agent
     return facts
 
@@ -311,8 +318,10 @@ def merge_message(existing: Lead | None, phone: str | None, facts: MessageFacts,
     consent = parse_bool(facts.variables.get("consent_marketing"))
     if consent is not None:
         lead.consent_marketing = consent
-    if not lead.contact_name and facts.profile_name:
-        lead.contact_name = facts.profile_name
+    # The WhatsApp profile name is kept apart from `contact_name`: it is shown on the card when
+    # the AI extracted no name, but it never makes a B2B lead look qualified (routing.py).
+    if facts.profile_name:
+        lead.profile_name = facts.profile_name
     stamps = facts.user_timestamps
     if stamps:
         lead.first_message_ts = min([*stamps, lead.first_message_ts] if lead.first_message_ts else stamps)
@@ -328,6 +337,32 @@ def merge_message(existing: Lead | None, phone: str | None, facts: MessageFacts,
 
     lead.tags = build_tags(lead, tier_dimensions(tag_tier))
     return lead
+
+
+_HANDED_OVER = (LeadStatus.HANDED_OFF, LeadStatus.CONTACTED)
+
+
+def notification_suppressed(lead: Lead, facts: MessageFacts) -> str | None:
+    """Why this message callback must NOT claim a card although `escalation_flag` is set.
+
+    Evaluated on the merged lead (the stored flag / reason are written as the rules say; only
+    the card is withheld). Returns None when the normal once-per-session claim applies.
+
+    * `agent_initiated`: the callback carries agent messages and no customer message (the
+      salesperson sent a template after the window closed). The stored flag is irrelevant.
+      A bot-only callback, or one without messages, is NOT suppressed: whether the flow
+      delivers its variables on a bot message is still open (README section 8, item 2).
+    * `handed_over_b2b`: the lead is already with sales (`handed_off` / `contacted`) and the
+      reason is `b2b_qualified` again (from the AI or re-derived by the rules). Any other
+      reason still notifies: a customer asking for a person after hand-off gets a card.
+      A lead whose conversation was already classified (closed_*, nurture, invalid) is a new
+      enquiry and notifies as usual.
+    """
+    if facts.agent_initiated:
+        return "agent_initiated"
+    if lead.status in _HANDED_OVER and lead.escalation_reason is EscalationReason.B2B_QUALIFIED:
+        return "handed_over_b2b"
+    return None
 
 
 def normalise_typification(value: str) -> str:

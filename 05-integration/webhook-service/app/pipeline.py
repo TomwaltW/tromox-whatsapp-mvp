@@ -22,7 +22,7 @@ from tromox_lead import Lead
 
 from .config import Settings
 from .models import BotmakerWebhook
-from .normalize import collect_message_facts, merge_events, merge_message, resolve_contact
+from .normalize import collect_message_facts, merge_events, merge_message, notification_suppressed, resolve_contact
 from .notify import Notifier, NotifyError, build_card
 from .retry import RetryError, RetryPolicy, retry_call
 from .store import LeadSink, RawEventState, SqliteStore
@@ -141,9 +141,14 @@ class Pipeline:
 
         notification_id = None
         if kind == "message" and lead.escalation_flag and lead.escalation_reason is not None:
-            session_key = parsed.session_id or self._clock().strftime("%Y-%m-%d")
-            notification_id = self.store.claim_notification(
-                lead.lead_id, lead.escalation_reason.value, session_key, parsed.customer_id)
+            suppressed = notification_suppressed(lead, facts)
+            if suppressed:  # decided BEFORE the claim, so no row is written for a withheld card
+                log.info("notification withheld", extra={"event_key": event_key, "lead_id": lead.lead_id,
+                                                         "reason": suppressed})
+            else:
+                session_key = parsed.session_id or self._clock().strftime("%Y-%m-%d")
+                notification_id = self.store.claim_notification(
+                    lead.lead_id, lead.escalation_reason.value, session_key, parsed.customer_id)
         return HandleResult("lead_upserted", kind, event_key, lead.lead_id, notification_id)
 
     # ------------------------------------------------------------------ outbound
