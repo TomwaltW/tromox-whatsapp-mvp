@@ -206,8 +206,18 @@ else
       sleep 2
       waited=$((waited + 2))
     done
-    if [ "${up}" -eq 1 ]; then
-      set_row 5 PASS "重启后 ${waited} 秒内 /health 返回 200；数据目录挂在宿主机，线索仍在"
+    if [ "${up}" -eq 1 ] && [ "${RESULT[4]}" = "PASS" ]; then
+      # 「数据仍在」不能只看 /health：再发一次第 3 项那条样例，仍判重就说明库没被重建。
+      do_curl -X POST -H "auth-bm-token: ${TOKEN}" -H 'content-type: application/json' \
+        --data-binary @"${FIXTURE}" "${BASE_URL}/webhooks/botmaker"
+      c5_status="$(json_field "${http_body}" status)"
+      if [ "${http_code}" = "200" ] && [ "${c5_status}" = "duplicate" ]; then
+        set_row 5 PASS "重启后 ${waited} 秒内 /health 返回 200；再发一次样例仍返回 duplicate，说明数据还在"
+      else
+        set_row 5 FAIL "重启后 /health 恢复了，但再发样例返回 HTTP ${http_code} status=${c5_status}，数据可能没落到宿主机目录"
+      fi
+    elif [ "${up}" -eq 1 ]; then
+      set_row 5 PASS "重启后 ${waited} 秒内 /health 返回 200；第 4 项没通过，数据是否仍在请人工确认"
     else
       set_row 5 FAIL "重启后 ${RESTART_WAIT} 秒内 /health 没回 200（最后一次 HTTP ${http_code}）"
     fi
