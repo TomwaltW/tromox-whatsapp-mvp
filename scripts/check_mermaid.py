@@ -18,6 +18,9 @@ import sys
 import tempfile
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # scripts/ is not on sys.path when tests load this by path
+from npx_env import npx_env  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 CHROME_CANDIDATES = (
     os.environ.get("PUPPETEER_EXECUTABLE_PATH", ""),
@@ -42,7 +45,7 @@ def main() -> int:
     if not shutil.which("npx") or not chrome:
         print("SKIP: npx or Chrome not found; cannot render Mermaid locally")
         return 2
-    env = {**os.environ, "PUPPETEER_SKIP_DOWNLOAD": "1", "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "1"}
+    env = npx_env(ROOT)  # private npm cache per checkout, see scripts/npx_env.py
     total = failed = 0
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = Path(tmp)
