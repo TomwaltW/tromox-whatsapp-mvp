@@ -81,6 +81,15 @@ cd 05-integration/webhook-service
 
 覆盖：鉴权（缺失 / 错误 / 正确 / 未配置）、健康检查、全部 fixture 的归一化、去重（同一回调两次只有一条线索一次通知）、合并语义、驼峰变量、短码与渠道、通知卡片（号码打码、24 小时窗口截止时间）、飞书签名（与 openssl 独立算出的向量比对）、重试、结束分类回写状态、响应先于通知发出、并发更新不丢失、日志不含完整号码。UAT 20 条用例的回放见第 9 节。
 
+**并发压测**（`tests/test_concurrency.py` 会跑一遍小规模的，也可以手动跑大规模的）：
+
+```bash
+cd 05-integration/webhook-service
+../../.venv/bin/python tools/loadtest.py --n 200 --concurrency 50 --out /tmp/loadtest.md --json /tmp/loadtest.json
+```
+
+它起一个真的 uvicorn 子进程（随机端口，`NOTIFIERS` 为空不联网），用线程池真并发地打 `/webhooks/botmaker`，然后自己打开 SQLite 核对三条不变量：场景 A 同一号码同一会话 n 条回调并发到达 → `processed_events` = n、`leads` = 1、`notifications` = 1（读改写在 `BEGIN IMMEDIATE` 事务里不丢更新，同一线索同一原因同一会话只发一张卡）；场景 B n 个不同号码各一条 → `leads` = n、`notifications` = n；每个请求的 HTTP 往返 p50 / p95 / max 对照 `06-acceptance/thresholds.json` 的 `notify_latency_max_seconds`（60 秒）——注意量的是应答时延，不是端到端通知时延，卡片是应答之后由后台任务发的，端到端 60 秒要在试用期用真实渠道测。不变量全部成立退出 0，否则 1；`--db PATH` 指定库文件、`--keep` 保留临时目录。其余单元测试用的 `TestClient` 在同一个事件循环里串行处理请求，同一时刻只有一条回调在跑，所以验不了并发；这也是为什么这一项要真起服务。
+
 ## 5. Docker
 
 构建上下文是**仓库根目录**（镜像需要 `pyproject.toml` 与 `shared/`）：
