@@ -1,0 +1,4 @@
+# 服务器上由 *.example 复制出来的本地文件与默认数据目录，不进仓库
+.env
+Caddyfile
+data/
