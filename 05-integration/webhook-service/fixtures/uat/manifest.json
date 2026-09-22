@@ -230,6 +230,7 @@
                  "last_message_ts": "2026-11-12T08:00:10Z"},
         "tags": ["stage_contacted"],
         "leads_total": 1,
+        "notifications": 1,
         "notifications_total": 1
       },
       "note": "服务层能观察到的是 status、时间戳与卡片数：信息齐全后 qualified 并发出唯一的 1 张卡，分配事件后 handed_off，销售发模板（坐席消息）后 contacted；坐席消息不推进 last_message_ts（24 小时窗口以客户最后一条消息起算），客户回复后才更新。通知规则：第 3 条回调（销售自己在新会话里发的模板，回调只有坐席消息、没有客户消息、变量为空）是坐席发起的回调，不领通知，存库的 escalation_flag / assigned_to / status 照常合并；第 4 条客户在同一会话回复、第 5 条客户在再下一个新会话回复，流程都已把 escalation_flag 重置为 false，规则层因字段齐全重新补 b2b_qualified，但线索已交接（handed_off / contacted），b2b_qualified 的重判不再领通知，全程只有 1 张卡（交接后客户明确要人等其他原因仍会发卡）。模板是否过 Meta 审核、自由回复可用与否、窗口重开都在 WhatsApp / Botmaker 侧，本测试不验。分配事件的名称按 normalize.py 的假设。"

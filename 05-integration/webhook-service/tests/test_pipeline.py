@@ -307,9 +307,10 @@ def test_event_key_is_stable_and_ignores_the_fixture_note():
 
 def test_stub_and_unknown_storage_backends_fail_fast(client, tmp_path):
     store = client.app.state.pipeline.store
-    for name in ("feishu_bitable", "gsheets"):
-        with pytest.raises(NotImplementedError):
-            build_sinks([name], store, tmp_path / "x.csv")
+    with pytest.raises(NotImplementedError):          # gsheets is still a documented stub
+        build_sinks(["gsheets"], store, tmp_path / "x.csv")
+    with pytest.raises(ValueError, match="FEISHU_APP_ID"):  # feishu_bitable is real now: missing credentials fail fast
+        build_sinks(["feishu_bitable"], store, tmp_path / "x.csv")
     with pytest.raises(ValueError):
         build_sinks(["mongodb"], store, tmp_path / "x.csv")
 
