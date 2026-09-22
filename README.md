@@ -87,6 +87,7 @@ bash scripts/check_all.sh
 
 # 客户文档导出：00-client/*.md → dist/<名>.docx（可编辑 Word）+ dist/<名>.pdf；dist/ 不入库
 # 需要 Node（npx，渲染流程图）与本机 Chrome（打印 PDF）；check_all.sh 加 --with-exports 会顺带全量导出
+# Mermaid 渲染的 npm 缓存在 scratch/npm-cache/（已 gitignore，每个 checkout 各一份，多个 worktree 并行不互相干扰；TROMOX_NPM_CACHE 可指到别处）
 uv pip install --python .venv/bin/python -e ".[export]"
 .venv/bin/python scripts/export_client_docs.py                          # 全部文档，docx + pdf
 .venv/bin/python scripts/export_client_docs.py --docs 方案书 报价单 --formats docx

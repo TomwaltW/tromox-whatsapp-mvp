@@ -44,6 +44,9 @@ from docx.shared import Cm, Pt, RGBColor
 from docx.text.run import Run
 from markdown_it import MarkdownIt
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # scripts/ is not on sys.path when tests load this by path
+from npx_env import npx_env  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[1]
 CLIENT_DIR = ROOT / "00-client"
 FORMATS = ("docx", "pdf")
@@ -128,7 +131,7 @@ def render_mermaid(body: str, workdir: Path, name: str) -> bytes:
     chrome = find_chrome()
     if not shutil.which("npx") or not chrome:
         raise RuntimeError("npx or Chrome not found; cannot render Mermaid")
-    env = {**os.environ, "PUPPETEER_SKIP_DOWNLOAD": "1", "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "1"}
+    env = npx_env(ROOT)  # private npm cache per checkout, see scripts/npx_env.py
     config = workdir / "puppeteer.json"
     config.write_text(json.dumps({"executablePath": chrome, "args": ["--no-sandbox"]}), encoding="utf-8")
     src, out = workdir / f"{name}.mmd", workdir / f"{name}.png"
