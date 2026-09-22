@@ -7,10 +7,12 @@
 - `notifications.by_status`：`notifications` 全表按 `status` 计数（五种状态键固定存在）；
   `failed_24h` = 窗口内 `created_at` 且 `status='failed'`；`pending` = 全表 `pending`；
 - `raw_events_unprocessed`：`raw_events.processed = 0` 的行数（回放没跟上 / 处理一直失败的堆积）；
+- `mirror_outbox_pending`：`mirror_outbox` 里 `status='pending'` 的行数（远程 sink 还没收到的镜像）；
+- `mirror_outbox_failed_24h`：窗口内 `updated_at`、`attempts >= 1` 且仍 `pending` 的行数（试过且失败的）；
 - `last_callback_at`：`raw_events.received_at` 最大值，没有则 null；
 - `leads_total`：`leads` 行数。
 
-库文件不存在或表为空都不报错，返回全 0。
+库文件不存在、表不存在或表为空都不报错，返回全 0（旧库没有 `mirror_outbox` 表也照样出数）。
 """
 from __future__ import annotations
 
@@ -36,9 +38,19 @@ def _empty(now: datetime, hours: int) -> dict[str, Any]:
         "callbacks": {"total": 0, "by_outcome": {o: 0 for o in OUTCOMES}},
         "notifications": {"by_status": {s: 0 for s in NOTIFICATION_STATUSES}, "failed_24h": 0, "pending": 0},
         "raw_events_unprocessed": 0,
+        "mirror_outbox_pending": 0,
+        "mirror_outbox_failed_24h": 0,
         "last_callback_at": None,
         "leads_total": 0,
     }
+
+
+def _scalar(conn: sqlite3.Connection, sql: str, params: tuple[Any, ...] = ()) -> int:
+    """COUNT(*) that returns 0 instead of raising when the table is not in this database yet."""
+    try:
+        return int(conn.execute(sql, params).fetchone()[0])
+    except sqlite3.OperationalError:  # a database written by an older version of the service
+        return 0
 
 
 def collect(db_path: Path | str, *, hours: int = DEFAULT_HOURS, now: datetime | None = None) -> dict[str, Any]:
@@ -67,6 +79,10 @@ def collect(db_path: Path | str, *, hours: int = DEFAULT_HOURS, now: datetime | 
         result["raw_events_unprocessed"] = conn.execute(
             "SELECT COUNT(*) FROM raw_events WHERE processed = 0"
         ).fetchone()[0]
+        result["mirror_outbox_pending"] = _scalar(conn, "SELECT COUNT(*) FROM mirror_outbox WHERE status = 'pending'")
+        result["mirror_outbox_failed_24h"] = _scalar(
+            conn, "SELECT COUNT(*) FROM mirror_outbox WHERE status = 'pending' AND attempts >= 1 AND updated_at >= ?",
+            (since,))
         result["last_callback_at"] = conn.execute("SELECT MAX(received_at) FROM raw_events").fetchone()[0]
         result["leads_total"] = conn.execute("SELECT COUNT(*) FROM leads").fetchone()[0]
     finally:

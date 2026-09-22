@@ -135,6 +135,8 @@ def create_app(settings: Settings | None = None, *, notifiers: list[Notifier] | 
 
         if result.notification_id is not None:
             background_tasks.add_task(pipeline.deliver, result.notification_id)
+        if result.mirror_queued and result.lead_id is not None:  # remote storage sinks: after the reply, never before
+            background_tasks.add_task(pipeline.mirror, result.lead_id)
         return JSONResponse(
             {"status": result.outcome, "kind": result.kind, "lead_id": result.lead_id,
              "notification_queued": result.notification_id is not None},

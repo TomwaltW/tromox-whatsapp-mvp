@@ -1,10 +1,14 @@
 """Webhook pipeline.
 
 handle():  persist raw event -> idempotency check -> parse -> normalise -> upsert by contact key (phone)
-           -> mirror to sinks -> claim a notification (once per lead + reason + session).
+           -> write local mirrors / queue the remote ones -> claim a notification (once per lead +
+           reason + session).
 deliver(): runs AFTER the HTTP response (FastAPI BackgroundTasks): render the card, send to
            every configured channel with bounded retries, record the outcome. A delivery
            failure is stored for `python -m app.replay`; it never affects the webhook reply.
+mirror():  the same shape for remote storage sinks (Feishu Bitable): the request path only writes
+           a `mirror_outbox` row, and this sends it after the response. Whatever fails stays
+           pending for `python -m app.replay`. Neither call ever raises.
 """
 from __future__ import annotations
 
@@ -25,7 +29,7 @@ from .models import BotmakerWebhook
 from .normalize import collect_message_facts, merge_events, merge_message, notification_suppressed, resolve_contact
 from .notify import Notifier, NotifyError, build_card
 from .retry import RetryError, RetryPolicy, retry_call
-from .store import LeadSink, RawEventState, SqliteStore
+from .store import LeadSink, MirrorError, RawEventState, SqliteStore
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +41,7 @@ class HandleResult:
     event_key: str
     lead_id: str | None = None
     notification_id: int | None = None
+    mirror_queued: bool = False   # a remote sink is waiting in mirror_outbox: run `mirror(lead_id)` after the response
 
 
 def compute_event_key(payload: dict[str, Any], parsed: BotmakerWebhook | None) -> str:
@@ -132,9 +137,15 @@ class Pipeline:
                 log.warning("typification has no status mapping",
                             extra={"event_key": event_key, "lead_id": lead.lead_id, "typification": typification})
 
+        mirror_queued = False
         for sink in self.sinks:
             try:
-                sink.upsert_lead(lead)
+                if getattr(sink, "remote", False):
+                    # network hop: only record the intent here, `mirror()` sends it after the response
+                    self.store.enqueue_mirror(lead.lead_id, sink.name)
+                    mirror_queued = True
+                else:
+                    sink.upsert_lead(lead)
             except Exception as exc:  # a mirror must never block the ledger
                 log.error("storage sink failed", extra={"channel": sink.name, "lead_id": lead.lead_id,
                                                         "error_type": type(exc).__name__})
@@ -149,9 +160,59 @@ class Pipeline:
                 session_key = parsed.session_id or self._clock().strftime("%Y-%m-%d")
                 notification_id = self.store.claim_notification(
                     lead.lead_id, lead.escalation_reason.value, session_key, parsed.customer_id)
-        return HandleResult("lead_upserted", kind, event_key, lead.lead_id, notification_id)
+        return HandleResult("lead_upserted", kind, event_key, lead.lead_id, notification_id, mirror_queued)
 
     # ------------------------------------------------------------------ outbound
+    def mirror(self, lead_id: str) -> dict[str, str]:
+        """Send this lead's pending remote mirrors. Returns {sink name: "sent"|"failed"}; never raises.
+
+        Runs after the HTTP response (background task) and again from `python -m app.replay`. What
+        is sent is the lead as the ledger holds it *now*, not a snapshot taken at callback time, so
+        a row that waited through several callbacks still ends up correct."""
+        try:
+            return self._mirror(lead_id)
+        except Exception as exc:  # last line of defence: a background task must not crash the worker
+            log.exception("mirror run crashed", extra={"lead_id": lead_id, "error_type": type(exc).__name__})
+            return {}
+
+    def _mirror(self, lead_id: str) -> dict[str, str]:
+        rows = self.store.pending_mirrors(lead_id)
+        if not rows:
+            return {}
+        by_name = {sink.name: sink for sink in self.sinks}
+        lead = self.store.get_lead(lead_id)
+        results: dict[str, str] = {}
+        for row in rows:
+            sink = by_name.get(row.sink)
+            if sink is None:  # STORAGE_BACKENDS changed while the row was waiting
+                self.store.finish_mirror(row.id, False, f"{row.sink}: sink not configured")
+                results[row.sink] = "failed"
+                log.error("mirror sink not configured", extra={"lead_id": lead_id, "sink": row.sink,
+                                                               "attempts": row.attempts + 1,
+                                                               "error_type": "SinkNotConfigured"})
+                continue
+            if lead is None:  # erased between the callback and the send: nothing left to mirror
+                self.store.finish_mirror(row.id, False, "lead not found")
+                results[row.sink] = "failed"
+                log.error("mirror skipped: lead not found", extra={"lead_id": lead_id, "sink": row.sink,
+                                                                   "attempts": row.attempts + 1,
+                                                                   "error_type": "LeadNotFound"})
+                continue
+            try:
+                _, attempts = retry_call(lambda s=sink: s.upsert_lead(lead), self.retry_policy, self._sleep)
+            except RetryError as exc:
+                # keep the text only for the sink's own error type (URL- and secret-free by construction)
+                detail = str(exc.last) if isinstance(exc.last, MirrorError) else type(exc.last).__name__
+                self.store.finish_mirror(row.id, False, detail)
+                results[row.sink] = "failed"
+                log.error("mirror failed", extra={"lead_id": lead_id, "sink": row.sink,
+                                                  "attempts": row.attempts + 1, "error_type": type(exc.last).__name__})
+            else:
+                self.store.finish_mirror(row.id, True, None)
+                results[row.sink] = "sent"
+                log.info("mirror sent", extra={"lead_id": lead_id, "sink": row.sink, "attempts": attempts})
+        return results
+
     def deliver(self, notification_id: int) -> str:
         """Send one claimed notification. Returns the final status; never raises."""
         try:
