@@ -49,7 +49,8 @@ CLIENT_DIR = ROOT / "00-client"
 FORMATS = ("docx", "pdf")
 # --package NAME exports a fixed bundle into <out-dir>/<NAME>-<date>/ and zips it next to it.
 # "zhang" is what 张宝文 gets before 9/25: three internal notes (exported verbatim: repo paths,
-# 【待核实】 marks and S-xx source ids stay in) plus the three client documents he forwards.
+# review markers and S-xx source ids stay in; no literal marker here or collect_open_questions.py
+# would index this comment) plus the three client documents he forwards.
 PACKAGES: dict[str, dict[str, tuple[str, ...]]] = {
     "zhang": {
         "internal": (
