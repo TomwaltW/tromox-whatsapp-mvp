@@ -1,15 +1,17 @@
 """调优期周报：从线索库出一份周复盘报告（Markdown + JSON）。
 
-    python -m app.report --out report.md [--json report.json] [--db PATH] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--latency-threshold 60]
+    python -m app.report --out report.md [--json report.json] [--db PATH] [--since YYYY-MM-DD] [--until YYYY-MM-DD] [--latency-threshold 60] [--post]
 
 只读打开 SQLite（`mode=ro`），不经过服务、不改库。窗口 `[since, until)` 按 UTC 日期，`until` 不含当天，默认最近 7 天。
 线索按 `leads.updated_at` 计，通知按 `notifications.created_at` 计。指标口径见 README 第 10 节。
 号码只显示尾号 4 位：报告会贴到群里，完整号码一个都不出现。
+`--post` 额外把六项指标的摘要发到 `NOTIFIERS` 配置的渠道（摘要只有汇总数，不含线索明细）。
 """
 from __future__ import annotations
 
 import argparse
 import json
+import logging
 import math
 import re
 import sqlite3
@@ -21,6 +23,10 @@ from typing import Any, Sequence
 
 from tromox_lead import EscalationReason, Lead, LeadStatus, Segment, SourceChannel
 
+from .notify import Notifier, NotifyError, build_notifiers
+
+log = logging.getLogger(__name__)
+
 # 与 06-acceptance/thresholds.json 的 notify_latency_max_seconds 一致（服务不在仓库根目录跑，故不在运行时读该文件）。
 DEFAULT_LATENCY_THRESHOLD_S = 60
 NOTIFICATION_STATUSES = ("sent", "partial", "failed", "pending", "skipped")
@@ -29,6 +35,9 @@ VALID_PROXY_STATUSES = frozenset({LeadStatus.HANDED_OFF, LeadStatus.CONTACTED, L
 # 第 6 节复盘清单：这两个原因最可能是 AI 误判，每周人工复看。
 REVIEW_REASONS = frozenset({EscalationReason.LOW_CONFIDENCE, EscalationReason.NOT_UNDERSTOOD_TWICE})
 TOP_SOURCE_CODES = 20
+# 推送摘要：每类只列前 3，整段不超过 20 行（群消息里一屏能读完）。
+TOP_SUMMARY_ITEMS = 3
+SUMMARY_MAX_LINES = 20
 _PHONE_RE = re.compile(r"(?<![\dA-Za-z])\+?\d{7,15}(?!\d)")
 
 REASON_ZH: dict[str, str] = {
@@ -261,6 +270,78 @@ def render_markdown(data: dict[str, Any], candidates: list[dict[str, str]], db_p
     return "\n".join(lines)
 
 
+# ------------------------------------------------------------------ 推送摘要
+def _top_items(counts: dict[str, int], limit: int = TOP_SUMMARY_ITEMS) -> str:
+    ranked = sorted(((name, count) for name, count in counts.items() if count), key=lambda item: (-item[1], item[0]))
+    return "、".join(f"{name} {count}" for name, count in ranked[:limit]) or "无"
+
+
+def summary_title(data: dict[str, Any]) -> str:
+    return f"调优期周报 {data['window']['since']} 至 {data['window']['until']}"
+
+
+def build_summary(data: dict[str, Any]) -> str:
+    """六项指标的一段话摘要，发到销售群用。只有汇总数：没有 lead_id、没有摘要、号码一个都不出现。"""
+    w, leads, esc, notif, funnel = (data["window"], data["leads"], data["escalation"],
+                                    data["notifications"], data["status_funnel"])
+    review_count = sum(esc["by_reason"].get(reason.value, 0) for reason in REVIEW_REASONS)
+    p95 = "—" if notif["latency_p95_s"] is None else f"{notif['latency_p95_s']:.2f}"
+    lines = [
+        f"窗口 {w['since']} 至 {w['until']}（不含 until 当天，UTC）。",
+        f"1. 线索 {leads['total']} 条（B 端占比 {_pct(leads['b2b_share'])}）：B 端 {leads['b2b']}、C 端 {leads['b2c']}、"
+        f"未判定 {leads['unknown']}；有效线索率（代理口径）{_pct(data['valid_lead_rate'])}。",
+        f"2. 来源前 3：{_top_items(data['by_source_channel'])}；短码前 3：{_top_items(data['by_source_code'])}。",
+        f"3. 转人工率 {_pct(esc['rate'])}（{esc['flagged']} 条）；原因前 3："
+        f"{_top_items({REASON_ZH.get(name, name): count for name, count in esc['by_reason'].items()})}。",
+        f"4. 通知 {notif['rows']} 条：sent {notif['sent']} / partial {notif['partial']} / failed {notif['failed']}；"
+        f"p95 {p95} 秒（阈值 {notif['threshold_s']} 秒），超阈值 {notif['over_threshold']} 条。",
+        f"5. 状态漏斗前 3：{_top_items({STATUS_ZH.get(name, name): count for name, count in funnel.items()})}"
+        f"（合计 {sum(funnel.values())} 条）。",
+        f"6. 复盘清单 {review_count} 条（AI 把握不足 / 连续两次没听懂），逐条见 Markdown 报告第 6 节。",
+    ]
+    return scrub("\n".join(lines[:SUMMARY_MAX_LINES]))
+
+
+def _configured_notifiers() -> list[Notifier]:
+    """按 NOTIFIERS / .env 建渠道。单独一层是为了测试能替换掉它，不去读真实环境。"""
+    from .config import get_settings  # 延后导入：只在 --post 时才读 .env
+
+    return build_notifiers(get_settings())
+
+
+def post_summary(data: dict[str, Any]) -> int:
+    """把摘要发到每个已配置渠道；全部成功返回 0，任一失败返回 1（失败不打断其余渠道）。"""
+    try:
+        notifiers = _configured_notifiers()
+    except ValueError as exc:
+        log.error("周报推送：渠道配置有误 %s", exc)
+        print(f"report: 渠道配置有误 {exc}", file=sys.stderr)
+        return 1
+    if not notifiers:
+        print("posted=none")
+        return 0
+
+    title, text = summary_title(data), build_summary(data)
+    posted: list[str] = []
+    failed: list[str] = []
+    for notifier in notifiers:
+        try:
+            notifier.send_text(title, text)
+        except Exception as exc:  # noqa: BLE001 - 一个渠道挂掉不该拖累其余渠道
+            # NotifyError 的文案按约定不含 URL；其它异常只留类型名，免得把带密钥的地址写进日志
+            detail = str(exc) if isinstance(exc, NotifyError) else type(exc).__name__
+            failed.append(notifier.name)
+            log.error("周报推送失败 channel=%s error=%s", notifier.name, detail)
+        else:
+            posted.append(notifier.name)
+            log.info("周报已推送 channel=%s", notifier.name)
+    print("posted=" + (",".join(posted) or "none"))
+    if failed:
+        print(f"report: 推送失败的渠道 {','.join(failed)}（原因见 error 日志）", file=sys.stderr)
+        return 1
+    return 0
+
+
 # ------------------------------------------------------------------ 入口
 def build_report(db_path: Path, since: date, until: date, threshold_s: int) -> tuple[dict[str, Any], str]:
     conn = open_readonly(db_path)
@@ -279,11 +360,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--db", type=Path, default=None, help="SQLite 线索库路径；默认取 DATABASE_PATH / .env")
     parser.add_argument("--since", help="窗口起点（含），YYYY-MM-DD，UTC；默认 until 往前 7 天")
     parser.add_argument("--until", help="窗口终点（不含），YYYY-MM-DD，UTC；默认今天")
-    parser.add_argument("--out", type=Path, required=True, help="Markdown 输出路径")
+    parser.add_argument("--out", type=Path, default=None, help="Markdown 输出路径；只推送（--post）时可省")
     parser.add_argument("--json", type=Path, default=None, help="JSON 输出路径（可选）")
     parser.add_argument("--latency-threshold", type=int, default=DEFAULT_LATENCY_THRESHOLD_S,
                         help="通知时延阈值（秒），默认 60")
+    parser.add_argument("--post", action="store_true",
+                        help="把六项指标摘要发到 NOTIFIERS 配置的渠道；任一渠道失败退出码 1")
     args = parser.parse_args(argv)
+    if args.out is None and not args.post:
+        parser.error("需要 --out（只推送不落盘时可以只给 --post）")
 
     try:
         since, until = parse_window(args.since, args.until)
@@ -301,13 +386,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"report: {exc}", file=sys.stderr)
         return 2
 
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(markdown, encoding="utf-8")
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(markdown, encoding="utf-8")
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"report: {since} 至 {until}，线索 {data['leads']['total']} 条，通知 {data['notifications']['rows']} 条 -> {args.out}")
-    return 0
+    print(f"report: {since} 至 {until}，线索 {data['leads']['total']} 条，通知 {data['notifications']['rows']} 条 "
+          f"-> {args.out if args.out else '（未落盘，只推送）'}")
+    return post_summary(data) if args.post else 0
 
 
 if __name__ == "__main__":

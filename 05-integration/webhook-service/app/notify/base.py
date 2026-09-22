@@ -16,3 +16,12 @@ class Notifier(Protocol):
 
     def send(self, card: LeadCard) -> None:  # raises NotifyError (or a transport error) on failure
         ...
+
+    def send_text(self, title: str, text: str) -> None:
+        """Send a plain text message (weekly report summary, alerts) - no card, no lead details.
+
+        `text` is already rendered, one item per line. Raises NotifyError on failure; as with
+        `send`, the error message must never contain the webhook URL. Callers pass summaries
+        only, so the message carries no phone number and no URL.
+        """
+        ...

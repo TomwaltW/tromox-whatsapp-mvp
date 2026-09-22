@@ -45,7 +45,7 @@ class FeishuNotifier:
             }]})
         if card.footer:
             elements.append({"tag": "note", "elements": [{"tag": "plain_text", "content": card.footer}]})
-        body: dict[str, Any] = {
+        return self._signed({
             "msg_type": "interactive",
             "card": {
                 "config": {"wide_screen_mode": True},
@@ -53,15 +53,31 @@ class FeishuNotifier:
                            "title": {"tag": "plain_text", "content": card.title}},
                 "elements": elements,
             },
-        }
+        })
+
+    def build_text_body(self, title: str, text: str) -> dict[str, Any]:
+        """富文本消息（msg_type: post）：标题 + 每行一段，飞书群里换行不会被吞掉。"""
+        content = [[{"tag": "text", "text": line}] for line in text.split("\n")]
+        return self._signed({
+            "msg_type": "post",
+            "content": {"post": {"zh_cn": {"title": title, "content": content}}},
+        })
+
+    def _signed(self, body: dict[str, Any]) -> dict[str, Any]:
         if self._secret:
             timestamp = str(int(self._clock()))
             body["timestamp"] = timestamp
             body["sign"] = feishu_sign(timestamp, self._secret)
         return body
 
-    def send(self, card: LeadCard) -> None:
-        data = post_json(self._url, self.build_body(card), channel=self.name, client=self._client)
+    def _post(self, body: dict[str, Any]) -> None:
+        data = post_json(self._url, body, channel=self.name, client=self._client)
         code = data.get("code", data.get("StatusCode", 0))
         if code not in (0, "0", None):
             raise NotifyError(f"feishu: API code {code}")
+
+    def send(self, card: LeadCard) -> None:
+        self._post(self.build_body(card))
+
+    def send_text(self, title: str, text: str) -> None:
+        self._post(self.build_text_body(title, text))

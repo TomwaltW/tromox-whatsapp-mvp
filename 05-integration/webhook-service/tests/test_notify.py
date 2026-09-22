@@ -193,6 +193,86 @@ def test_email_failure_is_a_notify_error():
         EmailNotifier(host="h", port=587, sender="a@example.com", recipients=["b@example.com"], smtp_factory=Broken).send(_card())
 
 
+# ------------------------------------------------------------------ send_text（周报摘要等纯文字消息）
+TEXT_TITLE = "调优期周报 2026-11-09 至 2026-11-16"
+TEXT_BODY = "线索 5 条（B 端占比 40.0%）\n转人工率 80.0%\n通知 sent 4 / partial 0 / failed 0"
+
+
+def _recorder(response: httpx.Response):
+    sent: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return response
+
+    return sent, httpx.Client(transport=httpx.MockTransport(handler))
+
+
+def test_feishu_send_text_posts_rich_text_with_signature():
+    sent, client = _recorder(httpx.Response(200, json={"code": 0, "msg": "success"}))
+    FeishuNotifier(SECRET_URL, "test-secret", client=client, clock=lambda: 1730000000.9).send_text(TEXT_TITLE, TEXT_BODY)
+    body = sent[0]
+    assert body["msg_type"] == "post"
+    post = body["content"]["post"]["zh_cn"]
+    assert post["title"] == TEXT_TITLE and len(post["content"]) == 3
+    assert [block[0]["text"] for block in post["content"]] == TEXT_BODY.split("\n")
+    assert body["timestamp"] == "1730000000" and body["sign"] == "s/83FabUZ3qM7iGhNM7nq1UAiWpFgs/DG9mQ19CFs44="
+
+
+def test_feishu_send_text_error_does_not_leak_the_url():
+    _, client = _recorder(httpx.Response(200, json={"code": 19021, "msg": "sign match fail"}))
+    with pytest.raises(NotifyError) as excinfo:
+        FeishuNotifier(SECRET_URL, client=client).send_text(TEXT_TITLE, TEXT_BODY)
+    assert "SECRET-TOKEN-VALUE" not in str(excinfo.value)
+
+
+def test_wecom_send_text_is_markdown_with_the_title_as_heading():
+    sent, client = _recorder(httpx.Response(200, json={"errcode": 0, "errmsg": "ok"}))
+    WeComNotifier("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=SECRET", client=client).send_text(TEXT_TITLE, TEXT_BODY)
+    assert sent[0]["msgtype"] == "markdown"
+    assert sent[0]["markdown"]["content"] == f"# {TEXT_TITLE}\n{TEXT_BODY}"
+
+    _, failing = _recorder(httpx.Response(200, json={"errcode": 93000, "errmsg": "invalid"}))
+    with pytest.raises(NotifyError) as excinfo:
+        WeComNotifier("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=SECRET", client=failing).send_text(TEXT_TITLE, TEXT_BODY)
+    assert "SECRET" not in str(excinfo.value)
+
+
+def test_generic_send_text_posts_a_typed_text_payload():
+    sent, client = _recorder(httpx.Response(200, json={"ok": True}))
+    GenericWebhookNotifier("https://hooks.example.com/SECRET-TOKEN-VALUE", client=client).send_text(TEXT_TITLE, TEXT_BODY)
+    assert sent[0] == {"type": "text", "title": TEXT_TITLE, "text": TEXT_BODY}
+
+
+def test_generic_send_text_non_2xx_raises_without_the_url():
+    _, client = _recorder(httpx.Response(500, json={"error": "boom"}))
+    with pytest.raises(NotifyError) as excinfo:
+        GenericWebhookNotifier("https://hooks.example.com/SECRET-TOKEN-VALUE", client=client).send_text(TEXT_TITLE, TEXT_BODY)
+    assert "SECRET-TOKEN-VALUE" not in str(excinfo.value) and "500" in str(excinfo.value)
+
+
+def test_email_send_text_uses_the_title_as_subject_and_plain_text_body():
+    FakeSMTP.instances.clear()
+    EmailNotifier(host="smtp.example.com", port=587, sender="bot@example.com", recipients=["a@example.com"],
+                  username="bot", password="pw", smtp_factory=FakeSMTP).send_text(TEXT_TITLE, TEXT_BODY)
+    smtp = FakeSMTP.instances[0]
+    assert smtp.steps == ["starttls", "login:bot", "send", "quit"]
+    message = smtp.messages[0]
+    assert message["Subject"] == TEXT_TITLE and message["To"] == "a@example.com"
+    assert message.get_content().rstrip("\n") == TEXT_BODY
+
+
+def test_email_send_text_failure_is_a_notify_error():
+    class Broken(FakeSMTP):
+        def send_message(self, message):
+            raise OSError("network down")
+
+    with pytest.raises(NotifyError) as excinfo:
+        EmailNotifier(host="h", port=587, sender="a@example.com", recipients=["b@example.com"],
+                      smtp_factory=Broken).send_text(TEXT_TITLE, TEXT_BODY)
+    assert "email: OSError" == str(excinfo.value)
+
+
 def test_build_notifiers_validates_configuration():
     base = dict(_env_file=None, botmaker_webhook_token="t")
     assert build_notifiers(Settings(**base)) == []
