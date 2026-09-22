@@ -1,0 +1,9 @@
+sample_id,data_origin,phone,conversation_text,language,segment,b2b_type,b2c_intent,country_gold,product_interest,escalation_flag,escalation_reason,is_valid_lead,annotator,label_notes
+AG-01,real,+4915112345601,"Hallo, wir sind ein Motorradhändler in Hamburg und möchten Tromox verkaufen. Mail: dealer.hh@example.com",de, b2b ,dealer,,de,,是,b2b_lead,是,销售B,
+AG-02,real,+12025550102,"Hi, how much is the MC10 and where can I test ride it? Call me on +1 202 555 0102",en,B2C,,test_ride,US,MC10,否,,否,销售B,
+AG-03,real,+34612345603,"Hola, quiero comprar una UKKO para mí. ¿Cuánto cuesta?",es,B2C,,purchase,ES,UKKO,,,,销售B,
+AG-05,real,+4915112345605,"Wo ist mein Ersatzteil? Ich warte seit 3 Wochen!",de,B2C,,support,DE,,false,other,no,销售B,
+AG-07,real,+31612345607,"We run a rental fleet in Amsterdam, 20 bikes, looking for a supplier.",en,B2B,fleet,,NL,,true,b2b_lead,yes,销售B,
+AG-08,real,+4915112345608,"Hallo? Ist da jemand?",de,B2C,,,DE,,false,,no,销售B,
+AG-10,real,+4915112345610,"Sind Sie an einer Partnerschaft mit unserem E-Bike-Shop interessiert?",de,B2B,dealer,,DE,,true,b2b_lead,yes,销售B,
+ZZ-99,real,+4915112345699,"Nur in B vorhanden.",de,B2C,,purchase,DE,,false,,no,销售B,

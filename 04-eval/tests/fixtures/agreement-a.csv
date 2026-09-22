@@ -1,0 +1,12 @@
+sample_id,data_origin,phone,conversation_text,language,segment,b2b_type,b2c_intent,country_gold,product_interest,escalation_flag,escalation_reason,is_valid_lead,annotator,label_notes
+EX-001,example,+4917604069001,"示例行：填写前请删除",de,B2B,dealer,,DE,,false,,yes,示例,示例行
+AG-01,real,+4915112345601,"Hallo, wir sind ein Motorradhändler in Hamburg und möchten Tromox verkaufen. Mail: dealer.hh@example.com",de,B2B,dealer,,DE,,true,b2b_lead,yes,运营A,
+AG-02,real,+12025550102,"Hi, how much is the MC10 and where can I test ride it? Call me on +1 202 555 0102",en,B2C,,test_ride,US,MC10,false,,no,运营A,
+AG-03,real,+34612345603,"Hola, quiero comprar una UKKO para mí. ¿Cuánto cuesta?",es,B2C,,purchase,ES,UKKO,false,,no,运营A,
+AG-04,real,+33612345604,"Bonjour, nous sommes un importateur en France, intéressés par une distribution exclusive.",fr,B2B,importer,,FR,,true,b2b_lead,yes,运营A,
+AG-05,real,+4915112345605,"Wo ist mein Ersatzteil? Ich warte seit 3 Wochen!",de,B2C,,support,DE,,true,complaint,no,运营A,
+AG-06,real,+393312345606,"Ciao, avete un rivenditore a Milano?",it,B2C,,dealer_locator,IT,,false,,no,运营A,
+AG-07,real,+31612345607,"We run a rental fleet in Amsterdam, 20 bikes, looking for a supplier.",en,B2B,fleet,,NL,,true,b2b_lead,yes,运营A,
+AG-08,real,+4915112345608,"Hallo? Ist da jemand?",de,unknown,,,DE,,false,,no,运营A,
+AG-09,real,+48512345609,"Hi, I'm a student in Warsaw, what's the cheapest model?",en,B2C,,purchase,PL,,false,,no,运营A,
+AG-10,real,+4915112345610,"Sind Sie an einer Partnerschaft mit unserem E-Bike-Shop interessiert?",de,B2B,dealer,,DE,,true,b2b_lead,yes,运营A,
