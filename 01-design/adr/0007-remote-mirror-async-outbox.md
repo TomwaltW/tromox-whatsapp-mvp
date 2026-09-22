@@ -32,7 +32,7 @@
 ## 影响
 
 - **镜像延迟从同步变成秒级。** 正常情况下响应发出后马上就发，销售在表里看到的延迟是秒级；飞书故障期间延迟等于故障时长加上下一次 `app.replay` 的间隔（5 分钟）。要"表里立刻有"的场景不成立，验收也不按这个口径写。
-- **`/metrics` 多三个键**：`mirror_outbox_pending`（待发）、`mirror_outbox_failed_24h`（24 小时内失败）与 `mirror_outbox_exhausted`（用满重试预算、不再自动重试）。口径见 `05-integration/webhook-service/README.md` 第 1 节「指标」一行。健康告警脚本目前只看回调堆积与通知失败，这三个数还没接进告警，要人在 `/metrics` 里看（见待决事项）。
+- **`/metrics` 多三个键**：`mirror_outbox_pending`（待发）、`mirror_outbox_failed_24h`（24 小时内失败）与 `mirror_outbox_exhausted`（用满重试预算、不再自动重试）。口径见 `05-integration/webhook-service/README.md` 第 1 节「指标」一行。健康告警脚本把 `mirror_outbox_exhausted > 0` 也算 degraded（`05-integration/deploy/README.md` 第 3 节）；`pending` 与 `failed_24h` 不报警，积压由 `app.replay` 消化。
 - **运维手册的口径跟着改**：镜像出问题不再表现为"回调变慢"，而是 `mirror_outbox` 堆积；处理动作是先看 `/metrics` 的三个数，再跑 `app.replay`，`exhausted` 大于 0 就看 `last_error`，排除原因后 `--reset-mirrors`（`05-integration/webhook-service/README.md` 第 7 节「运维」）。
 - 删除请求与数据保留照样删镜像：`app.forget` 与 `app.retention` 调的是 sink 的删除接口，不走 outbox。
 - 飞书验不通的后果被限制住了：接口形态对不上只会让 `mirror_outbox` 堆积，不会拖慢也拖不垮回调应答。
@@ -42,4 +42,3 @@
 | 事项 | 标记 |
 |---|---|
 | 飞书多维表格的接口形态（租户令牌、`records/search` 的 filter 写法、创建与更新记录、各列类型接受的值）未用真实租户跑通；拿到客户租户后按 `05-integration/feishu-bitable-setup.md` 第 6 节验一遍，其余待核实项见该文件第 7 节 | 【待核实】 |
-| 健康告警脚本 `05-integration/deploy/healthcheck-alert.sh` 还没看 `mirror_outbox_*` 三个数（尤其 `exhausted`），卡住的行目前只能靠人看 `/metrics`；接进告警并补 `05-integration/deploy/README.md` 第 3 节的处置口径，是下一步的实现工作，不是待核实的事实 | — |
