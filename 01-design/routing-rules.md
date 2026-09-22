@@ -77,7 +77,7 @@
 
 1. 模型已给出升级标记和原因：原样保留，规则层不改。
 2. 模型没给原因，且 `ai_confidence` 低于 `LOW_CONFIDENCE_THRESHOLD`（0.6）：补 `low_confidence`。
-3. 否则，若满足 B 端字段齐备（`is_b2b_qualified`：`segment` = `B2B`，有 `b2b_type`，有 `company` 或 `contact_name`，有 `country_stated` 或 `country_by_phone`）：补 `b2b_qualified`。
+3. 否则，若满足 B 端字段齐备（`is_b2b_qualified`：`segment` = `B2B`，有 `b2b_type`，有 `company` 或 `contact_name`（都指 AI 从对话里抽取的值；WhatsApp 资料名只存 `profile_name`、只作显示兜底，不算「有联系人」），有 `country_stated` 或 `country_by_phone`）：补 `b2b_qualified`。
 4. 模型标了升级却没给原因：补 `low_confidence`。
 5. 规则层只会增加升级，永远不会取消模型给出的升级。
 
@@ -119,7 +119,7 @@ sequenceDiagram
 | 停用 AI | 转人工后对该会话静音 Bot，避免 AI 与销售同时回复；会话结束后恢复。平台内的具体动作名称【待核实】；API 侧聊天对象带 `isBotMuted` 字段（SOURCES S-B2） |
 | 建工单 | 工单标题含国家、类型、公司；正文为 `ai_summary` 与字段清单 |
 | 队列 | MVP 设一个销售队列；按语种或区域分队列放到调优期再定【待客户确认】 |
-| 通知 | 同一线索、同一原因、同一会话只通知一次；号码默认只显示后四位 |
+| 通知 | 同一线索、同一原因、同一会话只通知一次；坐席发起、没有客户消息的回调（如窗口关闭后销售发模板）不通知；线索已交接（`handed_off` / `contacted`）后，`b2b_qualified` 的重判不再通知，其他原因照常；号码默认只显示后四位 |
 | 接手 | 只在 Botmaker 坐席界面、用公司号接手；**绝不**把客户引到销售个人的 WhatsApp 或手机 |
 | 回写 | 销售结束会话时选择结束分类，集成服务据此更新 `status` |
 
