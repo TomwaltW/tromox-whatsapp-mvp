@@ -166,6 +166,7 @@ def test_every_client_document_exports_to_docx(tmp_path):
         assert docx.Document(str(out)).paragraphs
 
 
+@pytest.mark.slow
 @needs_chrome
 def test_pdf_has_text_and_no_header_footer(tmp_path):
     pypdf = pytest.importorskip("pypdf")
@@ -182,6 +183,7 @@ def test_pdf_has_text_and_no_header_footer(tmp_path):
     assert not [ch for ch in text if 0x2E80 <= ord(ch) <= 0x2EFF]
 
 
+@pytest.mark.slow
 @needs_mermaid
 def test_mermaid_rendered_as_image_in_docx(tmp_path):
     text = "# 图\n\n```mermaid\nflowchart TD\n    A[入口] --> B[接待]\n```\n\n图下文字。\n"
@@ -302,6 +304,7 @@ def test_package_zhang_docx_only_bundles_six_documents_and_recreates_the_folder(
     assert not (folder / "stale.txt").exists()
 
 
+@pytest.mark.slow
 @needs_chrome
 @pytest.mark.usefixtures("stub_mermaid")
 def test_package_zhang_writes_twelve_files_and_the_zip(tmp_path):
