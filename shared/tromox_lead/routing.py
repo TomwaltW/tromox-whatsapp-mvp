@@ -10,7 +10,12 @@ from .schema import AIExtraction
 
 
 def is_b2b_qualified(extraction: AIExtraction, country_by_phone: str | None = None) -> bool:
-    """B2B field collection complete: type + who (company or contact) + market."""
+    """B2B field collection complete: type + who (company or contact) + market.
+
+    `contact_name` here is always the AI-extracted value: the WhatsApp profile name never
+    enters `AIExtraction` (the webhook service stores it on `Lead.profile_name`, for display
+    only), so a bare profile name can never make a lead look qualified.
+    """
     if extraction.segment is not Segment.B2B or extraction.b2b_type is None:
         return False
     has_who = bool(extraction.company or extraction.contact_name)

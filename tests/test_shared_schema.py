@@ -17,7 +17,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_lead_fields_match_pydantic_model():
     assert tuple(t.Lead.model_fields) == t.LEAD_FIELDS
-    assert len(t.LEAD_FIELDS) == 29
+    assert len(t.LEAD_FIELDS) == 30
+    assert "profile_name" in t.LEAD_FIELDS and "profile_name" not in t.AI_EXTRACTION_FIELDS
 
 
 def test_ai_extraction_is_ordered_subset_of_lead():
@@ -120,6 +121,11 @@ def test_routing_rules():
     assert qualified.escalation_flag and qualified.escalation_reason is t.EscalationReason.B2B_QUALIFIED
     not_yet = t.apply_routing_rules(t.AIExtraction.model_validate({**base, "company": None}), "DE")
     assert not not_yet.escalation_flag
+    # an AI-extracted contact name without a company still counts as "who" (only the WhatsApp
+    # profile name is excluded, and it never reaches AIExtraction)
+    contact_only = t.apply_routing_rules(
+        t.AIExtraction.model_validate({**base, "company": None, "contact_name": "Lucía Martínez"}), "DE")
+    assert contact_only.escalation_flag and contact_only.escalation_reason is t.EscalationReason.B2B_QUALIFIED
     low = t.apply_routing_rules(t.AIExtraction.model_validate({"segment": "B2C", "ai_confidence": 0.4}))
     assert low.escalation_reason is t.EscalationReason.LOW_CONFIDENCE
     explicit = t.apply_routing_rules(t.AIExtraction.model_validate(
