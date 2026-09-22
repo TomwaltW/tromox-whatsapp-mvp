@@ -24,7 +24,7 @@
 | `labeling-template.csv` | 标注模板（生成物，列名与 lead schema 对齐，勿手改表头） |
 | `synthetic-samples.csv` | 80 条多语言合成咨询（由 `tools/make_synthetic.py` 生成） |
 | `prompts/classify-v1.md` | 单次"分类 + 抽字段"prompt，固定 JSON 输出；抽取规则与 JSON 块和 Botmaker system prompt 逐字相同 |
-| `eval/` | 评测代码：`data` 加载校验、`prompt`、`clients/`（mock、OpenAI 兼容、Anthropic）、`parse`、`metrics`、`report`、`run` |
+| `eval/` | 评测代码：`data` 加载校验、`prompt`、`clients/`（mock、OpenAI 兼容、Anthropic）、`parse`、`metrics`、`report`、`run`、`import_history`（导入器）、`agreement`（双人标注一致性） |
 | `tests/` | pytest；真实客户端只通过 mock transport 测试，不访问网络 |
 | `reports/` | 评测报告；`synthetic-mock-report.md` 是 mock 在合成集上的样例 |
 | `data/` | 放真实标注数据与原始输出；整个目录已被 git 忽略 |
@@ -85,6 +85,20 @@ countries=AU:1,DE:1,ES:1,unknown:1
 ```bash
 python -m eval.run --input data/labeled-v1.csv --prompt prompts/classify-v1.md --model mock --out data/format-check.md
 ```
+
+### 4.2 双人标注对比
+
+`labeling-guide.md` 第 8 节要求第二人独立重标不少于 30 条（或 20%），`segment` 与 `escalation_flag` 的一致率低于 90% 就先对齐口径再重标。用一致性命令算，不要手数：
+
+```bash
+python -m eval.agreement --a data/labeled-v1.csv --b data/labeled-v1-second.csv --out data/agreement.md --json data/agreement.json
+python -m eval.agreement --a data/labeled-v1.csv --b data/labeled-v1-second.csv --columns segment,escalation_flag,b2c_intent --min-agreement 0.85
+```
+
+- 两份文件表头都必须与 `labeling-template.csv` 完全一致；按 `sample_id` 取交集（第二人只标子集也行），模板示例行（`data_origin=example`）不计。
+- 默认对比 `segment`、`escalation_flag`、`b2b_type`、`b2c_intent`、`country_gold`、`escalation_reason`、`is_valid_lead`，`--columns` 可改，但 `segment` 与 `escalation_flag` 永远参与。比较前去首尾空白、不分大小写；布尔列把 `true / 1 / yes / 是` 与 `false / 0 / no / 否 / 空` 归一后再比。
+- 每列给交集条数、相同条数、一致率与 Cohen's κ（κ 为 `null` 表示该列只有一个取值，算不出）。Markdown 报告第 3 节是分歧清单（样本、列、A 值、B 值、脱敏后的文本摘录），交给销售负责人裁决。
+- 退出码：`0` 通过；`3` `segment` 或 `escalation_flag` 任一列一致率低于 `--min-agreement`（默认 0.90）；`2` 表头不对、交集为空或 `--columns` 含未知列。stdout 末行固定为 `common=<n> segment=<0.xx> escalation_flag=<0.xx> kappa_segment=<0.xx|null> result=OK|LOW`，脚本按退出码与这一行判断即可。
 
 ## 5. 评测真实模型
 
