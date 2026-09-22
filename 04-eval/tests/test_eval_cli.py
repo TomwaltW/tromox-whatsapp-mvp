@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 import subprocess
 import sys
@@ -69,6 +70,38 @@ def test_error_exit_codes(tmp_path, capsys):
     assert main([*BASE_ARGS[:-1], "bogus-model", "--out", str(tmp_path / "r.md")]) == EXIT_CLIENT
     assert main([*BASE_ARGS[:-1], "openai:some-model", "--out", str(tmp_path / "r.md")]) == EXIT_CLIENT   # no key in env
     assert "OPENAI_API_KEY" in capsys.readouterr().err
+
+
+def _example_only_csv(tmp_path) -> tuple[Path, int]:
+    """试用样例包那样的 CSV：每行 data_origin=example，其余字段沿用合成集。"""
+    with (ROOT / "synthetic-samples.csv").open(encoding="utf-8", newline="") as fh:
+        reader = csv.DictReader(fh)
+        fieldnames = list(reader.fieldnames or [])
+        rows = [{**row, "data_origin": "example"} for row in reader]
+    path = tmp_path / "example-only.csv"
+    with path.open("w", encoding="utf-8", newline="") as fh:
+        writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+    return path, len(rows)
+
+
+def test_include_examples_evaluates_example_rows(tmp_path, capsys):
+    csv_path, count = _example_only_csv(tmp_path)
+    out = tmp_path / "example-report.md"
+    args = ["--input", str(csv_path), "--prompt", "prompts/classify-v1.md", "--model", "mock", "--out", str(out)]
+    assert main([*args, "--include-examples"]) == EXIT_OK
+    captured = capsys.readouterr()
+    assert f"evaluating {count} samples" in captured.err     # 样例行计入待评测样本
+    assert out.exists() and "RESULT:" in captured.out
+
+
+def test_example_rows_are_skipped_without_the_flag(tmp_path, capsys):
+    csv_path, _ = _example_only_csv(tmp_path)
+    out = tmp_path / "skipped-report.md"
+    assert main(["--input", str(csv_path), "--prompt", "prompts/classify-v1.md", "--model", "mock",
+                 "--out", str(out)]) == EXIT_DATA
+    assert "example" in capsys.readouterr().err and not out.exists()
 
 
 def test_module_entry_point(tmp_path):

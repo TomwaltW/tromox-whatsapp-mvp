@@ -34,6 +34,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--thresholds", default=None, help="default: ../06-acceptance/thresholds.json")
     parser.add_argument("--fail-under", action="store_true", help="exit 1 when any threshold is not met")
     parser.add_argument("--limit", type=int, default=None, help="only evaluate the first N samples")
+    parser.add_argument("--include-examples", action="store_true",
+                        help="also evaluate data_origin=example rows (trial sample kit); skipped by default")
     parser.add_argument("--predictions-out", default=None,
                         help="optional JSONL with raw model outputs (may contain personal data - keep it out of git)")
     parser.add_argument("--mock-seed", type=int, default=DEFAULT_SEED)
@@ -84,7 +86,7 @@ def write_predictions(path: Path, outcomes: list[Outcome]) -> None:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
-        dataset = load_dataset(args.input)
+        dataset = load_dataset(args.input, include_examples=args.include_examples)
     except (DataError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return EXIT_DATA

@@ -27,11 +27,12 @@ Outputs (both under --out-dir, which is created):
                       the 实测… / scoring columns left blank for the site), 平台验证项 (section 3 table plus a
                       blank 结果 column), 说明 (source, date, command, the 7 scoring fields, the mapping notes).
 
-Route B comparison: eval.run skips data_origin=example rows (they are template rows there), so run
-    python scripts/gen_trial_kit.py --out-dir dist/trial-kit --data-origin synthetic
-    cd 04-eval && python -m eval.run --input ../dist/trial-kit/trial-samples.csv --prompt prompts/classify-v1.md --model mock --out /tmp/trial-mock.md
+Route B comparison: run the default (example) output straight through eval.run with --include-examples
+    python scripts/gen_trial_kit.py --out-dir dist/trial-kit
+    cd 04-eval && python -m eval.run --input ../dist/trial-kit/trial-samples.csv --prompt prompts/classify-v1.md --model mock --include-examples --out /tmp/trial-mock.md
 The default (example) keeps the file marked as hand-written plan samples, which is what the acceptance
-check expects; load it with include_examples=True.
+check expects; in code, load it with include_examples=True. --data-origin synthetic stays for backward
+compatibility (such a CSV is consumed without the flag), but it is no longer needed for route B.
 
 Markdown cells: `<br>` -> newline, backticks stripped, `\\|` -> `|`. Prints `samples=20 csv=<path> xlsx=<path>`
 and exits 0; exits 2 when the md does not hold exactly 20 samples or a table is malformed. Needs openpyxl.
@@ -254,7 +255,8 @@ def explanation(plan_label: str, generated: str, command: str, data_origin: str,
         "7 个计分字段（每条样例按这 7 项计分，\"应为空\" 也算一项，写了就算错）：" + "、".join(f"{i}. {f}" for i, f in enumerate(SCORING_FIELDS, start=1)),
         "多值期望（如 \"support 或 warranty 均可\"）：实测落在给定取值内即算对；写对的字段数按计划第 5 节的口径填。",
         f"同目录的 {CSV_NAME}：表头等于 tromox_lead.LABEL_COLUMNS，data_origin={data_origin}，annotator={ANNOTATOR}，"
-        "供路线 B 离线评测对照（eval.data.load_dataset(..., include_examples=True)）。",
+        f"供路线 B 离线评测对照：python -m eval.run --input {CSV_NAME} --prompt prompts/classify-v1.md "
+        "--model mock --include-examples。",
     ]
     if choices:
         notes.append("CSV 里多值期望的取值（原文见样例表，取第一个具名值；schema 要求 B2B/B2C 必填而计划未具名时取 other）：" + "；".join(choices))
@@ -296,7 +298,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--plan", default=str(DEFAULT_PLAN), help="trial test plan markdown (read only)")
     ap.add_argument("--date", default=date.today().isoformat(), help="generation date, YYYY-MM-DD (default today)")
     ap.add_argument("--data-origin", choices=DATA_ORIGINS, default="example",
-                    help="data_origin column of the CSV; synthetic lets eval.run consume it (default example)")
+                    help="data_origin column of the CSV; default example, which eval.run reads with "
+                         "--include-examples. synthetic is kept for backward compatibility (no flag needed)")
     args = ap.parse_args(argv)
     command = "python scripts/gen_trial_kit.py " + " ".join(sys.argv[1:] if argv is None else argv)
     try:
