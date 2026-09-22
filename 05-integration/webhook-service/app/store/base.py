@@ -28,7 +28,14 @@ class NotificationRow:
 
 @runtime_checkable
 class LeadSink(Protocol):
-    """Secondary destination that mirrors lead upserts (CSV, Feishu Bitable, Google Sheets)."""
+    """Secondary destination that mirrors lead upserts (CSV, Feishu Bitable, Google Sheets).
+
+    Optional method (not part of the protocol, looked up with `getattr(sink, "delete_lead", None)`):
+        delete_lead(lead_id: str) -> bool
+    Removes the mirror's copy of one lead for a deletion request (`python -m app.forget`); True when
+    a record was deleted, False when the mirror had none. A sink without it, such as the CSV export,
+    is handled by the command itself (the CSV is rewritten from the ledger).
+    """
 
     name: str
 

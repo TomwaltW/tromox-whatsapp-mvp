@@ -22,6 +22,7 @@ Requests (all JSON):
     POST .../bitable/v1/apps/{app_token}/tables/{table_id}/records/search  filter lead_id = ...
     POST .../records                 create   {"fields": {...}}
     PUT  .../records/{record_id}     update   {"fields": {...}}
+    DELETE .../records/{record_id}   delete   (deletion requests, `python -m app.forget`)
 The token is cached for `expire - 300` seconds; a token-invalid error code (99991661,
 99991663) drops the cache and retries the data request once. The request shapes follow the
 public Bitable open API documentation and have NOT been checked against a real tenant
@@ -110,6 +111,16 @@ class FeishuBitableSink:
             else:
                 self._request("update", "PUT", f"{self._records_url}/{record_id}", {"fields": fields})
 
+    def delete_lead(self, lead_id: str) -> bool:
+        """Remove the mirror's record of this lead (deletion request). True when a record was
+        deleted, False when the table had none. Failures raise `FeishuBitableError`."""
+        with self._lock:
+            record_id = self._find_record(lead_id)
+            if record_id is None:
+                return False
+            self._request("delete", "DELETE", f"{self._records_url}/{record_id}", {})
+            return True
+
     # --- Bitable calls --------------------------------------------------------------------
 
     def _find_record(self, lead_id: str) -> str | None:
@@ -160,6 +171,8 @@ class FeishuBitableSink:
         try:
             if method == "PUT":
                 response = self._client.put(url, json=body, headers=headers)
+            elif method == "DELETE":
+                response = self._client.delete(url, headers=headers)
             else:
                 response = self._client.post(url, json=body, headers=headers)
         except httpx.HTTPError as exc:

@@ -60,6 +60,12 @@ class FakeBitable:
             rid = path.rsplit("/", 1)[1]
             self.records[rid] = dict(body["fields"])
             return httpx.Response(200, json={"code": 0, "data": {"record": {"record_id": rid}}})
+        if request.method == "DELETE" and path.startswith(RECORDS + "/"):
+            rid = path.rsplit("/", 1)[1]
+            if rid not in self.records:
+                return httpx.Response(200, json={"code": 1254005, "msg": "RecordIdNotFound"})
+            del self.records[rid]
+            return httpx.Response(200, json={"code": 0, "data": {"deleted": True, "record_id": rid}})
         return httpx.Response(404, json={"code": 404, "msg": f"unexpected {request.method} {path}"})
 
     def data_calls(self) -> list[tuple[str, str]]:
@@ -143,6 +149,29 @@ def test_expired_token_code_drops_the_cache_and_retries_the_request_once():
     assert fake.data_calls() == [("POST", "search"), ("POST", "search"), ("POST", "records")]
     assert [h["authorization"] for _, p, h, _ in fake.calls if "tenant_access_token" not in p] == \
         ["Bearer tok-one", "Bearer tok-two", "Bearer tok-two"]
+
+
+def test_delete_lead_searches_then_deletes_the_record_and_is_false_when_absent():
+    fake = FakeBitable()
+    sink = _sink(fake)
+    sink.upsert_lead(_lead())
+    assert sink.delete_lead("L-feishu-1") is True
+    assert fake.records == {}
+    assert fake.data_calls()[-2:] == [("POST", "search"), ("DELETE", "rec1")]
+    method, path, headers, body = fake.calls[-1]
+    assert headers["authorization"] == "Bearer tok-one" and body == {}
+    assert sink.delete_lead("L-feishu-1") is False           # second request: nothing left to delete
+    assert fake.data_calls()[-1] == ("POST", "search") and fake.tokens_issued == 1
+
+
+def test_delete_lead_failure_raises_without_secret():
+    fake = FakeBitable()
+    sink = _sink(fake)
+    sink.upsert_lead(_lead())
+    fake.fail_code = 1254005
+    with pytest.raises(FeishuBitableError) as info:
+        sink.delete_lead("L-feishu-1")
+    assert str(info.value).startswith("feishu_bitable: search code=1254005") and APP_SECRET not in str(info.value)
 
 
 def test_api_error_code_raises_and_the_message_carries_no_secret():
