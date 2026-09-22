@@ -3,14 +3,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .base import LeadSink, NotificationRow, RawEventState
+from .base import LeadSink, MirrorError, MirrorRow, NotificationRow, RawEventState
 from .csv_export import DEFAULT_MIN_INTERVAL_S, CsvExportSink
 from .sqlite_store import SqliteStore
 
 if TYPE_CHECKING:  # pragma: no cover - import for type hints only
     from ..config import Settings
 
-__all__ = ["CsvExportSink", "LeadSink", "NotificationRow", "RawEventState", "SqliteStore", "build_sinks"]
+__all__ = ["CsvExportSink", "LeadSink", "MirrorError", "MirrorRow", "NotificationRow", "RawEventState",
+           "SqliteStore", "build_sinks"]
 
 # (Settings attribute, environment variable) pairs the feishu_bitable sink cannot run without.
 FEISHU_BITABLE_SETTINGS: tuple[tuple[str, str], ...] = (

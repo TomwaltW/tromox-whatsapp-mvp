@@ -49,6 +49,7 @@ def lead_to_row(lead: Lead) -> dict[str, str]:
 
 class CsvExportSink:
     name = "csv"
+    remote = False   # a local file: writing it stays in the request path
 
     def __init__(self, store: SqliteStore, path: Path | str, *,
                  min_interval_s: float = DEFAULT_MIN_INTERVAL_S,

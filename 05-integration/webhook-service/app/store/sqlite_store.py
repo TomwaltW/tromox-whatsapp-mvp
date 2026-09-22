@@ -1,4 +1,4 @@
-"""SQLite primary store: leads, raw_events, processed_events, notifications.
+"""SQLite primary store: leads, raw_events, processed_events, notifications, mirror_outbox.
 
 One short-lived connection per operation (thread-safe with FastAPI's thread pool). The
 lead read-modify-write runs inside BEGIN IMMEDIATE, so two callbacks for the same phone
@@ -14,7 +14,7 @@ from typing import Callable, Iterator
 
 from tromox_lead import Lead, effective_country
 
-from .base import NotificationRow, RawEventState
+from .base import MirrorRow, NotificationRow, RawEventState
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS leads (
@@ -56,6 +56,17 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at        TEXT NOT NULL,
     sent_at           TEXT,
     UNIQUE (lead_id, escalation_reason, session_key)
+);
+CREATE TABLE IF NOT EXISTS mirror_outbox (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    lead_id     TEXT NOT NULL,
+    sink        TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'pending',   -- pending | sent
+    attempts    INTEGER NOT NULL DEFAULT 0,
+    last_error  TEXT,
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL,
+    UNIQUE (lead_id, sink)
 );
 """
 
@@ -202,13 +213,16 @@ class SqliteStore:
             leads = conn.execute("SELECT count(*) FROM leads WHERE lead_id = ?", (lead_id,)).fetchone()[0]
             notifications = conn.execute("SELECT count(*) FROM notifications WHERE lead_id = ?", (lead_id,)).fetchone()[0]
             raw_events = conn.execute(f"SELECT count(*) FROM raw_events WHERE {where}", params).fetchone()[0]
-        return {"leads": int(leads), "notifications": int(notifications), "raw_events": int(raw_events)}
+            mirrors = conn.execute("SELECT count(*) FROM mirror_outbox WHERE lead_id = ?", (lead_id,)).fetchone()[0]
+        return {"leads": int(leads), "notifications": int(notifications), "raw_events": int(raw_events),
+                "mirror_outbox": int(mirrors)}
 
     def delete_lead(self, lead_id: str, phone_digits: str | None, customer_id: str | None) -> dict[str, int]:
         """Erase one contact from the ledger in a single transaction: the lead row, its notification
-        records and every stored raw callback that contains the phone digits (no '+') or the platform
-        customer id. `processed_events` is untouched (event keys carry no personal data and keep
-        redeliveries idempotent). Returns the number of rows removed per table."""
+        records, its still-undelivered `mirror_outbox` entries (an erased lead must never be pushed
+        to a mirror afterwards) and every stored raw callback that contains the phone digits (no '+')
+        or the platform customer id. `processed_events` is untouched (event keys carry no personal
+        data and keep redeliveries idempotent). Returns the number of rows removed per table."""
         where, params = self._raw_events_predicate(phone_digits, customer_id)
         with self._connect() as conn:
             conn.execute("BEGIN IMMEDIATE")
@@ -216,11 +230,13 @@ class SqliteStore:
                 leads = conn.execute("DELETE FROM leads WHERE lead_id = ?", (lead_id,)).rowcount
                 notifications = conn.execute("DELETE FROM notifications WHERE lead_id = ?", (lead_id,)).rowcount
                 raw_events = conn.execute(f"DELETE FROM raw_events WHERE {where}", params).rowcount
+                mirrors = conn.execute("DELETE FROM mirror_outbox WHERE lead_id = ?", (lead_id,)).rowcount
                 conn.execute("COMMIT")
             except BaseException:
                 conn.execute("ROLLBACK")
                 raise
-        return {"leads": int(leads), "notifications": int(notifications), "raw_events": int(raw_events)}
+        return {"leads": int(leads), "notifications": int(notifications), "raw_events": int(raw_events),
+                "mirror_outbox": int(mirrors)}
 
     # ------------------------------------------------------------------ notifications
     def claim_notification(self, lead_id: str, reason: str, session_key: str, customer_id: str | None) -> int | None:
@@ -262,6 +278,59 @@ class SqliteStore:
             session_key=row["session_key"], customer_id=row["customer_id"], status=row["status"],
             attempts=row["attempts"], last_error=row["last_error"],
         )
+
+    # ------------------------------------------------------------------ mirror outbox (remote sinks)
+    def enqueue_mirror(self, lead_id: str, sink: str) -> int:
+        """Mark "this lead still has to reach this sink". Returns the row id.
+
+        At most one row per (lead, sink): a lead that changes again while its mirror is still
+        pending does not queue a second entry, because the send pushes whatever the ledger holds
+        at that moment, not a snapshot. An already sent row goes back to `pending` for the new
+        state. `attempts` is deliberately NOT reset: it is the lifetime failure count that
+        `pending_mirrors(max_attempts=...)` uses to stop retrying a hopeless (lead, sink) pair."""
+        with self._connect() as conn:
+            now = _now()
+            conn.execute(
+                """
+                INSERT INTO mirror_outbox (lead_id, sink, status, created_at, updated_at)
+                VALUES (?, ?, 'pending', ?, ?)
+                ON CONFLICT(lead_id, sink) DO UPDATE SET status = 'pending', updated_at = excluded.updated_at
+                """,
+                (lead_id, sink, now, now),
+            )
+            # `lastrowid` is only meaningful for the INSERT branch of the upsert, so read the id back
+            row = conn.execute("SELECT id FROM mirror_outbox WHERE lead_id = ? AND sink = ?", (lead_id, sink)).fetchone()
+        return int(row["id"])
+
+    def pending_mirrors(self, lead_id: str | None = None, max_attempts: int = 10) -> list[MirrorRow]:
+        """Rows still waiting to be sent, oldest first; `lead_id` narrows it to one lead."""
+        sql = "SELECT * FROM mirror_outbox WHERE status = 'pending' AND attempts < ?"
+        params: tuple[object, ...] = (max_attempts,)
+        if lead_id is not None:
+            sql += " AND lead_id = ?"
+            params += (lead_id,)
+        with self._connect() as conn:
+            rows = conn.execute(sql + " ORDER BY id", params).fetchall()
+        return [self._mirror(row) for row in rows]
+
+    def finish_mirror(self, mirror_id: int, ok: bool, error: str | None = None) -> None:
+        """Success: the row is `sent` and its last error cleared. Failure: it stays `pending`
+        with one more attempt recorded, so the next callback, background task or replay retries."""
+        with self._connect() as conn:
+            if ok:
+                conn.execute("UPDATE mirror_outbox SET status = 'sent', last_error = NULL, updated_at = ? WHERE id = ?",
+                             (_now(), mirror_id))
+            else:
+                conn.execute(
+                    "UPDATE mirror_outbox SET status = 'pending', attempts = attempts + 1, last_error = ?, "
+                    "updated_at = ? WHERE id = ?",
+                    ((error or "")[:500] or None, _now(), mirror_id),
+                )
+
+    @staticmethod
+    def _mirror(row: sqlite3.Row) -> MirrorRow:
+        return MirrorRow(id=row["id"], lead_id=row["lead_id"], sink=row["sink"], status=row["status"],
+                         attempts=row["attempts"], last_error=row["last_error"])
 
     # ------------------------------------------------------------------ health
     def ping(self) -> bool:
