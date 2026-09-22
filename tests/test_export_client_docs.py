@@ -191,3 +191,100 @@ def test_mermaid_rendered_as_image_in_docx(tmp_path):
         xml = z.read("word/document.xml").decode("utf-8")
     assert media
     assert "flowchart" not in xml and "图下文字" in xml
+
+
+# ---------------------------------------------------------------- --paths / --package
+
+INTERNAL_DOC = "99-internal/zhang-baowen-brief.md"
+PACKAGE_STEMS = [Path(rel).stem for group in export.PACKAGES["zhang"].values() for rel in group]
+
+
+def tiny_png() -> bytes:
+    """A valid 2x1 RGB PNG that stands in for mermaid-cli output."""
+    import struct
+    import zlib
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xFFFFFFFF)
+
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 2, 1, 8, 2, 0, 0, 0))
+            + chunk(b"IDAT", zlib.compress(b"\x00" + b"\xff" * 6)) + chunk(b"IEND", b""))
+
+
+@pytest.fixture
+def stub_mermaid(monkeypatch):
+    """方案书 has a Mermaid block; mermaid-cli itself is covered above, and one npx start-up is ~80 s."""
+    monkeypatch.setattr(export, "render_mermaid", lambda body, workdir, name: tiny_png())
+
+
+def source_headings(rel: str, prefix: str) -> list[str]:
+    """Heading lines of a repo Markdown file outside code fences, with inline `*` / backticks removed."""
+    found, fenced = [], False
+    for line in (ROOT / rel).read_text(encoding="utf-8").splitlines():
+        if line.startswith("```"):
+            fenced = not fenced
+        elif not fenced and line.startswith(prefix):
+            found.append(line[len(prefix):].strip().replace("*", "").replace("`", ""))
+    return found
+
+
+def test_paths_rejects_files_outside_the_repo_or_not_markdown(tmp_path, capsys):
+    outside = tmp_path / "外部.md"
+    outside.write_text("# 外部\n", encoding="utf-8")
+    out = str(tmp_path / "out")
+    assert export.main(["--paths", str(outside), "--formats", "docx", "--out-dir", out]) == 1
+    assert "outside the repository" in capsys.readouterr().err
+    assert export.main(["--paths", "../外部.md", "--formats", "docx", "--out-dir", out]) == 1
+    assert "outside the repository" in capsys.readouterr().err
+    assert export.main(["--paths", "pyproject.toml", "--formats", "docx", "--out-dir", out]) == 1
+    assert "not a Markdown file" in capsys.readouterr().err
+    assert not (tmp_path / "out").exists()  # refused before anything is written
+
+
+def test_paths_exports_an_internal_document_named_after_its_stem(tmp_path):
+    assert export.main(["--paths", INTERNAL_DOC, "--formats", "docx", "--out-dir", str(tmp_path)]) == 0
+    doc = docx.Document(str(tmp_path / "zhang-baowen-brief.docx"))
+    assert [p.text for p in doc.paragraphs if p.style.name == "Title"] == source_headings(INTERNAL_DOC, "# ")
+    assert [p.text for p in doc.paragraphs if p.style.name == "Heading 1"] == source_headings(INTERNAL_DOC, "## ")
+
+
+def test_docs_paths_and_package_flags_are_validated(tmp_path, capsys):
+    out = str(tmp_path)
+    assert export.main(["--docs", "方案书", "--paths", "00-client/方案书.md", "--formats", "docx", "--out-dir", out]) == 1
+    assert "collide" in capsys.readouterr().err
+    with pytest.raises(SystemExit):
+        export.main(["--package", "zhang", "--date", "22/09/2026", "--out-dir", out])
+    with pytest.raises(SystemExit):
+        export.main(["--package", "zhang", "--docs", "方案书", "--out-dir", out])
+    with pytest.raises(SystemExit):
+        export.main(["--package", "nobody", "--out-dir", out])
+    assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.usefixtures("stub_mermaid")
+def test_package_zhang_docx_only_bundles_six_documents_and_recreates_the_folder(tmp_path):
+    argv = ["--package", "zhang", "--date", "2026-09-22", "--formats", "docx", "--out-dir", str(tmp_path)]
+    assert export.main(argv) == 0
+    folder = tmp_path / "zhang-2026-09-22"
+    expected = sorted(f"{s}.docx" for s in PACKAGE_STEMS)
+    assert len(expected) == 6 and sorted(p.name for p in folder.iterdir()) == expected
+    with zipfile.ZipFile(tmp_path / "zhang-2026-09-22.zip") as z:
+        infos = z.infolist()
+    assert sorted(i.filename for i in infos) == [f"zhang-2026-09-22/{n}" for n in expected]
+    assert not any(i.is_dir() for i in infos)
+    assert all(i.flag_bits & 0x800 for i in infos if not i.filename.isascii())  # 方案书 etc. stored as UTF-8
+    (folder / "stale.txt").write_text("x", encoding="utf-8")
+    assert export.main(argv) == 0
+    assert not (folder / "stale.txt").exists()
+
+
+@needs_chrome
+@pytest.mark.usefixtures("stub_mermaid")
+def test_package_zhang_writes_twelve_files_and_the_zip(tmp_path):
+    assert export.main(["--package", "zhang", "--date", "2026-09-22", "--out-dir", str(tmp_path)]) == 0
+    expected = sorted(f"{s}.{ext}" for s in PACKAGE_STEMS for ext in ("docx", "pdf"))
+    assert len(expected) == 12
+    assert sorted(p.name for p in (tmp_path / "zhang-2026-09-22").iterdir()) == expected
+    with zipfile.ZipFile(tmp_path / "zhang-2026-09-22.zip") as z:
+        assert sorted(z.namelist()) == [f"zhang-2026-09-22/{n}" for n in expected]
+        assert z.testzip() is None

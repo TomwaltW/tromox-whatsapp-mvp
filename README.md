@@ -90,6 +90,7 @@ bash scripts/check_all.sh
 uv pip install --python .venv/bin/python -e ".[export]"
 .venv/bin/python scripts/export_client_docs.py                          # 全部文档，docx + pdf
 .venv/bin/python scripts/export_client_docs.py --docs 方案书 报价单 --formats docx
+.venv/bin/python scripts/export_client_docs.py --package zhang              # 发给张宝文的包：dist/zhang-<日期>/ 内 6 份 docx+pdf，再打成 dist/zhang-<日期>.zip
 ```
 
 换成真实模型评测：设置 `OPENAI_BASE_URL`、`OPENAI_API_KEY` 后用 `--model openai:<模型名>`，或设置 `ANTHROPIC_API_KEY` 后用 `--model anthropic:<模型名>`。离线评测与生产必须使用同一模型、同一版 prompt。
