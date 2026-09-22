@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
-"""Export every client document (00-client/*.md) to an editable Word file and a PDF.
+"""Export Markdown documents (00-client/*.md by default) to an editable Word file and a PDF.
 
     python scripts/export_client_docs.py                       # all 00-client/*.md, docx + pdf
     python scripts/export_client_docs.py --docs 方案书 报价单
     python scripts/export_client_docs.py --formats docx         # docx | pdf | docx,pdf
     python scripts/export_client_docs.py --out-dir dist         # default; dist/ is gitignored
+    python scripts/export_client_docs.py --paths 99-internal/zhang-baowen-brief.md 07-project/meeting-prep.md
+    python scripts/export_client_docs.py --package zhang --date 2026-09-22
+        # -> dist/zhang-2026-09-22/ (the PACKAGES["zhang"] documents, docx + pdf) + dist/zhang-2026-09-22.zip
 
 One markdown-it token stream feeds both outputs: python-docx builds the .docx, the same
 tokens rendered to HTML are printed to PDF by headless Chrome. ```mermaid blocks are
@@ -27,6 +30,8 @@ import subprocess
 import sys
 import tempfile
 import time
+import zipfile
+from datetime import date
 from pathlib import Path
 
 from docx import Document
@@ -42,6 +47,23 @@ from markdown_it import MarkdownIt
 ROOT = Path(__file__).resolve().parents[1]
 CLIENT_DIR = ROOT / "00-client"
 FORMATS = ("docx", "pdf")
+# --package NAME exports a fixed bundle into <out-dir>/<NAME>-<date>/ and zips it next to it.
+# "zhang" is what 张宝文 gets before 9/25: three internal notes (exported verbatim: repo paths,
+# 【待核实】 marks and S-xx source ids stay in) plus the three client documents he forwards.
+PACKAGES: dict[str, dict[str, tuple[str, ...]]] = {
+    "zhang": {
+        "internal": (
+            "99-internal/zhang-baowen-brief.md",
+            "99-internal/zhang-baowen-changelog-2026-09-22.md",
+            "07-project/meeting-prep.md",
+        ),
+        "client": (
+            "00-client/方案书.md",
+            "00-client/报价单.md",
+            "00-client/客户需提供清单.md",
+        ),
+    },
+}
 CHROME_CANDIDATES = (
     os.environ.get("PUPPETEER_EXECUTABLE_PATH", ""),
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -457,26 +479,91 @@ def parse_formats(value: str) -> tuple[str, ...]:
     return chosen
 
 
+def parse_date(value: str) -> str:
+    try:
+        return date.fromisoformat(value).isoformat()
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"date must be YYYY-MM-DD (got {value!r})") from None
+
+
+def resolve_paths(values: list[str]) -> list[Path]:
+    """Markdown files given as repo-relative (or absolute) paths; anything outside the repository is refused."""
+    sources: list[Path] = []
+    for value in values:
+        path = Path(value)
+        path = (path if path.is_absolute() else ROOT / path).resolve()
+        if not path.is_relative_to(ROOT):
+            raise ValueError(f"{value}: outside the repository ({ROOT})")
+        if path.suffix != ".md" or not path.is_file():
+            raise ValueError(f"{value}: not a Markdown file")
+        sources.append(path)
+    return sources
+
+
+def select_sources(args: argparse.Namespace) -> list[Path]:
+    """The files to export: a package, --docs and/or --paths, else every 00-client/*.md. Output names must not clash."""
+    if args.package:
+        return resolve_paths([rel for group in PACKAGES[args.package].values() for rel in group])
+    if not args.docs and not args.paths:
+        return sorted(CLIENT_DIR.glob("*.md"))
+    sources: list[Path] = []
+    if args.docs:
+        docs = [CLIENT_DIR / f"{d.removesuffix('.md')}.md" for d in args.docs]
+        missing = [s.stem for s in docs if not s.exists()]
+        if missing:
+            raise ValueError(f"no such client document: {', '.join(missing)}")
+        sources += docs
+    if args.paths:
+        sources += resolve_paths(args.paths)
+    stems = [s.stem for s in sources]
+    clashes = sorted({s for s in stems if stems.count(s) > 1})
+    if clashes:
+        raise ValueError(f"output names collide: {', '.join(clashes)}")
+    return sources
+
+
+def write_zip(files: list[Path], zip_path: Path, folder: str) -> None:
+    """One top-level folder, no directory entries; zipfile stores non-ASCII names as UTF-8 and flags them."""
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+        for f in files:
+            z.write(f, arcname=f"{folder}/{f.name}")
+
+
 def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Export 00-client/*.md to .docx and .pdf")
-    ap.add_argument("--docs", nargs="+", metavar="NAME", help="document names without .md (default: all)")
+    ap = argparse.ArgumentParser(
+        description="Export Markdown to .docx and .pdf: 00-client/*.md by default, any repository "
+                    "file with --paths, or a predefined bundle with --package.")
+    ap.add_argument("--docs", nargs="+", metavar="NAME", help="client document names without .md (default: all of 00-client/)")
+    ap.add_argument("--paths", nargs="+", metavar="PATH",
+                    help="repo-relative .md paths from any directory, e.g. 99-internal/zhang-baowen-brief.md; "
+                         "the output is named after the file stem; may be combined with --docs")
+    ap.add_argument("--package", choices=sorted(PACKAGES),
+                    help="export a predefined bundle into <out-dir>/<package>-<date>/ (recreated on every run) "
+                         "and zip it as <out-dir>/<package>-<date>.zip; cannot be combined with --docs / --paths")
+    ap.add_argument("--date", type=parse_date, default=date.today().isoformat(), metavar="YYYY-MM-DD",
+                    help="date in the package folder and zip name (default: today)")
     ap.add_argument("--formats", type=parse_formats, default=FORMATS, help="docx | pdf | docx,pdf")
     ap.add_argument("--out-dir", default="dist", help="output directory, relative to the repo root (default dist)")
     args = ap.parse_args(argv)
+    if args.package and (args.docs or args.paths):
+        ap.error("--package cannot be combined with --docs or --paths")
 
-    if args.docs:
-        sources = [CLIENT_DIR / f"{d.removesuffix('.md')}.md" for d in args.docs]
-        missing = [s.stem for s in sources if not s.exists()]
-        if missing:
-            print(f"FAIL: no such client document: {', '.join(missing)}", file=sys.stderr)
-            return 1
-    else:
-        sources = sorted(CLIENT_DIR.glob("*.md"))
+    try:
+        sources = select_sources(args)
+    except ValueError as exc:
+        print(f"FAIL: {exc}", file=sys.stderr)
+        return 1
     out_dir = Path(args.out_dir)
     out_dir = out_dir if out_dir.is_absolute() else ROOT / out_dir
+    folder = f"{args.package}-{args.date}" if args.package else None
+    if folder:
+        out_dir = out_dir / folder
+        if out_dir.exists():
+            shutil.rmtree(out_dir)  # the folder is exactly this run's package, nothing stale
     out_dir.mkdir(parents=True, exist_ok=True)
 
     failed = 0
+    written_all: list[Path] = []
     for src in sources:
         try:
             written = export_one(src, out_dir, args.formats)
@@ -484,9 +571,16 @@ def main(argv: list[str] | None = None) -> int:
             failed += 1
             print(f"FAIL {exc}", file=sys.stderr)
             continue
+        written_all += written
         print(f"ok   {src.stem}: " + ", ".join(p.name for p in written))
     print(f"{len(sources)} document(s), {failed} failed")
-    return 1 if failed else 0
+    if failed:
+        return 1
+    if folder:
+        zip_path = out_dir.parent / f"{folder}.zip"
+        write_zip(written_all, zip_path, folder)
+        print(f"zip  {zip_path.name}: {len(written_all)} file(s)")
+    return 0
 
 
 if __name__ == "__main__":
