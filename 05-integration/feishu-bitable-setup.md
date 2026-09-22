@@ -71,7 +71,7 @@
 
    期望：响应 `{"outcome": "lead_upserted", ...}`；表格里多出一行，`segment` 是 `B2B`，`product_interest` 是两个选项，`first_message_ts` 显示成日期。
 3. 把同一个 fixture 再发一次（或改一个变量再发）：表里**仍是一行**，内容被更新，不会多出重复行。这就是按 `lead_id` 查找后更新的效果。
-4. 故意把 `FEISHU_BITABLE_TABLE_ID` 改错再发一条：响应仍是 `lead_upserted`（账本照常），服务日志有一行 `storage sink failed`，`channel` 为 `feishu_bitable`。改回来后再发一条，这条线索会被补写；更早失败的行不会自动补，跑一次 `python -m app.replay --export` 也不会补（回放只管通知），需要时用 CSV 镜像对一遍。
+4. 故意把 `FEISHU_BITABLE_TABLE_ID` 改错再发一条：响应仍是 `lead_upserted`（账本照常，应答不等飞书），几秒后服务日志有一行 `mirror failed`，`sink` 为 `feishu_bitable`，`/metrics` 的 `mirror_outbox_pending` 加 1。改回来之后不用再发：这一行留在 `mirror_outbox` 里，每 5 分钟一次的 `python -m app.replay` 会把它补发（等不及就手动跑一次）；连失败 10 次的行会停在 `mirror_outbox_exhausted` 里，排查 `last_error` 之后用 `python -m app.replay --reset-mirrors` 重置再补发。
 
 ## 7. 上线前要用真实租户对一遍的点
 

@@ -12,12 +12,12 @@
 
 ## 决策
 
-1. **sink 分本地与远程两类。** 本地 sink（CSV 镜像）写的是本机文件，照旧在请求路径里同步写，写后合并；远程 sink（飞书多维表格）一律不在请求路径里调用。
+1. **sink 分本地与远程两类。** 本地 sink（CSV 镜像）写的是本机文件，照旧在请求路径里同步写（一阵回调在最小间隔内合并成一次，合并掉的那次由定时器在响应后补写）；远程 sink（飞书多维表格）一律不在请求路径里调用。
 2. **入库后只登记，不发送。** 线索写进 SQLite 之后，往 `mirror_outbox` 表登记一行待发。**一行一个 (lead, sink)**：同一条线索同一个 sink 只留一行，同一条线索更新多次也不会堆出多行。
 3. **HTTP 响应发出之后再发。** 后台任务取待发行，按指数退避重试 3 次；发的是**发送时刻账本里的最新状态**，不是登记时刻的快照，所以合并掉的那几次更新不会丢信息。
-4. **发送按 `updated_at` 条件完成**（已实现）：标记这一行完成时，带上后台任务取出它、准备发送那一刻读到的 `updated_at`；发送期间又来一条回调把这一行重新置为待发（`updated_at` 变了）就不标完成，留着下一轮再发。这样"发送中又来一条回调"不会被后台任务顺手勾掉。
+4. **发送按 `updated_at` 条件完成。** 标记这一行完成时，带上后台任务取出它、准备发送那一刻读到的 `updated_at`；发送期间又来一条回调把这一行重新置为待发（`updated_at` 变了）就不标完成，这一遍不作数、行留着 `pending`，同一次后台任务随即按最新状态再发一遍，再被抢先就留给 `app.replay`。这样"发送中又来一条回调"不会被后台任务顺手勾掉。
 5. **失败留给 `app.replay`。** cron 每 5 分钟跑一次 `python -m app.replay`，把还是 `pending` 的行按线索逐条补发——飞书挂掉那段时间的镜像就靠这一步补回来。
-6. **卡满 10 次转人工。** `attempts` 累计到 `--max-attempts`（默认 10）之后不再自动重试，要人看 `last_error` 判断是配置错了还是接口变了，修好再人工重置。不让一条坏数据无限重试占住后台任务。
+6. **卡满 10 次转人工。** `attempts` 累计到 `--max-attempts`（默认 10）之后不再自动重试，要人看 `last_error` 判断是配置错了还是接口变了，修好再跑 `python -m app.replay --reset-mirrors` 重置（不进 cron：原因没排除就重置，只是再烧一轮预算）。线索本身又来了新回调会重新入队，`attempts` 一并归零——那是一份新的活。不让一条坏数据无限重试占住后台任务。
 7. **镜像失败不改变对 Botmaker 的应答**，也不影响线索入库与销售通知；账本始终是 SQLite。
 
 ## 备选方案
@@ -32,8 +32,8 @@
 ## 影响
 
 - **镜像延迟从同步变成秒级。** 正常情况下响应发出后马上就发，销售在表里看到的延迟是秒级；飞书故障期间延迟等于故障时长加上下一次 `app.replay` 的间隔（5 分钟）。要"表里立刻有"的场景不成立，验收也不按这个口径写。
-- **`/metrics` 多两个键**：`mirror_outbox_pending`（待发）与 `mirror_outbox_failed_24h`（24 小时内失败）。健康告警脚本据此判断 degraded，口径见 `05-integration/webhook-service/README.md` 第 1 节「指标」一行。
-- **运维手册的口径跟着改**：镜像出问题不再表现为"回调变慢"，而是 `mirror_outbox` 堆积；处理动作是先看 `/metrics` 的两个数，再跑 `app.replay`，还不行就看 `last_error`（`05-integration/deploy/README.md` 第 3 节）。
+- **`/metrics` 多三个键**：`mirror_outbox_pending`（待发）、`mirror_outbox_failed_24h`（24 小时内失败）与 `mirror_outbox_exhausted`（用满重试预算、不再自动重试）。口径见 `05-integration/webhook-service/README.md` 第 1 节「指标」一行。健康告警脚本目前只看回调堆积与通知失败，这三个数还没接进告警，要人在 `/metrics` 里看（见待决事项）。
+- **运维手册的口径跟着改**：镜像出问题不再表现为"回调变慢"，而是 `mirror_outbox` 堆积；处理动作是先看 `/metrics` 的三个数，再跑 `app.replay`，`exhausted` 大于 0 就看 `last_error`，排除原因后 `--reset-mirrors`（`05-integration/webhook-service/README.md` 第 7 节「运维」）。
 - 删除请求与数据保留照样删镜像：`app.forget` 与 `app.retention` 调的是 sink 的删除接口，不走 outbox。
 - 飞书验不通的后果被限制住了：接口形态对不上只会让 `mirror_outbox` 堆积，不会拖慢也拖不垮回调应答。
 
@@ -42,3 +42,4 @@
 | 事项 | 标记 |
 |---|---|
 | 飞书多维表格的接口形态（租户令牌、`records/search` 的 filter 写法、创建与更新记录、各列类型接受的值）未用真实租户跑通；拿到客户租户后按 `05-integration/feishu-bitable-setup.md` 第 6 节验一遍，其余待核实项见该文件第 7 节 | 【待核实】 |
+| 健康告警脚本 `05-integration/deploy/healthcheck-alert.sh` 还没看 `mirror_outbox_*` 三个数（尤其 `exhausted`），卡住的行目前只能靠人看 `/metrics`；接进告警并补 `05-integration/deploy/README.md` 第 3 节的处置口径，是下一步的实现工作，不是待核实的事实 | — |
