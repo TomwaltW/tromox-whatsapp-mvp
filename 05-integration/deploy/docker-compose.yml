@@ -12,6 +12,8 @@ services:
     build:
       context: ../..                                   # 构建上下文是仓库根目录（镜像需要 pyproject.toml 与 shared/）
       dockerfile: 05-integration/webhook-service/Dockerfile
+      args:
+        PIP_INDEX_URL: "${PIP_INDEX_URL:-https://pypi.org/simple}"   # 构建慢时指向 PyPI 镜像（Dockerfile 里的同名 ARG）
     image: tromox-webhook
     restart: unless-stopped
     env_file:

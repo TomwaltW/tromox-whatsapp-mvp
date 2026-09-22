@@ -24,6 +24,7 @@ compose 文件里四个可插值变量（写在本目录 `.env` 或 shell 环境
 | `TROMOX_BIND` | `127.0.0.1` | 宿主机绑定地址；公网流量一律经反向代理进入，不要改成 0.0.0.0 |
 | `TROMOX_HTTP_PORT` | `8000` | 宿主机端口 |
 | `TROMOX_DATA_DIR` | `./data` | 宿主机数据目录（SQLite + CSV）；服务器上建议放仓库之外 |
+| `PIP_INDEX_URL` | PyPI 官方 | 只在构建镜像时用；国内网络构建慢就指向 PyPI 镜像的 `/simple`，境外服务器不需要 |
 
 ## 2. 首次部署（服务器）
 
