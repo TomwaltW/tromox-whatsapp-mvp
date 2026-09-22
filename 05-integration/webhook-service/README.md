@@ -292,7 +292,7 @@ cd 05-integration/webhook-service
 
 | 对象 | 判定 | 说明 |
 |---|---|---|
-| 到期线索 | 参考时间早于 `now − --older-than-days`（默认 730 天 = 24 个月） | 参考时间取线索的 `last_message_ts`；线索从没记下过消息时间时，取 `leads.updated_at`。**`status` 不影响判定**：`handed_off`、`contacted` 的线索同样按时间删——保留期就是保留期。两个时间都读不出来的行保留（只删证据确凿的） |
+| 到期线索 | 参考时间早于 `now − --older-than-days`（默认 730 天 = 24 个月） | 参考时间取线索的 `last_message_ts`；线索从没记下过消息时间时，取 `leads.updated_at`（注意 `updated_at` 是"最后一次写这行"，改个状态也会刷新它，所以这种线索的保留期起算点可能晚于真实的最后联系时间——宁可多留不可错删）。**`status` 不影响判定**：`handed_off`、`contacted` 的线索同样按时间删——保留期就是保留期。两个时间都读不出来的行保留（只删证据确凿的） |
 | 到期原始事件 | `raw_events` 里 `processed = 1` 且 `received_at` 早于 `now − --raw-events-days`（默认 90 天） | 不管 `payload_json` 是否已被 `mark_processed` 清空都删：到期后连时间戳和事件键也不留。未处理的行不动，那是 `app.replay` 的活 |
 | 孤儿通知 | `notifications` 里 `lead_id` 已不在 `leads` 表的行 | 线索删了、通知记录没跟着删的历史残留 |
 | CSV 镜像 | 真删掉线索时整批重写一次 | 一次运行重写一次，不是一条线索重写一次 |
@@ -301,5 +301,5 @@ cd 05-integration/webhook-service
 - 退出码：`0` 完成（或预演）；`1` 某个 sink 删除失败或飞书配置不全（账本已删的不回滚，修好后重跑即可）；`3` 既没 `--dry-run` 也没 `--yes`。
 - stdout 与日志**连 `lead_id` 都不出现**，只有计数（一次运行可能涉及成千上万条）；末行固定为 `retention leads=… raw_events=… notifications=… csv=rewritten|skipped sinks=…`，日志只有一行 `retention finished`。
 - `--now YYYY-MM-DD` 把"今天"固定成某个 UTC 日期，只给测试与演练用，默认当前 UTC 日期。
-- cron 建议每月 1 日 04:00 跑一次（避开 03:15 的备份），写法见 `../deploy/cron.example`；先用 `--dry-run` 看一眼条数，确认口径没问题再挂 `--yes`。
+- cron 建议每月 1 日 04:00 跑一次（避开 03:15 的备份），写法见 `../deploy/cron.example`；先用 `--dry-run` 看一眼条数，确认口径没问题再挂 `--yes`。那行把输出接到 `logger -t tromox`，末行计数与 sink 失败的 error 日志都进系统日志，`journalctl -t tromox` 能查到。
 - 备份不在命令范围内：备份里的副本按 `../deployment.md` 第 6 节的保留期自然过期。Botmaker 后台的会话记录由平台自己按天数删除（`03-whatsapp/compliance.md` 第 4 节）。
