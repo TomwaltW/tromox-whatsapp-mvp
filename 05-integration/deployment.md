@@ -57,13 +57,15 @@ apt-get update && apt-get install -y unattended-upgrades sqlite3    # 自动安�
 
 ### 4.4 数据目录与启动
 
-服务器上用绑定挂载，备份与取 CSV 都方便；容器以 uid 10001 运行，目录要 `chown 10001` 交给它。`docker compose up -d --build webhook` 起服务。compose 文件里已经写死的几项及其理由：端口只绑 `127.0.0.1`，公网流量一律经反向代理进入；`restart: unless-stopped`，机器重启后自动拉起；日志驱动 json-file、单文件 10 MB、保留 5 个，就是日志轮转；健康检查与镜像里的一样查 `/health`。日志是 JSON 结构化的，不含完整号码与消息正文。
+服务器上用绑定挂载，备份与取 CSV 都方便；容器以 uid 10001 运行，目录要 `chown 10001` 交给它。`docker compose up -d --build webhook` 起服务。compose 文件里已经写死的几项及其理由：端口只绑 `127.0.0.1`，公网流量一律经反向代理进入；`restart: unless-stopped`，机器重启后自动拉起；日志驱动 json-file、单文件 10 MB、保留 5 个，就是日志轮转；健康检查与镜像里的一样查 `/health`；容器按最小权限跑（只读根文件系统 + `/tmp` 内存盘、去掉全部 capabilities、禁止提权、进程数上限 256），逐项理由见 `deploy/README.md` 第 4 节。日志是 JSON 结构化的，不含完整号码与消息正文。
 
 ### 4.5 反向代理与 TLS
 
-推荐 Caddy，配置三行，证书自动签发与续期。先把子域名的 A 记录指到服务器，再把 `deploy/Caddyfile.example` 复制为 `deploy/Caddyfile`、改域名，`docker compose --profile proxy up -d` 起代理。Caddy 跑在同一个 compose 网络里，所以上游写服务名 `webhook:8000`；不加 `--profile proxy` 时 Caddy 不会起，本机 smoke test 因此不占 80 / 443。改在宿主机上直接跑 Caddy（systemd）也可以，上游改成 `127.0.0.1:8000`；用 Nginx 则是 `proxy_pass http://127.0.0.1:8000;` 加 certbot 签发证书。
+推荐 Caddy，一个站点块，证书自动签发与续期。先把子域名的 A 记录指到服务器，再把 `deploy/Caddyfile.example` 复制为 `deploy/Caddyfile`、改域名，`docker compose --profile proxy up -d` 起代理。Caddy 跑在同一个 compose 网络里，所以上游写服务名 `webhook:8000`；不加 `--profile proxy` 时 Caddy 不会起，本机 smoke test 因此不占 80 / 443。改在宿主机上直接跑 Caddy（systemd）也可以，上游改成 `127.0.0.1:8000`；用 Nginx 则是 `proxy_pass http://127.0.0.1:8000;` 加 certbot 签发证书。
 
-如果启用了 `ALLOWED_IPS`：容器看到的对端是 Caddy 容器（宿主机跑 Caddy 时则是 Docker 网桥网关）而不是真实来源，需要让 uvicorn 信任反向代理传来的 `X-Forwarded-For`。在 `.env` 里加 `FORWARDED_ALLOW_IPS`：Caddy 在 compose 里时其地址会随重建变化，写 `*` 即可（8000 端口只绑 127.0.0.1，只有 Caddy 与本机能到达）；宿主机跑 Caddy 时写网桥网关 IP（`docker network inspect bridge` 可查，常见为 `172.17.0.1`）。不启用 `ALLOWED_IPS` 时不需要这一步，密钥校验才是主防线。
+代理这一层顺手做了三件减害的事，配置已经写在 `Caddyfile.example` 里：只转发 `/webhooks/botmaker`、`/health`、`/metrics` 三条路径，其余一律 404（扫描器探到的路径到不了上游）；请求体上限 1 MB；回包加 `X-Content-Type-Options` / `X-Frame-Options` / `Referrer-Policy` / `Strict-Transport-Security` 四个安全头并去掉 `Server`。以后服务新增对外路径，要同步加进那行路径匹配。容器侧的最小权限（只读根文件系统、去掉全部 capabilities、禁止提权、进程数上限）同样已经写死在 `deploy/docker-compose.yml` 里，逐项理由见 `deploy/README.md` 第 4 节。
+
+来源 IP 与代理头：容器看到的对端是 Caddy 容器（宿主机跑 Caddy 时则是 Docker 网桥网关）而不是真实来源，所以镜像里 uvicorn 带 `--proxy-headers` 启动，compose 也已经把 `FORWARDED_ALLOW_IPS` 设成 `*` —— 只有来源在这个名单里时 `X-Forwarded-For` 才被采信，伪造的一律忽略，`ALLOWED_IPS` 因此可以直接用，不必再配什么。默认 `*` 的前提是 8000 端口只绑 `127.0.0.1`，只有 Caddy 与本机能到达。把端口暴露到公网、或在宿主机上直接跑代理时要收紧：在 `deploy/.env` 里写 `TROMOX_FORWARDED_ALLOW_IPS=<代理的固定 IP>`（网桥网关常见为 `172.17.0.1`，`docker network inspect bridge` 可查），或留空表示谁的代理头都不信。注意改的是 `TROMOX_FORWARDED_ALLOW_IPS`：compose 里的 `environment` 盖过 `env_file`，直接写 `FORWARDED_ALLOW_IPS` 不生效。密钥校验仍是主防线，`ALLOWED_IPS` 只是纵深防御。
 
 ### 4.6 验证
 
