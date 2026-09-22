@@ -178,6 +178,25 @@ def test_half_configured_bitable_is_refused_before_anything_is_deleted(populated
     assert _counts(settings)["leads"] == 2
 
 
+def test_forget_lead_is_the_shared_deletion_path_and_leaves_the_csv_to_its_caller(populated, caplog):
+    """`app.retention` deletes every expired lead through this function, then rewrites the CSV once."""
+    store = SqliteStore(populated.database_path)
+    target = store.get_lead_by_phone(TARGET_PHONE)
+    csv_before = populated.csv_export_path.read_bytes()
+    broken = FeishuBitableSink("cli", "sec", "bascnX", "tblX",
+                               client=httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(500))))
+
+    with caplog.at_level(logging.ERROR, logger="app.forget"):
+        outcome = forget.forget_lead(store, [broken], target)
+
+    assert outcome["counts"]["leads"] == 1 and outcome["counts"]["notifications"] == 1
+    assert outcome["counts"]["raw_events"] == 3
+    assert outcome["sink_states"] == ["feishu_bitable=failed"] and outcome["failed"] is True
+    assert store.get_lead(target.lead_id) is None and _counts(populated)["leads"] == 1
+    assert populated.csv_export_path.read_bytes() == csv_before   # the mirror is the caller's job
+    assert _no_phone(caplog.text)
+
+
 def test_module_entry_point_reads_the_environment(populated):
     env = {**os.environ, "DATABASE_PATH": str(populated.database_path), "CSV_EXPORT_PATH": str(populated.csv_export_path),
            "STORAGE_BACKENDS": "sqlite,csv", "BOTMAKER_WEBHOOK_TOKEN": "t", "NOTIFIERS": ""}
