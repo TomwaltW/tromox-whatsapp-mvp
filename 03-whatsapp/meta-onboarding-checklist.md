@@ -6,7 +6,7 @@
 
 ## 1. 原则：官方接入的要求
 
-1. **资产全部在客户名下**：Meta 商务账户（Business Portfolio）、WhatsApp Business 账户、号码、Botmaker 账号都由客户持有并担任所有者；第三方费用客户直付；集成工程师只拿管理权限，项目结束可随时移除。
+1. **资产全部在客户名下**：Meta 商务账户（Business Portfolio）、WhatsApp Business 账户、号码、Botmaker 账号都由客户持有并担任所有者；第三方费用客户直付。集成工程师默认不需要 Meta 侧管理员权限（第 2 节第 6 项），确需协助时以最小权限临时加入、事后移除；Botmaker 后台在交付期与维护期内给集成工程师一个操作席位，项目结束可随时移除。
 2. **只走官方通道**：经 Meta 官方 BSP（Botmaker，SOURCES S-B1）接入 WhatsApp Business Platform。
 3. **号码只有两个官方来源**：公司名下新办的专用号，或现有 WhatsApp Business App 号码经 Coexistence 接入（第 4 节）。
 4. **明确不采用的做法**：

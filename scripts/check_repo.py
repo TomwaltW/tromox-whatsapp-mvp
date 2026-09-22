@@ -55,6 +55,7 @@ CLIENT_FORBIDDEN = [
     (r"SOURCES\.md|\badr/|路线\s*[AB]\b|work-breakdown|pricing-internal|open-questions", "reference to non-client files"),
     (r"Baileys|whatsapp-web\.js|wppconnect|venom-bot", "non-official library name"),
     (r"0[0-9]-[a-z-]+/|shared/|scripts/|\.(?:md|py|json|csv)\b", "repo path or file name (refer to client docs by title only)"),
+    (r"只持有管理权限|保留我方.{0,30}管理权限", "outdated admin-access wording"),
 ]
 # Any CNY service amount in client docs must be a marker, not a number.
 CLIENT_CNY_AMOUNT = re.compile(r"(?<![\d.,])(\d{1,3}(?:[,，]\d{3})+|\d{4,6})\s*(?:元|CNY|人民币)|\d+(?:\.\d+)?\s*万(?:元|\s*CNY|人民币)?")
