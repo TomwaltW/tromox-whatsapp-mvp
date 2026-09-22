@@ -89,6 +89,7 @@ def test_tables_are_real_bordered_word_tables(tmp_path):
     assert len(doc.tables) == 2
     first = doc.tables[0]
     assert first.style.name == "Table Grid"
+    assert first._tbl.tblPr.find(docx.oxml.ns.qn("w:tblBorders")) is not None
     assert [[c.text for c in row.cells] for row in first.rows] == [
         ["项目", "说明"], ["首付", "签约后支付"], ["尾款", "验收后支付"],
     ]

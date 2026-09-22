@@ -324,9 +324,18 @@ def add_table(doc, tokens: list, start: int) -> int:
     table = doc.add_table(rows=len(rows), cols=cols)
     table.style = doc.styles["Table Grid"]
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
+    # Borders also set on the table itself: Pages / Quick Look ignore the style's borders.
+    borders = OxmlElement("w:tblBorders")
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        line = OxmlElement(f"w:{edge}")
+        for attr, value in (("w:val", "single"), ("w:sz", "4"), ("w:space", "0"), ("w:color", "888888")):
+            line.set(qn(attr), value)
+        borders.append(line)
+    table._tbl.tblPr.append(borders)
     for r, row in enumerate(rows):
         for c, (is_header, inline) in enumerate(row):
             cell = table.cell(r, c)
+            cell.paragraphs[0].paragraph_format.space_after = Pt(2)
             add_inline(cell.paragraphs[0], inline, bold=is_header)
             if is_header:
                 shade = OxmlElement("w:shd")
