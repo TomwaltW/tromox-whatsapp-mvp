@@ -11,6 +11,11 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # （原来"备份"与"find ... -delete 清理"两条 cron 现在都由 backup.sh 做）
 15 3 * * * /opt/tromox/app/05-integration/deploy/backup.sh /opt/tromox/data /opt/tromox/backup 30 >/dev/null 2>&1 || logger -t tromox "backup failed"
 
+# 每月 1 日 04:00 按保留期清理：线索默认 730 天（最后一次联系后 24 个月）、已处理的原始回调事件默认 90 天，
+# 顺带删孤儿通知并重写一次 CSV 镜像（口径见 webhook-service/README.md 第 12 节；天数改这行的参数，
+# 例如加 --older-than-days 365 --raw-events-days 30）。先不加 --yes 跑一次看条数，确认后再挂上。
+0 4 1 * * cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.retention --yes >/dev/null 2>&1 || logger -t tromox "retention failed"
+
 # 每 5 分钟检查 /health（走公网域名，顺带验证反向代理与证书）；不健康时 POST 到运维群机器人并写系统日志。
 # 第二个参数是接收 {"text": "..."} 的通用 webhook 地址；只想写系统日志就不填。
 */5 * * * * /opt/tromox/app/05-integration/deploy/healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址> 2>&1 | logger -t tromox

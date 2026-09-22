@@ -275,3 +275,31 @@ cd 05-integration/webhook-service
 - **卡片样式以飞书 / 企业微信实际渲染为准**。`cards.html` 只是示意版式；飞书按 `payloads/` 里的 interactive card 渲染，企业微信按 Markdown 渲染，字段顺序和文字一致，外观由各平台决定。
 - 卡片"接手"链接的真实地址格式还没核实（第 8 节第 7 条），演示里按 `BOTMAKER_CHAT_URL_TEMPLATE` 的默认值生成。
 - 回放用的是 UAT 用例里预设的 AI Agent 变量，AI 判得对不对不在这里验（同第 9 节）；这套卡片展示的是"给定这些判断，销售会看到什么"。
+
+## 12. 数据保留
+
+`03-whatsapp/compliance.md` 第 4 节承诺：线索记录在最后一次联系后 24 个月删除或匿名化，原始回调事件 90 天自动清理。第 7 节的 `app.forget` 是"客户提出删除请求时删一条"，这一节的 `app.retention` 是同一承诺的定时那一半——按保留期到期就删，一个月跑一次。
+
+```bash
+cd 05-integration/webhook-service
+../../.venv/bin/python -m app.retention --dry-run   # 只预演：到期线索（按 segment 分列）、到期原始事件、孤儿通知各多少条
+../../.venv/bin/python -m app.retention             # 同样的预演 + 提示加 --yes，退出 3，不改任何东西
+../../.venv/bin/python -m app.retention --yes       # 执行
+../../.venv/bin/python -m app.retention --yes --older-than-days 365 --raw-events-days 30   # 改保留期
+```
+
+一次运行删四样东西，口径如下：
+
+| 对象 | 判定 | 说明 |
+|---|---|---|
+| 到期线索 | 参考时间早于 `now − --older-than-days`（默认 730 天 = 24 个月） | 参考时间取线索的 `last_message_ts`；线索从没记下过消息时间时，取 `leads.updated_at`。**`status` 不影响判定**：`handed_off`、`contacted` 的线索同样按时间删——保留期就是保留期。两个时间都读不出来的行保留（只删证据确凿的） |
+| 到期原始事件 | `raw_events` 里 `processed = 1` 且 `received_at` 早于 `now − --raw-events-days`（默认 90 天） | 不管 `payload_json` 是否已被 `mark_processed` 清空都删：到期后连时间戳和事件键也不留。未处理的行不动，那是 `app.replay` 的活 |
+| 孤儿通知 | `notifications` 里 `lead_id` 已不在 `leads` 表的行 | 线索删了、通知记录没跟着删的历史残留 |
+| CSV 镜像 | 真删掉线索时整批重写一次 | 一次运行重写一次，不是一条线索重写一次 |
+
+- 每条到期线索走的是 `app.forget` 里的同一个 `forget_lead()`：账本（`leads`、`notifications`、保留期内含其号码或客户 id 的 `raw_events` 原文）与飞书多维表格镜像一起删，`processed_events` 不动。
+- 退出码：`0` 完成（或预演）；`1` 某个 sink 删除失败或飞书配置不全（账本已删的不回滚，修好后重跑即可）；`3` 既没 `--dry-run` 也没 `--yes`。
+- stdout 与日志**连 `lead_id` 都不出现**，只有计数（一次运行可能涉及成千上万条）；末行固定为 `retention leads=… raw_events=… notifications=… csv=rewritten|skipped sinks=…`，日志只有一行 `retention finished`。
+- `--now YYYY-MM-DD` 把"今天"固定成某个 UTC 日期，只给测试与演练用，默认当前 UTC 日期。
+- cron 建议每月 1 日 04:00 跑一次（避开 03:15 的备份），写法见 `../deploy/cron.example`；先用 `--dry-run` 看一眼条数，确认口径没问题再挂 `--yes`。
+- 备份不在命令范围内：备份里的副本按 `../deployment.md` 第 6 节的保留期自然过期。Botmaker 后台的会话记录由平台自己按天数删除（`03-whatsapp/compliance.md` 第 4 节）。
