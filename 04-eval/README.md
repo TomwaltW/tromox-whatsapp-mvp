@@ -50,7 +50,35 @@ mock 客户端对标注答案做确定性扰动（按 `sample_id` 播种），�
 
 ## 4. 换成真实标注数据
 
-1. 按 `labeling-guide.md` 标注，保存为 `data/labeled-v1.csv`，`data_origin` 填 `real`。表头必须与 `labeling-template.csv` 完全一致。
+### 4.0 从客户导出到标注模板
+
+客户交来的历史咨询多半是 WhatsApp / Instagram 后台导出的 CSV 或 Excel，列名五花八门，正文里夹着号码和邮箱。先用导入器把它变成表头正确、正文已脱敏的标注文件，再交给标注人：
+
+```bash
+cd 04-eval
+python -m eval.import_history --input data/export-2026-08.xlsx --out data/labeling-batch-1.csv
+python -m eval.import_history --input data/export.csv --out data/labeling-batch-1.csv --text-col 客户消息 --phone-col 手机
+```
+
+- 列自动识别（大小写不敏感、按"包含"匹配）：正文 `message / text / content / 内容 / 消息 / 咨询 / conversation / 正文`；号码 `phone / number / mobile / 号码 / 电话 / whatsapp / wa`；日期 `date / time / 时间 / 日期`；渠道 `channel / source / platform / 来源 / 渠道 / 平台`。认不出正文列时退出码 2 并在 stderr 列出实际表头，用 `--text-col` 等参数显式指定。XLSX 默认读第一个工作表，`--sheet` 可换。
+- 每行：`sample_id` 由号码与脱敏正文哈希得到（`H-` 开头，同一条重跑不变）；`phone` 归一化为 E.164，认不出的留空；`conversation_text` 里的邮箱与 7 位以上数字串已替换成 `<email>` / `<number>`；`language` 已按规则预填（可能是 `und`，标注人复核）；`label_notes` 记 `来源:<渠道>;日期:<日期>`；其余标注列留空。
+- 丢弃正文为空的行和（号码，正文）重复的行，`--limit N` 只留前 N 条。`--check` 只校验输出表头与 `labeling-template.csv` 一致。
+- 输出文件含未打码的号码，只能放在 `data/` 下（已被 git 忽略）。
+
+摘要打在 stdout，一行一个键值，看三处：`rows_out` 是标注人要处理的条数；`languages=de:41,en:23,...` 与 `countries=DE:38,ES:12,unknown:5,...` 看语种、国家分布是否覆盖目标市场，`unknown` 多说明导出里的号码格式有问题；`dropped_duplicate` 偏大说明导出重复拉了同一段对话。
+
+```
+rows_in=6
+rows_out=4
+dropped_empty=1
+dropped_duplicate=1
+languages=de:1,en:1,es:1,fr:1
+countries=AU:1,DE:1,ES:1,unknown:1
+```
+
+### 4.1 标注与质检
+
+1. 按 `labeling-guide.md` 标注，保存为 `data/labeled-v1.csv`，`data_origin` 填 `real`。表头必须与 `labeling-template.csv` 完全一致（导入器的输出已满足）。
 2. 先用 mock 跑一遍做格式质检：加载器会一次性列出所有问题行（行号 + 原因），例如 B2B 行缺 `b2b_type`、产品代码不在目录内、号码不是合法 E.164。
 3. 再用真实模型跑（第 5 节）。报告第 2 节的"真实样本数"只统计 `data_origin=real`。
 
@@ -133,4 +161,4 @@ export EVAL_PRICE_OUTPUT_PER_1M=25    # USD / 百万输出 token
 
 ## 9. 隐私
 
-真实咨询含个人信息：只放在 `data/`（已被 git 忽略），不要提交、不要外发；`--predictions-out` 的原始输出同样放在 `data/`。报告里的文本摘录会自动遮蔽邮箱与长数字串，但仍应在标注前按 `labeling-guide.md` 第 3 节做脱敏。
+真实咨询含个人信息：只放在 `data/`（已被 git 忽略），不要提交、不要外发；`--predictions-out` 的原始输出同样放在 `data/`。报告里的文本摘录会自动遮蔽邮箱与长数字串；正文里的邮箱与 7 位以上数字串由导入器（第 4.0 节）在生成标注文件时替换为 `<email>` / `<number>`，姓名、地址等其余项仍要在标注前按 `labeling-guide.md` 第 3 节处理。
