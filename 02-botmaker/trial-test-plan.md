@@ -141,6 +141,7 @@
 | 各平台事实的核实结论，去掉已解决的【待核实】 | `SOURCES.md`（S-B3 至 S-B18、S-M6、S-M7、S-M9） |
 | 界面路径与节点名称 | `setup-guide.md` 第 10 节清单 |
 | 真实回调样本（脱敏后） | `05-integration/webhook-service/fixtures/` |
+| 回调结构：用 `app.samples` 导出对照 | `05-integration/webhook-service/README.md` 第 9 节 |
 | 每条 AI 回复的 token 数、AI 单价、客服消息加价 | `03-whatsapp/cost-model-inputs.csv`，改完重跑 `cost_model.py` |
 | 路线决策 | `01-design/adr/0003-ai-route-a-b.md` |
 | 账号界面代际、模型名称、能否指定模型；Botmaker 数据条款的书面答复 | `01-design/adr/0006-model-selection.md` |

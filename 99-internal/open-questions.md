@@ -597,7 +597,7 @@
 | 163 | 测试号码 / 备用号码 1 个，走新号接入；另备 1 部装有 WhatsApp Business App（版本不低于 2.24.17）的手机与 1 个测试号，仅用于 T-1。商家认证未通过时一个商务组合最多注册 2 个号码（SOURCES S-M8），测试号接在客户的商务组合下也占名额：这两个测试号正好占满，上线号码要等认证通过（或升到 … | `02-botmaker/trial-test-plan.md:27` | 客户（经张宝文 / Kim 对接） |
 | 164 | T-6 / CTWA referral 透传 / 客户有广告账户且同意时，投 1 条最小预算的 Click-to-WhatsApp 测试广告【待客户确认】；否则书面询问 Botmaker 支持。检查回调 messages[] 里是否出现 whatsappReferral 及其子键 sourceId、sourceURL、headline、b… | `02-botmaker/trial-test-plan.md:43` | 客户（经张宝文 / Kim 对接） |
 | 165 | 语种分布：EN 8、DE 3、ES 3、FR 3、PT 2、IT 1。最终语种清单【待客户确认】后，把不在范围内的语种样例换成范围内的。 | `02-botmaker/trial-test-plan.md:82` | 客户（经张宝文 / Kim 对接） |
-| 166 | T-6 如需投测试广告，费用由客户广告账户承担，投放前征得客户同意【待客户确认】。 | `02-botmaker/trial-test-plan.md:155` | 客户（经张宝文 / Kim 对接） |
+| 166 | T-6 如需投测试广告，费用由客户广告账户承担，投放前征得客户同意【待客户确认】。 | `02-botmaker/trial-test-plan.md:156` | 客户（经张宝文 / Kim 对接） |
 | 167 | 假设：本文件是工程侧的合规设计说明，**不是法律意见**；欧盟隐私要求只写到"基本做法"的深度；客户以哪个主体作为数据责任方尚未确定【待客户确认】。平台条款引用见 SOURCES S-M5；账号与发送量规则已按 Meta 原文核实，见 SOURCES S-M8、S-M10；Botmaker 的 AI 数据条款见 SOURCES S-B17… | `03-whatsapp/compliance.md:4` | 客户（经张宝文 / Kim 对接） |
 | 168 | 与提供方之间有数据处理协议 / 客户作为业务方"聘用 AI 提供方作为第三方服务商"，需要相应的数据处理条款 / 【待客户确认】由哪一方签 | `03-whatsapp/compliance.md:40` | 客户（经张宝文 / Kim 对接） |
 | 169 | 营销类消息必须有明确的事先同意**：MVP 不发营销消息。流程里的同意步骤（S8，可选【待客户确认】）只是把同意记录进线索字段 consent_marketing，为第二阶段的主动再触达做准备；没有记录同意的客户，第二阶段也不得群发。 | `03-whatsapp/compliance.md:52` | 客户（经张宝文 / Kim 对接） |
