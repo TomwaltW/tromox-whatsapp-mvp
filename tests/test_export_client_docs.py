@@ -193,6 +193,30 @@ def test_mermaid_rendered_as_image_in_docx(tmp_path):
     assert "flowchart" not in xml and "图下文字" in xml
 
 
+def test_render_mermaid_passes_private_npm_cache_to_npx(tmp_path, monkeypatch):
+    """No Node needed: subprocess.run is faked and just records the env it was handed."""
+    import types
+
+    calls: list[dict] = []
+
+    def fake_run(cmd, **kw):
+        calls.append(dict(kw.get("env") or {}))
+        Path(cmd[cmd.index("-o") + 1]).write_bytes(b"\x89PNG\r\n\x1a\n" + b"\x00" * 16)
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.delenv("TROMOX_NPM_CACHE", raising=False)
+    monkeypatch.setattr(export.subprocess, "run", fake_run)
+    monkeypatch.setattr(export.shutil, "which", lambda *_a, **_k: "/usr/bin/npx")
+    monkeypatch.setattr(export, "find_chrome", lambda: "/fake/chrome")
+
+    data = export.render_mermaid("graph TD; A-->B", tmp_path, "d")
+    assert data.startswith(b"\x89PNG")
+    assert len(calls) == 1
+    env = calls[0]
+    assert Path(env["npm_config_cache"]).resolve().is_relative_to((ROOT / "scratch").resolve())
+    assert env["PUPPETEER_SKIP_DOWNLOAD"] == "1"
+
+
 # ---------------------------------------------------------------- --paths / --package
 
 INTERNAL_DOC = "99-internal/zhang-baowen-brief.md"
