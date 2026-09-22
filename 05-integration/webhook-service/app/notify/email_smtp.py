@@ -34,20 +34,32 @@ class EmailNotifier:
         self._factory = smtp_factory
 
     def build_message(self, card: LeadCard) -> EmailMessage:
+        return self._message(card.title, card.to_text())
+
+    def build_text_message(self, title: str, text: str) -> EmailMessage:
+        return self._message(title, text)
+
+    def _message(self, subject: str, body: str) -> EmailMessage:
         message = EmailMessage()
-        message["Subject"] = card.title
+        message["Subject"] = subject
         message["From"] = self._sender
         message["To"] = ", ".join(self._recipients)
-        message.set_content(card.to_text())
+        message.set_content(body)
         return message
 
-    def send(self, card: LeadCard) -> None:
+    def _deliver(self, message: EmailMessage) -> None:
         try:
             with self._factory(self._host, self._port) as smtp:
                 if self._port != 465:
                     smtp.starttls()
                 if self._username:
                     smtp.login(self._username, self._password or "")
-                smtp.send_message(self.build_message(card))
+                smtp.send_message(message)
         except (smtplib.SMTPException, OSError) as exc:
             raise NotifyError(f"email: {type(exc).__name__}") from None
+
+    def send(self, card: LeadCard) -> None:
+        self._deliver(self.build_message(card))
+
+    def send_text(self, title: str, text: str) -> None:
+        self._deliver(self.build_text_message(title, text))
