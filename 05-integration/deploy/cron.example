@@ -1,0 +1,16 @@
+# deploy 用户的 crontab（crontab -e 后把下面几行贴进去、改路径与域名）。
+# 假设：仓库克隆在 /opt/tromox/app，compose 目录 /opt/tromox/app/05-integration/deploy，
+#       数据目录 /opt/tromox/data，备份目录 /opt/tromox/backup，deploy 用户在 docker 组。
+# 为什么这几条、为什么健康检查要通知到人：deployment.md 第 5 节。
+PATH=/usr/local/bin:/usr/bin:/bin
+
+# 每 5 分钟重放未处理事件、重试失败通知（幂等；-T 因为 cron 没有终端）
+*/5 * * * * cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.replay >/dev/null 2>&1
+
+# 每日 03:15 在线一致性备份到 /opt/tromox/backup/leads-YYYY-MM-DD.db，并删除 30 天前的备份
+# （原来"备份"与"find ... -delete 清理"两条 cron 现在都由 backup.sh 做）
+15 3 * * * /opt/tromox/app/05-integration/deploy/backup.sh /opt/tromox/data /opt/tromox/backup 30 >/dev/null 2>&1 || logger -t tromox "backup failed"
+
+# 每 5 分钟检查 /health（走公网域名，顺带验证反向代理与证书）；不健康时 POST 到运维群机器人并写系统日志。
+# 第二个参数是接收 {"text": "..."} 的通用 webhook 地址；只想写系统日志就不填。
+*/5 * * * * /opt/tromox/app/05-integration/deploy/healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址> 2>&1 | logger -t tromox

@@ -1,0 +1,59 @@
+# Tromox 回调服务：一台 VPS、一个容器、一个 SQLite 文件（deployment.md 第 1 节）。
+# 在本目录执行 docker compose 命令。可插值变量（写在本目录 .env 或 shell 环境里）：
+#   TROMOX_ENV_FILE   传给容器的环境变量文件，默认 .env（同一个文件也给下面几项插值）
+#   TROMOX_BIND       宿主机绑定地址，默认 127.0.0.1（公网流量一律经反向代理进入）
+#   TROMOX_HTTP_PORT  宿主机端口，默认 8000
+#   TROMOX_DATA_DIR   宿主机数据目录（SQLite + CSV），默认 ./data；服务器上建议放仓库之外，如 /opt/tromox/data
+# caddy 服务带 profile "proxy"：不加 --profile proxy 就不起（本机 smoke test 不占 80/443）。
+name: tromox
+
+services:
+  webhook:
+    build:
+      context: ../..                                   # 构建上下文是仓库根目录（镜像需要 pyproject.toml 与 shared/）
+      dockerfile: 05-integration/webhook-service/Dockerfile
+      args:
+        PIP_INDEX_URL: "${PIP_INDEX_URL:-https://pypi.org/simple}"   # 构建慢时指向 PyPI 镜像（Dockerfile 里的同名 ARG）
+    image: tromox-webhook
+    restart: unless-stopped
+    env_file:
+      - "${TROMOX_ENV_FILE:-.env}"
+    ports:
+      - "${TROMOX_BIND:-127.0.0.1}:${TROMOX_HTTP_PORT:-8000}:8000"
+    volumes:
+      - "${TROMOX_DATA_DIR:-./data}:/srv/data"         # 绑定挂载；目录要 chown 10001（容器内的运行用户）
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"                                # 单文件 10 MB，保留 5 个 = 日志轮转
+        max-file: "5"
+    healthcheck:                                       # 与 Dockerfile 里的 HEALTHCHECK 同一条
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+
+  caddy:
+    image: caddy:2
+    profiles:
+      - proxy
+    restart: unless-stopped
+    depends_on:
+      - webhook
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro            # 由 Caddyfile.example 复制并改域名
+      - caddy_data:/data                               # 证书与 ACME 账号，删了会重新签发
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
