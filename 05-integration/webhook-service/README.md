@@ -157,3 +157,11 @@ cd 05-integration/webhook-service
 ```
 
 拿到 Botmaker 真实回调样本后：按真实结构改 `fixtures/uat/*.json`（字段名、层级、按钮点击在回调里的形态、变量随哪条消息下发），`manifest.json` 里的期望不动，看哪条用例变红就是哪条行为受影响；`app/models.py` 与 `app/normalize.py` 若随样本调整，也以这 20 条全绿为准。W3 集成联调时把这 20 条当执行清单，和 UAT 现场核对的 Bot 话术、时延互补。
+
+## 10. 调优期周报
+
+（本节由 T9 填写：`python -m app.report` 的用法、指标口径与周复盘怎么用。）
+
+## 11. 演示卡片
+
+（本节由 T11 填写：`python -m app.demo` 的用法与产物。）
