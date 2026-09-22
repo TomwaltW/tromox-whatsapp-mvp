@@ -6,10 +6,12 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from app import report
+from app.notify import GenericWebhookNotifier
 from webhook_test_helpers import HEADERS, load_fixture
 
 # U01 B2B 合格（IG-2609）、U05 C 端不转人工、U09 unknown 要人工、U13 连续没听懂、U14 低置信度
@@ -105,3 +107,70 @@ def test_bad_window_and_missing_db_fail_cleanly(tmp_path):
     assert exc.value.code == 2
     assert report.main(["--db", str(tmp_path / "missing.db"), "--out", str(tmp_path / "r.md")]) == 2
     assert not (tmp_path / "r.md").exists()
+    with pytest.raises(SystemExit) as exc:  # 既不落盘也不推送 -> 没事可做
+        report.main(["--db", str(tmp_path / "x.db")])
+    assert exc.value.code == 2
+
+
+# ------------------------------------------------------------------ --post
+def _post_notifier(monkeypatch, response: httpx.Response) -> list[dict]:
+    """把 --post 的渠道换成一个走 MockTransport 的 generic webhook，不碰环境变量、不联网。"""
+    sent: list[dict] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        sent.append(json.loads(request.content))
+        return response
+
+    notifier = GenericWebhookNotifier("https://hooks.example.com/SECRET-TOKEN-VALUE",
+                                      client=httpx.Client(transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(report, "_configured_notifiers", lambda: [notifier])
+    return sent
+
+
+def test_post_sends_the_six_metric_summary(client, settings, tmp_path, monkeypatch, capsys):
+    phones = _replay(client, CASES)
+    sent = _post_notifier(monkeypatch, httpx.Response(200, json={"ok": True}))
+    out = tmp_path / "report.md"
+    assert report.main(["--db", str(settings.database_path), "--out", str(out), *_window(), "--post"]) == 0
+
+    assert "posted=generic" in capsys.readouterr().out
+    assert len(sent) == 1 and sent[0]["type"] == "text"
+    title, text = sent[0]["title"], sent[0]["text"]
+    assert title.startswith("调优期周报") and title.endswith(_window()[3])
+    lines = text.split("\n")
+    assert len(lines) <= 20
+    for item in ("线索 5 条", "来源前 3", "转人工率", "通知 4 条", "状态漏斗", "复盘清单 2 条"):
+        assert item in text
+    assert "sent 4 / partial 0 / failed 0" in text and "阈值 60 秒" in text
+    for phone in phones:  # 摘要只有汇总数，号码与线索明细都不出现
+        assert phone not in text and phone.lstrip("+") not in text
+    assert "lead_id" not in text and "尾号" not in text
+    assert out.read_text(encoding="utf-8").startswith("# 调优期周报")  # 不带 --post 的产物照旧
+
+
+def test_post_failure_exits_1_and_keeps_the_report(client, settings, tmp_path, monkeypatch, capsys):
+    _replay(client, CASES)
+    _post_notifier(monkeypatch, httpx.Response(500, text="oops"))
+    out = tmp_path / "report.md"
+    assert report.main(["--db", str(settings.database_path), "--out", str(out), *_window(), "--post"]) == 1
+    captured = capsys.readouterr()
+    assert "SECRET-TOKEN-VALUE" not in captured.out + captured.err
+    assert "generic" in captured.err and out.exists()
+
+
+def test_post_without_configured_channels_is_not_a_failure(client, settings, tmp_path, monkeypatch, capsys):
+    _replay(client, CASES)
+    monkeypatch.setattr(report, "_configured_notifiers", lambda: [])
+    assert report.main(["--db", str(settings.database_path), "--out", str(tmp_path / "r.md"), *_window(), "--post"]) == 0
+    assert "posted=none" in capsys.readouterr().out
+
+
+def test_summary_of_an_empty_window_still_has_all_six_items(client, settings, tmp_path, monkeypatch, capsys):
+    sent = _post_notifier(monkeypatch, httpx.Response(200, json={"ok": True}))
+    assert report.main(["--db", str(settings.database_path), "--out", str(tmp_path / "r.md"),
+                        "--since", "2030-01-01", "--until", "2030-01-08", "--post"]) == 0
+    assert "posted=generic" in capsys.readouterr().out
+    text = sent[0]["text"]
+    assert sent[0]["title"] == "调优期周报 2030-01-01 至 2030-01-08"
+    assert "线索 0 条（B 端占比 0.0%）" in text and "来源前 3：无" in text
+    assert "p95 — 秒" in text and "复盘清单 0 条" in text

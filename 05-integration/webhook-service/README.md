@@ -189,7 +189,7 @@ cd 05-integration/webhook-service
 
 ## 10. 调优期周报
 
-`app/report.py` 从线索库出一份周复盘报告（Markdown + JSON），给 `../../07-project/timeline.md` W5–W8 的每周误判复盘用；`../../07-project/phase-2-outline.md` 第 1 节要在调优结束时回看的几个数（线索数与 B 端占比、有效线索率按渠道 / 短码、升级率与通知时延）都在里面。它只读打开 SQLite（`mode=ro`），不经过服务，不改库、不发通知，随时可跑。
+`app/report.py` 从线索库出一份周复盘报告（Markdown + JSON），给 `../../07-project/timeline.md` W5–W8 的每周误判复盘用；`../../07-project/phase-2-outline.md` 第 1 节要在调优结束时回看的几个数（线索数与 B 端占比、有效线索率按渠道 / 短码、升级率与通知时延）都在里面。它只读打开 SQLite（`mode=ro`），不经过服务，不改库，随时可跑；默认不发通知，加 `--post` 才把摘要推到销售群（见本节末「自动推送」）。
 
 ```bash
 cd 05-integration/webhook-service
@@ -214,6 +214,37 @@ cd 05-integration/webhook-service
 隐私：报告会贴到群里，所以号码只出尾号 4 位，摘要里像号码的数字串也一并打码；`lead_id` 是哈希，可拿去 `data/leads.csv` 或 Botmaker 后台对账。
 
 周复盘怎么用（W5–W8）：每周一跑一次，`report.md` 整份贴进当周复盘记录；先看第 6 节逐条定性（AI 判错 / 客户表达含糊 / 流程漏洞），再看第 3 节升级率和第 4 节时延有没有越线，最后把第 1、2 节的数按周排成一列看趋势。要看四周的变化，把每周的 `report.json` 留下来即可，键名固定。
+
+### 自动推送（`--post`）
+
+不加 `--post` 时行为和以前完全一样。加上之后，报告照常生成，再把上面六个指标压成一段摘要，发到第 6 节 `NOTIFIERS` 里配的每个渠道（飞书富文本、企业微信 markdown、通用 webhook 的 `{"type": "text", "title": …, "text": …}`、邮件的纯文本正文，主题就是标题）。标题是 `调优期周报 <since> 至 <until>`，正文不超过 20 行，六行分别对应上表的六节：线索数与 B 端占比、来源前 3、转人工率与原因前 3、通知 sent / partial / failed 与 p95、状态漏斗、复盘清单条数。
+
+```bash
+cd 05-integration/webhook-service
+../../.venv/bin/python -m app.report --out report.md --post          # 出报告 + 推送
+../../.venv/bin/python -m app.report --post                          # 只推送，不落盘
+```
+
+摘要里只有汇总数：没有 `lead_id`、没有 `ai_summary`、一个号码都没有（第 6 节的逐条清单仍然只在 `report.md` 里），所以推给销售群比整份报告更安全。
+
+每周一 09:00 自动发一次，宿主机 crontab 写：
+
+```cron
+0 9 * * 1 docker exec tromox-webhook python -m app.report --post >> /var/log/tromox-report.log 2>&1
+```
+
+容器里的 `NOTIFIERS` 等配置沿用第 5 节的 `--env-file`，不用再传一遍；`--db` 不给就取 `DATABASE_PATH`，窗口不给就是「上一整周」，所以周一早上这一条命令就够了。
+
+怎么看结果：
+
+| 情况 | stdout | 退出码 | 怎么办 |
+|---|---|---|---|
+| 全部渠道成功 | `posted=feishu,wecom` | 0 | 无 |
+| 一部分渠道失败 | `posted=feishu`（成功的那些） | 1 | stderr 有失败渠道名，详情看 error 日志的 `周报推送失败`，再照第 7 节查那个渠道 |
+| 全部失败 | `posted=none` | 1 | 同上；`posted=none` 配退出码 1 就是「一个都没发出去」 |
+| 没配 `NOTIFIERS` | `posted=none` | 0 | 这不算失败；要推送先按第 6 节配渠道 |
+
+失败不会打断其余渠道：每个渠道各发各的，失败的记一条 error 日志（和通知一样，日志与报错里都不会出现带密钥的 webhook 地址），全部发完才决定退出码。cron 用退出码判断即可，非 0 就去看日志。
 
 ## 11. 演示卡片
 
