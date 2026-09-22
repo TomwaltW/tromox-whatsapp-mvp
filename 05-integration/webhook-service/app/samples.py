@@ -36,7 +36,7 @@ FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
 RAW_WARNING = "WARNING: raw payloads contain personal data; keep this directory out of the repo"
 
 # 键名（不分大小写）落在这里的字符串值整个换掉：这些字段装的就是人名，打码留尾号没有意义。
-NAME_KEYS = frozenset({"firstname", "lastname", "fromname", "name", "contactname", "profilename"})
+NAME_KEYS = frozenset({"firstname", "lastname", "fromname", "contactname", "profilename"})  # 不含裸 name：events[].name / info[].name 是事件类型与结束分类，不是个人数据
 REDACTED_NAME = "<redacted>"
 REDACTED_EMAIL = "<email>"
 _EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")

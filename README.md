@@ -37,7 +37,7 @@
 | `02-botmaker/` | 配置指南、AI Agent system prompt、知识库模板、试用账号测试计划、再触达模板、需要 Botmaker 书面答复的问题清单（含英文邮件稿） |
 | `03-whatsapp/` | Meta 接入清单、成本模型（CSV + 脚本 + 结果 + xlsx）、合规要点 |
 | `04-eval/` | 离线评测工具：标注指南、标注模板、合成样本、分类 prompt、评测包、历史咨询导入器（`eval.import_history`）、双人标注一致性（`eval.agreement`）、测试 |
-| `05-integration/` | FastAPI 回调服务（含调优期周报 `app.report`（可 `--post` 推送到通知渠道）、演示卡片 `app.demo`、删除请求命令 `app.forget`、`/metrics` 指标端点、飞书多维表格 sink、CSV 镜像写后合并、并发压测 `tools/loadtest.py`）、Botmaker API 笔记、部署说明与部署套件（`deploy/`，含上线演练脚本 `rehearsal.sh`）、飞书多维表格设置说明 |
+| `05-integration/` | FastAPI 回调服务（含调优期周报 `app.report`（可 `--post` 推送到通知渠道）、演示卡片 `app.demo`、删除请求命令 `app.forget`、数据保留任务 `app.retention`、原始回调样本导出 `app.samples`、`/metrics` 指标端点、飞书多维表格 sink、CSV 镜像写后合并、并发压测 `tools/loadtest.py`）、Botmaker API 笔记、部署说明与部署套件（`deploy/`：加固后的 compose、Caddyfile、上线演练脚本 `rehearsal.sh`）、飞书多维表格设置说明 |
 | `06-acceptance/` | 验收标准（含机器可读阈值）、UAT 用例、上线检查表 |
 | `07-project/` | 时间计划、RACI、风险登记、碰面准备、第二阶段展望 |
 | `99-internal/` | 工作量、内部报价、待决问题、给张宝文的一页说明与 9/22 变更说明 |
