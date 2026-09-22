@@ -228,7 +228,7 @@ def test_processing_failure_answers_200_and_replay_recovers(client, notifier, mo
     assert _rows(client, "SELECT processed, payload_json IS NOT NULL, error FROM raw_events") == [(0, 1, "RuntimeError: disk hiccup")]
 
     monkeypatch.setattr(pipeline.store, "update_lead", original)
-    assert replay(pipeline) == {"events": 1, "notifications": 0, "mirrors": 0}
+    assert replay(pipeline) == {"events": 1, "notifications": 0, "mirrors": 0, "mirrors_reset": 0}
     assert len(pipeline.store.list_leads()) == 1 and notifier.calls == 1
     assert _rows(client, "SELECT processed FROM raw_events") == [(1,)]
 
@@ -244,7 +244,7 @@ def test_notifier_failure_never_breaks_the_webhook_and_is_retryable(settings):
     pipeline = client.app.state.pipeline
     healthy = RecordingNotifier("feishu")
     pipeline.notifiers = [healthy]
-    assert replay(pipeline) == {"events": 0, "notifications": 1, "mirrors": 0}
+    assert replay(pipeline) == {"events": 0, "notifications": 1, "mirrors": 0, "mirrors_reset": 0}
     assert len(healthy.cards) == 1
     assert _rows(client, "SELECT status, attempts FROM notifications") == [("sent", 4)]
 

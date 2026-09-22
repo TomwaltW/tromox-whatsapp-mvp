@@ -25,7 +25,7 @@ flowchart LR
 | 幂等 | 消息回调按 `messages[]._id_` 识别重复，其余按内容哈希；同一回调重发返回 `duplicate`，不会产生第二条线索或第二次通知。 |
 | 归一化 | 全部规则来自共享包 `tromox_lead`：号码转 E.164、国家取号码国家码、首条消息解析来源短码、`language` 变量缺失时用确定性语言检测兜底、会话变量转线索字段（下划线与驼峰写法都认）、路由规则、按 `TAG_TIER` 生成标签。 |
 | 合并 | 一个号码一条线索；空值不覆盖已有值，`unknown` 不覆盖已知的 B2B / B2C；来源短码取首次触达；`first_message_ts` / `last_message_ts` 只看客户消息。读改写在 `BEGIN IMMEDIATE` 事务内完成，同号码并发回调不丢更新。CSV 镜像写后合并：单条回调立即写，一阵回调在 `CSV_EXPORT_MIN_INTERVAL_S`（默认 5 秒）内只写一次，服务退出前补写。 |
-| 镜像 | 远程 sink（飞书多维表格）不在请求路径里调用：入库后只往 `mirror_outbox` 表登记一行待发（同一线索同一 sink 只留一行），HTTP 响应发出之后由后台任务按指数退避重试 3 次发送，发的是发送时刻账本里的最新状态；失败留给 `python -m app.replay` 继续重试，计数见 `/metrics` 的 `mirror_outbox_pending` 与 `mirror_outbox_failed_24h`。本地 sink（CSV 镜像）是写本机文件，照旧在请求路径里同步写。理由同"先落盘"一行：飞书一次上传是令牌 + 查找 + 创建三次 HTTP、每次超时 10 秒，放在请求路径里会把对 Botmaker 的应答拖到几十秒。 |
+| 镜像 | 远程 sink（飞书多维表格）不在请求路径里调用：入库后只往 `mirror_outbox` 表登记一行待发（同一线索同一 sink 只留一行），HTTP 响应发出之后由后台任务按指数退避重试 3 次发送，发的是发送时刻账本里的最新状态；失败留给 `python -m app.replay` 继续重试，计数见 `/metrics` 的 `mirror_outbox_pending` 与 `mirror_outbox_failed_24h`。发送期间同一线索又来回调不会丢最新状态：行带一个版本号（`updated_at`），发完只在版本没变的前提下才算数，变了就说明期间来过新回调，这一遍不作数、行留着 `pending`，随后按最新状态再发一遍。连失败 10 次的行不再自动重试，要人工排查后用 `--reset-mirrors` 重置（见第 7 节），计数见 `/metrics` 的 `mirror_outbox_exhausted`。本地 sink（CSV 镜像）是写本机文件，照旧在请求路径里同步写。理由同"先落盘"一行：飞书一次上传是令牌 + 查找 + 创建三次 HTTP、每次超时 10 秒，放在请求路径里会把对 Botmaker 的应答拖到几十秒。 |
 | 通知 | `escalation_flag` 为真时，按 `(lead_id, escalation_reason, sessionId)` 只通知一次；坐席发起、没有客户消息的回调（如窗口关闭后销售发模板）不通知；线索已交接（`handed_off` / `contacted`）后，`b2b_qualified` 的重判不再通知，其他原因照常（判定在 `app/normalize.py` 的 `notification_suppressed`，存库的 `escalation_flag` / `escalation_reason` 仍按规则层写）；在 HTTP 响应发出之后由后台任务发送，失败按指数退避重试 3 次，结果记入 `notifications` 表，失败不会让 webhook 返回 5xx。通知慢或失败都不拖累对 Botmaker 的应答（熔断见"先落盘"一行）。 |
 | 状态回写 | 坐席消息出现时线索转 `contacted`；`conversation-close` 事件里的结束分类（typification）映射为线索状态，映射表见 `../botmaker-api-notes.md` 第 6 节。【待核实】 |
 | 指标 | `GET /metrics`（同 Token 鉴权：无配置 503、不对或缺 401；不套 `ALLOWED_IPS`，调用方是服务器自己的 cron）返回最近 24 小时的处理结果分布、通知状态分布、未处理原始事件数、待发与已失败的镜像数、最后一次回调时间与线索总数，只读 SQLite；`?hours=` 可改窗口，范围 1–168，越界返回 400。健康告警脚本据此告警，见 `../deploy/README.md` 第 3 节。 |
@@ -143,10 +143,12 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 ```bash
 ../../.venv/bin/python -m app.replay            # 重放未处理完的回调，重试失败或未发出的通知，重试未发出的镜像
 ../../.venv/bin/python -m app.replay --export   # 另外重写一次 CSV
+../../.venv/bin/python -m app.replay --reset-mirrors   # 先给卡住的镜像行重置重试预算，再补发
 ```
 
 - 重放与重试都是幂等的，可以放进 cron（建议每 5 分钟一次）。
-- 镜像重试：`mirror_outbox` 里还是 `pending` 的行按线索逐条补发（飞书挂掉那段时间的镜像就靠这一步补回来）；`attempts` 累计到 `--max-attempts`（默认 10）之后不再自动重试，要人工看 `last_error`。
+- 镜像重试：`mirror_outbox` 里还是 `pending` 的行按线索逐条补发（飞书挂掉那段时间的镜像就靠这一步补回来）；`attempts` 累计到 `--max-attempts`（默认 10）之后不再自动重试，要人工看 `last_error`。线索本身又变了（来了新回调）会重新入队，`attempts` 一并归零 —— 那是一份新的活，重试预算重新给满。
+- 卡住的镜像行：`/metrics` 的 `mirror_outbox_exhausted` 就是这些用满重试预算、已不再自动重试的行，按 `last_error` 排查。**原因排除之后**再跑 `--reset-mirrors`：它把这些行的 `attempts` 归零、`last_error` 清空，然后照常补发，跑完在日志的 `mirrors_reset` 里看重置了几行。原因没排除就重置，只会再白烧一轮重试预算，所以它不是默认行为，也不要放进 cron。
 - `/health` 要接告警（做法见 `../deployment.md` 第 5 节）：熔断期间的回调、单条失败后没重发的回调都没落盘，`app.replay` 补不回，只能按 `../botmaker-api-notes.md` 第 7 节对账。
 - `notifications.status`：`pending` 已登记未发送、`sent` 全部渠道成功、`partial` 部分成功、`failed` 全部失败、`skipped` 未配置通知渠道。
 - 备份只需备份 SQLite 文件，做法见 `../deployment.md`。
