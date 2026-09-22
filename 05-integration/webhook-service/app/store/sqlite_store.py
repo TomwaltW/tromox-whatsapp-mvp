@@ -176,6 +176,52 @@ class SqliteStore:
             rows = conn.execute("SELECT data_json FROM leads ORDER BY created_at, lead_id").fetchall()
         return [Lead.model_validate_json(row["data_json"]) for row in rows]
 
+    # ------------------------------------------------------------------ deletion requests (GDPR erasure)
+    @staticmethod
+    def _raw_events_predicate(phone_digits: str | None, customer_id: str | None) -> tuple[str, tuple[str, ...]]:
+        """WHERE clause matching the raw callbacks that still carry this contact's personal data.
+
+        Only rows whose payload is still stored can contain it (KEEP_RAW_PAYLOADS=true during the
+        trial); rows already blanked by `mark_processed` hold nothing personal and stay, so a replayed
+        callback is still recognised as a duplicate. `instr` instead of LIKE: no wildcard surprises.
+        An empty needle would match every payload (`instr(x, '') = 1`), so blanks are skipped."""
+        clauses, params = [], []
+        for needle in (phone_digits, customer_id):
+            needle = (needle or "").strip()
+            if needle:
+                clauses.append("instr(payload_json, ?) > 0")
+                params.append(needle)
+        if not clauses:
+            return "0", ()
+        return "payload_json IS NOT NULL AND (" + " OR ".join(clauses) + ")", tuple(params)
+
+    def lead_footprint(self, lead_id: str, phone_digits: str | None, customer_id: str | None) -> dict[str, int]:
+        """Row counts `delete_lead` would remove, without changing anything (the dry run)."""
+        where, params = self._raw_events_predicate(phone_digits, customer_id)
+        with self._connect() as conn:
+            leads = conn.execute("SELECT count(*) FROM leads WHERE lead_id = ?", (lead_id,)).fetchone()[0]
+            notifications = conn.execute("SELECT count(*) FROM notifications WHERE lead_id = ?", (lead_id,)).fetchone()[0]
+            raw_events = conn.execute(f"SELECT count(*) FROM raw_events WHERE {where}", params).fetchone()[0]
+        return {"leads": int(leads), "notifications": int(notifications), "raw_events": int(raw_events)}
+
+    def delete_lead(self, lead_id: str, phone_digits: str | None, customer_id: str | None) -> dict[str, int]:
+        """Erase one contact from the ledger in a single transaction: the lead row, its notification
+        records and every stored raw callback that contains the phone digits (no '+') or the platform
+        customer id. `processed_events` is untouched (event keys carry no personal data and keep
+        redeliveries idempotent). Returns the number of rows removed per table."""
+        where, params = self._raw_events_predicate(phone_digits, customer_id)
+        with self._connect() as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            try:
+                leads = conn.execute("DELETE FROM leads WHERE lead_id = ?", (lead_id,)).rowcount
+                notifications = conn.execute("DELETE FROM notifications WHERE lead_id = ?", (lead_id,)).rowcount
+                raw_events = conn.execute(f"DELETE FROM raw_events WHERE {where}", params).rowcount
+                conn.execute("COMMIT")
+            except BaseException:
+                conn.execute("ROLLBACK")
+                raise
+        return {"leads": int(leads), "notifications": int(notifications), "raw_events": int(raw_events)}
+
     # ------------------------------------------------------------------ notifications
     def claim_notification(self, lead_id: str, reason: str, session_key: str, customer_id: str | None) -> int | None:
         """Insert the (lead, reason, session) row; None when it already exists (= already notified)."""

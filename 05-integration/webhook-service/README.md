@@ -149,6 +149,18 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 - `notifications.status`：`pending` 已登记未发送、`sent` 全部渠道成功、`partial` 部分成功、`failed` 全部失败、`skipped` 未配置通知渠道。
 - 备份只需备份 SQLite 文件，做法见 `../deployment.md`。
 
+**删除请求**（`03-whatsapp/compliance.md` 3.3 节）：一条命令把一个联系人从账本（`leads`、`notifications`、保留期内含其号码或客户 id 的 `raw_events` 原文）、CSV 与多维表格镜像里一次删净；`processed_events` 不动，重投的回调仍按重复处理。
+
+```bash
+../../.venv/bin/python -m app.forget --phone +4915112345678 --dry-run   # 只预演：各表行数、会重写哪个 CSV、会调哪些 sink
+../../.venv/bin/python -m app.forget --phone +4915112345678             # 同样的预演 + 提示加 --yes，退出 3，不改任何东西
+../../.venv/bin/python -m app.forget --phone +4915112345678 --yes       # 执行；也可用 --lead-id L-…
+```
+
+- 退出码：`0` 完成（或预演）；`1` 某个 sink 删除失败或飞书配置不全（账本已删的不回滚，修好后重跑即可）；`2` 找不到线索；`3` 既没 `--dry-run` 也没 `--yes`。
+- stdout 与日志只出现 `lead_id`，不出现号码；末行固定为 `forgotten lead_id=… leads=… notifications=… raw_events=… csv=rewritten|skipped sinks=…`。
+- 备份不在命令范围内：备份里的副本按 `../deployment.md` 第 6 节的保留期自然过期。Botmaker 后台的联系人与会话另行处理。
+
 ## 8. 待核实清单（拿到试用账号后逐条关闭）
 
 1. 真实回调的字段名与层级是否与 fixture 一致，尤其 `contactId`、`customerId`、`messages[]._id_`、`variables`。【待核实】

@@ -110,12 +110,12 @@ webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置�
 2. 库里不存完整聊天记录：回调原文在处理成功后即清空（`KEEP_RAW_PAYLOADS` 只在试用期为采集真实样本临时打开）。
 3. 发到销售群的卡片默认只显示号码后四位，详情回 Botmaker 看；飞书、企业微信的服务器在中国，卡片内容等于出境数据，这也是默认打码的原因。
 4. CSV 导出含个人数据：只放在服务器数据目录，按需下载，不挂公开链接。
-5. 删除请求：按号码从 `leads` 表删除该行并重写 CSV，同时在 Botmaker 后台处理对应会话；流程见 `03-whatsapp/compliance.md`。
+5. 删除请求：用 `app.forget` 命令按号码一次删除账本（线索、通知记录、保留期内的原始回调）、CSV 与多维表格镜像，同时在 Botmaker 后台处理对应会话；流程见 `03-whatsapp/compliance.md`。备份里的副本按第 6 节的保留期自然过期，命令不处理备份。
 
 ```bash
-# 按号码删除一条线索（测试数据或删除请求），随后重写 CSV
-sqlite3 /opt/tromox/data/leads.db "DELETE FROM leads WHERE phone = '+<E.164 号码>';"
-docker exec tromox-webhook python -m app.replay --export
+# 先预演（只打印会删什么，不改任何东西），确认后加 --yes 执行；输出与日志里只有 lead_id，不出现号码
+docker exec tromox-webhook python -m app.forget --phone +<E.164 号码> --dry-run
+docker exec tromox-webhook python -m app.forget --phone +<E.164 号码> --yes
 ```
 
 ## 9. 上线前检查
