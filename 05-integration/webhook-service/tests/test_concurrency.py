@@ -14,6 +14,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.slow  # 起真 uvicorn 子进程，十几秒；TROMOX_FAST_TESTS=1 时整模块跳过
+
 SERVICE_ROOT = Path(__file__).resolve().parents[1]
 LOADTEST = SERVICE_ROOT / "tools" / "loadtest.py"
 N = 20

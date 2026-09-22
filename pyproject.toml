@@ -38,3 +38,4 @@ tromox_lead = ["py.typed"]
 # Each sub-project keeps its own tests; run them separately (see README) because
 # 04-eval and 05-integration each have a top-level package on their own sys.path.
 testpaths = ["tests"]
+markers = ["slow: needs Chrome / npx / a subprocess; skipped when TROMOX_FAST_TESTS=1"]

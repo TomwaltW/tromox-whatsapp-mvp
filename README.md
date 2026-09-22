@@ -84,6 +84,7 @@ cd ../..
 
 # 全部自动检查（测试 + 一致性）；加 --with-mermaid 会逐个渲染 Mermaid 图，较慢
 bash scripts/check_all.sh
+# 开发时用 --fast：跳过 Chrome / npx / 子进程的慢测试（TROMOX_FAST_TESTS=1），20 秒内出结果；提交前仍跑全量
 
 # 客户文档导出：00-client/*.md → dist/<名>.docx（可编辑 Word）+ dist/<名>.pdf；dist/ 不入库
 # 需要 Node（npx，渲染流程图）与本机 Chrome（打印 PDF）；check_all.sh 加 --with-exports 会顺带全量导出
@@ -104,7 +105,7 @@ uv pip install --python .venv/bin/python -e ".[export]"
 | `03-whatsapp/cost_model.py --check` | 成本模型结果是否过期 |
 | `scripts/collect_open_questions.py --check` | 待决问题汇总是否过期 |
 | `scripts/check_repo.py` | 文件齐全；客户文档无内部价格、工作量、内部引用；无非官方库与购号建议；两档范围表、费用数字、验收阈值一致；方案书回答五个问题、列全八个包含项；URL 白名单；时间计划含关键路径 |
-| `pytest`（根目录、`04-eval`、`05-integration/webhook-service`） | 代码测试 |
+| `pytest`（根目录、`04-eval`、`05-integration/webhook-service`） | 代码测试；`check_all.sh --fast`（即 `TROMOX_FAST_TESTS=1`）跳过带 `slow` 标记的用例（真 Chrome、真 npx、uvicorn 子进程），其余照跑 |
 | `scripts/check_mermaid.py` | 所有 Mermaid 图可渲染（需要 Node 与本机 Chrome） |
 | `scripts/export_client_docs.py` | 客户文档能导出成 Word 与 PDF（流程图渲染成图片、表格带边框、中文字体已设）；任一文档失败即非 0 退出（需要 Node 与本机 Chrome，`check_all.sh --with-exports` 时运行） |
 
