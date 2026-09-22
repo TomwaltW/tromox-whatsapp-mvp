@@ -233,8 +233,8 @@
 | 163 | 遗忘 PIN 的重置流程与等待期【待核实】。 | `03-whatsapp/meta-onboarding-checklist.md:111` | 集成工程师（沈思锴） |
 | 164 | 监控：每周看一次号码质量评级与号码是否为已连接状态，写入 00-client/运维手册.md 的周检项；集成工程师另看商务组合当前的发送额度档位，并留意 WABA 是否被限制。在 Botmaker 或 Meta 的 WhatsApp 管理后台看，具体入口【待核实】；也可用 GET /whatsapp/accounts/{number}/s… | `03-whatsapp/meta-onboarding-checklist.md:122` | 集成工程师（沈思锴） |
 | 165 | 最多注册 2 个号码，完成认证或升到 2,000 档后自动放宽到 20 个。MVP 生产只用 1 个号码，但试用期接入的备用测试号与 T-1 的 Coexistence 测试号若登记在同一商务组合下，同样占名额；认证通过前正式号可能排不上，删除测试号能否释放名额【待核实】。试用号码的安排见 02-botmaker/trial-test-p… | `03-whatsapp/meta-onboarding-checklist.md:129` | 集成工程师（沈思锴） |
-| 166 | 参考单价（USD / 百万 token，输入 / 输出；为 2026-06-24 的缓存价，开跑前以官网价格页为准【待核实】）：claude-opus-5 5 / 25；claude-sonnet-5 2 / 10；claude-haiku-4-5 1 / 5。其他服务商的单价请查各自官网，不要凭印象填。 | `04-eval/README.md:132` | 集成工程师（沈思锴） |
-| 167 | 路线 A（Botmaker 内置 AI Agent）的模型在平台内，无法离线直调；离线评测用来迭代规则与示例，平台内的实际表现以 02-botmaker/trial-test-plan.md 的 20 条样例为准。【待核实】内置模型能否通过同款接口在平台外复现。 | `04-eval/README.md:152` | 集成工程师（沈思锴） |
+| 166 | 参考单价（USD / 百万 token，输入 / 输出；为 2026-06-24 的缓存价，开跑前以官网价格页为准【待核实】）：claude-opus-5 5 / 25；claude-sonnet-5 2 / 10；claude-haiku-4-5 1 / 5。其他服务商的单价请查各自官网，不要凭印象填。 | `04-eval/README.md:146` | 集成工程师（沈思锴） |
+| 167 | 路线 A（Botmaker 内置 AI Agent）的模型在平台内，无法离线直调；离线评测用来迭代规则与示例，平台内的实际表现以 02-botmaker/trial-test-plan.md 的 20 条样例为准。【待核实】内置模型能否通过同款接口在平台外复现。 | `04-eval/README.md:166` | 集成工程师（沈思锴） |
 | 168 | 依据：公开的接口描述文件与帮助中心文章（SOURCES S-B2、S-B5、S-B6、S-B10、S-B11、S-B12、S-B18）。未登录、未调用任何真实接口；凡未在一手来源读到的内容均标【待核实】。 | `05-integration/botmaker-api-notes.md:4` | 集成工程师（沈思锴） |
 | 169 | 不要用 GET /messages、GET /billing/whatsapp/billed-conversations 做轮询：接口描述写明这两个端点"会增加 BI 数据源费用"。对话数据以 webhook 推送为准。唯一的例外是回调缺口（第 7 节）：熔断期间的消息原文写明丢失、有无补发未写，单条失败是否重发也未写（SOURCES S… | `05-integration/botmaker-api-notes.md:10` | 集成工程师（沈思锴） |
 | 170 | Token 权限范围能否收窄（只读、限端点）：未见说明。【待核实】 | `05-integration/botmaker-api-notes.md:23` | 集成工程师（沈思锴） |
