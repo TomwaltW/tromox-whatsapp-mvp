@@ -164,4 +164,30 @@ cd 05-integration/webhook-service
 
 ## 11. 演示卡片
 
-（本节由 T11 填写：`python -m app.demo` 的用法与产物。）
+Botmaker 开通之前，客户和销售都没见过"销售群里收到的卡片"长什么样。`python -m app.demo` 不起服务、不联网，把第 9 节的 U01–U20 逐条回放（每条用例各用一个临时 SQLite 和一个 `Pipeline`，走的是和线上完全一样的解析、归一化、去重与卡片渲染），把销售本来会收到的卡片收集起来写成文件，可以直接拿给客户看。
+
+```bash
+cd 05-integration/webhook-service
+../../.venv/bin/python -m app.demo --out ../../scratch/demo                       # 全部 20 条
+../../.venv/bin/python -m app.demo --out ../../scratch/demo --cases U01,U20      # 只回放几条
+../../.venv/bin/python -m app.demo --out ../../scratch/demo --now 2026-11-10T12:00:00Z --timezone Asia/Shanghai
+```
+
+`--now` 指定回放时的"当前时刻"（默认当前 UTC 时间），卡片上"24 小时窗口截止 … 剩余约 N 小时"按它算，固定它就能每次产出一样的文件；`--timezone` 是截止时间的展示时区，默认 `Asia/Shanghai`。`--cases` 写了不存在的用例号时退出码为 2。stdout 每条用例一行进度，末行 `cases=<n> cards=<m> out=<目录>`。
+
+`--out` 目录下的五个产物：
+
+| 产物 | 内容 | 给谁看 |
+| --- | --- | --- |
+| `cards.md` | 每张卡片的 Markdown（`LeadCard.to_markdown()` 原文），按用例分组，不发卡的用例注明"只入库、不通知" | 客户、销售：看卡片上有哪些字段 |
+| `cards.html` | 同一批卡片的单文件网页，内联 CSS、不引用任何外部资源，每张卡一个 `<article data-case="U01">`，带优先级角标（高 = 红、普通 = 蓝）和"接手"按钮样式（按钮不跳转） | 客户、销售：直观感受版式；浏览器直接打开 |
+| `summary.md` | 一张表：用例、场景、回调数、卡片数、接管原因、最终状态 | 张宝文、总管：一眼看 20 条各发了几张卡 |
+| `leads.csv` | 每条用例回放后线索库里的全部线索，表头 = `tromox_lead.LEAD_FIELDS`，和第 1 节的 CSV 镜像同一列序 | 对照卡片看线索库存了什么 |
+| `payloads/<用例>-<n>.feishu.json` | 每张卡对应的飞书机器人请求体（`FeishuNotifier.build_body()` 原样），不发送 | 联调飞书群机器人时对照字段 |
+
+给客户看之前注意：
+
+- **数据全部虚构**。公司、姓名、号码、对话都是 `fixtures/uat/` 编的，与任何真实客户无关；卡片上出现的号码只有尾号 4 位（线上默认 `NOTIFY_MASK_PHONE=true`）。`leads.csv` 是线索库导出，含完整（虚构）号码，别把它和卡片一起发给客户。
+- **卡片样式以飞书 / 企业微信实际渲染为准**。`cards.html` 只是示意版式；飞书按 `payloads/` 里的 interactive card 渲染，企业微信按 Markdown 渲染，字段顺序和文字一致，外观由各平台决定。
+- 卡片"接手"链接的真实地址格式还没核实（第 8 节第 7 条），演示里按 `BOTMAKER_CHAT_URL_TEMPLATE` 的默认值生成。
+- 回放用的是 UAT 用例里预设的 AI Agent 变量，AI 判得对不对不在这里验（同第 9 节）；这套卡片展示的是"给定这些判断，销售会看到什么"。
