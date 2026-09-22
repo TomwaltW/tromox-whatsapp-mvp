@@ -1,0 +1,54 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U01（第 c 条回调）：客户一条消息给齐 B 端信息，AI Agent 写入抽取变量并判 b2b_qualified；Bot 发交接话术。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069021",
+  "whatsappNumber": "4917604069021",
+  "customerId": "TRXUAT01C1",
+  "sessionId": "TRXUAT01C1_2026-11-10T09:00:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:00:00.000Z",
+  "customerCreationTime": "2026-11-10T09:00:00.000Z",
+  "firstName": "Anna",
+  "lastName": "K",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU01C001",
+      "date": "2026-11-10T09:01:30.000Z",
+      "from": "user",
+      "fromName": "Anna K",
+      "message": "Moto Nord GmbH, Germany. We are a dealer with two shops, interested in the MC10 and the UKKO, about 20 units per quarter. Anna Keller, owner.",
+      "operatorId": null,
+      "clientPayload": ""
+    },
+    {
+      "_id_": "TRXUATU01C002",
+      "date": "2026-11-10T09:01:34.500Z",
+      "from": "bot",
+      "fromName": "Bot",
+      "message": "Thank you, Anna Keller. I have passed your details to our sales team. A Tromox sales manager will reply here, on this WhatsApp number, within one business day.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2B",
+    "b2b_type": "dealer",
+    "b2c_intent": "",
+    "country_stated": "DE",
+    "city_region": "",
+    "contact_name": "Anna Keller",
+    "company": "Moto Nord GmbH",
+    "role": "owner",
+    "product_interest": "MC10; UKKO",
+    "volume": "about 20 units per quarter",
+    "existing_dealer_relationship": "dealer with two shops",
+    "ai_summary": "德国经销商 Moto Nord GmbH（两家门店），店主 Anna Keller，意向 MC10 与 UKKO，每季度约 20 台；建议销售尽快跟进。",
+    "ai_confidence": "0.95",
+    "escalation_flag": "true",
+    "escalation_reason": "b2b_qualified",
+    "source_code": "IG-2609"
+  }
+}

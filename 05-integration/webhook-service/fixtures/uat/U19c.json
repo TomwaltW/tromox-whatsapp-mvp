@@ -1,0 +1,36 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U19（第 c 条回调）：会话三，第三位客户只问了问题、没有被问同意，consent_marketing 变量不存在，线索里应为空。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069026",
+  "whatsappNumber": "4917604069026",
+  "customerId": "TRXUAT19C3",
+  "sessionId": "TRXUAT19C3_2026-11-10T10:14:00.000Z",
+  "sessionCreationTime": "2026-11-10T10:14:00.000Z",
+  "customerCreationTime": "2026-11-10T10:14:00.000Z",
+  "firstName": "Lena",
+  "lastName": "V",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU19C001",
+      "date": "2026-11-10T10:14:10.000Z",
+      "from": "user",
+      "fromName": "Lena V",
+      "message": "Wo kann ich den MINO kaufen?",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "de",
+    "segment": "B2C",
+    "b2c_intent": "buy",
+    "product_interest": "MINO",
+    "ai_summary": "德国个人用户询问 MINO 购买渠道。",
+    "ai_confidence": "0.9",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

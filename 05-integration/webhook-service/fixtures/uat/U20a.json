@@ -1,0 +1,29 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U20（第 a 条回调）：客户按下 Dealer/Distributor 按钮。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069027",
+  "whatsappNumber": "4917604069027",
+  "customerId": "TRXUAT20C1",
+  "sessionId": "TRXUAT20C1_2026-11-10T10:20:00.000Z",
+  "sessionCreationTime": "2026-11-10T10:20:00.000Z",
+  "customerCreationTime": "2026-11-10T10:20:00.000Z",
+  "firstName": "Jonas",
+  "lastName": "W",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU20A001",
+      "date": "2026-11-10T10:20:05.000Z",
+      "from": "user",
+      "fromName": "Jonas W",
+      "message": "Dealer/Distributor",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "segment": "B2B"
+  }
+}

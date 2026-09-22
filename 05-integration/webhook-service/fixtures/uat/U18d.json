@@ -1,0 +1,30 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U18（第 d 条回调）：客户回复模板，24 小时窗口重开；流程在新会话开场已把 escalation_flag 重置为 false（README 第 8 节第 8 条）。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069023",
+  "whatsappNumber": "4917604069023",
+  "customerId": "TRXUAT18C1",
+  "sessionId": "TRXUAT18C1_2026-11-11T10:00:00.000Z",
+  "sessionCreationTime": "2026-11-11T10:00:00.000Z",
+  "customerCreationTime": "2026-11-10T09:30:00.000Z",
+  "firstName": "Felix",
+  "lastName": "B",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU18D001",
+      "date": "2026-11-11T11:00:00.000Z",
+      "from": "user",
+      "fromName": "Felix B",
+      "message": "Yes, still interested. Please send me the details.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

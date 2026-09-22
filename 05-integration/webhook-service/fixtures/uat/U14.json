@@ -1,0 +1,39 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U14：含糊的 B 端意向；AI Agent 判 B2B 但置信度 0.45，未自行写升级字段，由服务的规则层补 low_confidence。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "12025550153",
+  "whatsappNumber": "12025550153",
+  "customerId": "TRXUAT14C1",
+  "sessionId": "TRXUAT14C1_2026-11-10T10:00:00.000Z",
+  "sessionCreationTime": "2026-11-10T10:00:00.000Z",
+  "customerCreationTime": "2026-11-10T10:00:00.000Z",
+  "firstName": "Jordan",
+  "lastName": "M",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU14A001",
+      "date": "2026-11-10T10:00:10.000Z",
+      "from": "user",
+      "fromName": "Jordan M",
+      "message": "I might want some bikes for my business, not sure yet",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2B",
+    "b2b_type": "",
+    "b2c_intent": "",
+    "country_stated": "",
+    "city_region": "",
+    "contact_name": "",
+    "company": "",
+    "product_interest": "",
+    "ai_summary": "美国（按号码）客户说可能为自己的生意买几台车，意向不明；AI 拿不准，交销售判断。",
+    "ai_confidence": "0.45"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U05（第 c 条回调）：客户问意大利哪里能买 MINO；AI 按知识库作答，不转人工。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "393123456789",
+  "whatsappNumber": "393123456789",
+  "customerId": "TRXUAT05C1",
+  "sessionId": "TRXUAT05C1_2026-11-10T09:20:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:20:00.000Z",
+  "customerCreationTime": "2026-11-10T09:20:00.000Z",
+  "firstName": "Giulia",
+  "lastName": "R",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU05C001",
+      "date": "2026-11-10T09:20:40.000Z",
+      "from": "user",
+      "fromName": "Giulia R",
+      "message": "Where can I buy a MINO in Italy?",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2C",
+    "b2b_type": "",
+    "b2c_intent": "buy",
+    "country_stated": "IT",
+    "city_region": "",
+    "product_interest": "MINO",
+    "ai_summary": "意大利个人用户询问 MINO 的购买渠道；已按知识库回复经销商查询方式。",
+    "ai_confidence": "0.95",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

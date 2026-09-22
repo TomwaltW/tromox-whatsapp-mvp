@@ -1,0 +1,43 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U04（第 b 条回调）：随后的文字与按钮矛盾（三家店、整柜进口）；AI Agent 以文字为准改判 B2B/importer 并调低置信度，公司名与联系人未给，流程转入 B 端信息收集。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "61412345678",
+  "whatsappNumber": "61412345678",
+  "customerId": "TRXUAT04C1",
+  "sessionId": "TRXUAT04C1_2026-11-10T09:15:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:15:00.000Z",
+  "customerCreationTime": "2026-11-10T09:15:00.000Z",
+  "firstName": "Ben",
+  "lastName": "T",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU04B001",
+      "date": "2026-11-10T09:15:45.000Z",
+      "from": "user",
+      "fromName": "Ben T",
+      "message": "Actually I own three motorcycle shops in Australia and want to import a container of your bikes.",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "en",
+    "segment": "B2B",
+    "b2b_type": "importer",
+    "b2c_intent": "",
+    "country_stated": "AU",
+    "city_region": "",
+    "contact_name": "",
+    "company": "",
+    "role": "",
+    "product_interest": "",
+    "volume": "1 container",
+    "ai_summary": "澳大利亚客户拥有三家摩托车门店，想整柜进口；与按钮选择矛盾，按文字改判 B 端。",
+    "ai_confidence": "0.75",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

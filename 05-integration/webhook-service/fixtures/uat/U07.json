@@ -1,0 +1,39 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U07：西语客户的售后问题（Ukko 无法充电）；AI 按知识库给排查指引，不转人工。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "34612345679",
+  "whatsappNumber": "34612345679",
+  "customerId": "TRXUAT07C1",
+  "sessionId": "TRXUAT07C1_2026-11-10T09:30:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:30:00.000Z",
+  "customerCreationTime": "2026-11-10T09:30:00.000Z",
+  "firstName": "Carlos",
+  "lastName": "P",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU07A001",
+      "date": "2026-11-10T09:30:10.000Z",
+      "from": "user",
+      "fromName": "Carlos P",
+      "message": "Mi Ukko no carga, ¿qué hago?",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "es",
+    "segment": "B2C",
+    "b2b_type": "",
+    "b2c_intent": "support",
+    "country_stated": "",
+    "city_region": "",
+    "product_interest": "UKKO",
+    "ai_summary": "西班牙个人用户反映 Ukko 无法充电；已按知识库给出排查步骤。",
+    "ai_confidence": "0.9",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

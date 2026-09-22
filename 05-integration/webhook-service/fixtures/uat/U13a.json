@@ -1,0 +1,36 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U13（第 a 条回调）：第一条无意义内容；AI Agent 判 unknown、置信度高（抽取规则第 8 条），不升级。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "351912345678",
+  "whatsappNumber": "351912345678",
+  "customerId": "TRXUAT13C1",
+  "sessionId": "TRXUAT13C1_2026-11-10T09:55:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:55:00.000Z",
+  "customerCreationTime": "2026-11-10T09:55:00.000Z",
+  "firstName": "Rui",
+  "lastName": "F",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU13A001",
+      "date": "2026-11-10T09:55:10.000Z",
+      "from": "user",
+      "fromName": "Rui F",
+      "message": "asdf qwer",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "language": "",
+    "segment": "unknown",
+    "b2b_type": "",
+    "b2c_intent": "",
+    "ai_summary": "客户消息无法理解（第 1 次）。",
+    "ai_confidence": "0.9",
+    "escalation_flag": "false",
+    "escalation_reason": ""
+  }
+}

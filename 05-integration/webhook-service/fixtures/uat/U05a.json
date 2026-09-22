@@ -1,0 +1,29 @@
+{
+  "_note": "结构同 fixtures/message_with_variables_b2b.json 的 _note；号码、姓名、公司均为虚构。 UAT U05（第 a 条回调）：客户按下 Rider or Customer 按钮。",
+  "v": "1.1",
+  "type": "message",
+  "chatPlatform": "whatsapp",
+  "contactId": "393123456789",
+  "whatsappNumber": "393123456789",
+  "customerId": "TRXUAT05C1",
+  "sessionId": "TRXUAT05C1_2026-11-10T09:20:00.000Z",
+  "sessionCreationTime": "2026-11-10T09:20:00.000Z",
+  "customerCreationTime": "2026-11-10T09:20:00.000Z",
+  "firstName": "Giulia",
+  "lastName": "R",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "messages": [
+    {
+      "_id_": "TRXUATU05A001",
+      "date": "2026-11-10T09:20:05.000Z",
+      "from": "user",
+      "fromName": "Giulia R",
+      "message": "Rider or Customer",
+      "operatorId": null,
+      "clientPayload": ""
+    }
+  ],
+  "variables": {
+    "segment": "B2C"
+  }
+}

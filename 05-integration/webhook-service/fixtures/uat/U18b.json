@@ -1,0 +1,19 @@
+{
+  "_note": "结构同 fixtures/event_conversation_close.json 的 _note；号码、姓名均为虚构。 UAT U18（第 b 条回调）：会话被分配给销售坐席，线索转 handed_off。事件名 assigned-to-agent 按 app/normalize.py 的 ASSIGNMENT_EVENTS 假设，Botmaker 是否下发此类事件见 README 第 8 节第 4 条。",
+  "v": "1.1",
+  "type": "event",
+  "chatPlatform": "whatsapp",
+  "contactId": "4917604069023",
+  "customerId": "TRXUAT18C1",
+  "chatIdInChatPlatform": "4917604069023",
+  "customerCreationTime": "2026-11-10T09:30:00.000Z",
+  "chatChannelId": "tromox-whatsapp-000000000000",
+  "events": [
+    {
+      "name": "assigned-to-agent",
+      "info": [
+        { "name": "agentName", "value": "Li Wei" }
+      ]
+    }
+  ]
+}
