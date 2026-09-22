@@ -42,7 +42,8 @@ def main() -> int:
     settings = get_settings()
     setup_logging(settings.log_level)
     store = SqliteStore(settings.database_path)
-    pipeline = Pipeline(settings, store, build_sinks(settings.storage_backend_list, store, settings.csv_export_path),
+    pipeline = Pipeline(settings, store,
+                        build_sinks(settings.storage_backend_list, store, settings.csv_export_path, settings=settings),
                         build_notifiers(settings))
     counts = replay(pipeline, args.max_attempts)
     if args.export:

@@ -1,14 +1,33 @@
 """Storage: SQLite is the primary store (leads + idempotency ledger); sinks mirror leads."""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from .base import LeadSink, NotificationRow, RawEventState
 from .csv_export import CsvExportSink
 from .sqlite_store import SqliteStore
 
+if TYPE_CHECKING:  # pragma: no cover - import for type hints only
+    from ..config import Settings
+
 __all__ = ["CsvExportSink", "LeadSink", "NotificationRow", "RawEventState", "SqliteStore", "build_sinks"]
 
+# (Settings attribute, environment variable) pairs the feishu_bitable sink cannot run without.
+FEISHU_BITABLE_SETTINGS: tuple[tuple[str, str], ...] = (
+    ("feishu_app_id", "FEISHU_APP_ID"),
+    ("feishu_app_secret", "FEISHU_APP_SECRET"),
+    ("feishu_bitable_app_token", "FEISHU_BITABLE_APP_TOKEN"),
+    ("feishu_bitable_table_id", "FEISHU_BITABLE_TABLE_ID"),
+)
 
-def build_sinks(names: list[str], store: SqliteStore, csv_path) -> list[LeadSink]:
+
+def build_sinks(names: list[str], store: SqliteStore, csv_path, *, settings: Settings | None = None) -> list[LeadSink]:
     """Instantiate the sinks named in STORAGE_BACKENDS. `sqlite` is always on (it is the
-    ledger), so it is accepted here and skipped. Stub sinks fail fast at start-up."""
+    ledger), so it is accepted here and skipped. A sink whose configuration is missing, and
+    the remaining stub, fail fast at start-up instead of silently dropping leads.
+
+    `settings` is only needed for `feishu_bitable`; callers that never enable it may keep
+    the old three-argument form."""
     sinks: list[LeadSink] = []
     for name in names:
         if name == "sqlite":
@@ -17,7 +36,17 @@ def build_sinks(names: list[str], store: SqliteStore, csv_path) -> list[LeadSink
             sinks.append(CsvExportSink(store, csv_path))
         elif name == "feishu_bitable":
             from .feishu_bitable import FeishuBitableSink
-            sinks.append(FeishuBitableSink())
+            missing = [env for attr, env in FEISHU_BITABLE_SETTINGS
+                       if settings is None or not str(getattr(settings, attr, "") or "").strip()]
+            if missing:
+                raise ValueError(
+                    "feishu_bitable storage needs " + ", ".join(missing)
+                    + (" (build_sinks was called without settings)" if settings is None else "")
+                    + "; set them or remove feishu_bitable from STORAGE_BACKENDS"
+                )
+            assert settings is not None
+            sinks.append(FeishuBitableSink(settings.feishu_app_id, settings.feishu_app_secret,
+                                           settings.feishu_bitable_app_token, settings.feishu_bitable_table_id))
         elif name == "gsheets":
             from .gsheets import GoogleSheetsSink
             sinks.append(GoogleSheetsSink())
