@@ -12,7 +12,7 @@
 | `backup.sh` | `backup.sh <data_dir> <backup_dir> [keep_days=30]`：`sqlite3 .backup` 在线一致性备份，删过期备份，打印备份文件路径 |
 | `restore.sh` | `restore.sh <backup_file> <data_dir>`：覆盖 `leads.db`、删 `-wal` / `-shm`、留底现有库；不停起容器，只提示下一步 |
 | `update.sh` | `update.sh [compose_dir]`：`git pull --ff-only` → 重建镜像 → 重建容器 → 等 `/health` 200（最多 60 秒） |
-| `healthcheck-alert.sh` | `healthcheck-alert.sh <health_url> [alert_webhook_url]`：健康则安静退出 0；否则 stderr 报 `tromox webhook down`，POST `{"text": "..."}` 到告警地址，退出 1 |
+| `healthcheck-alert.sh` | `healthcheck-alert.sh <health_url> [alert_webhook_url]`：健康则安静退出 0；否则 stderr 报 `tromox webhook down`，POST `{"text": "..."}` 到告警地址，退出 1。设了环境变量 `TROMOX_METRICS_TOKEN` 再查 `/metrics`，回调堆积或通知失败时报 `tromox webhook degraded`（第 3 节） |
 | `cron.example` | 三条定时任务：每 5 分钟 `app.replay`、每日备份、每 5 分钟健康检查 |
 | `.gitignore` | 本目录的 `.env`、`Caddyfile`、`data/` 不进仓库 |
 
@@ -52,6 +52,18 @@ cd /opt/tromox/app/05-integration/deploy
 - **恢复**：`docker compose stop webhook` → `./restore.sh /opt/tromox/backup/leads-YYYY-MM-DD.db /opt/tromox/data` → 按脚本打印的提示 `docker compose up -d webhook`、重放并重写 CSV。上线前演练一次。
 - **更新**：`./update.sh`（等价于 `git pull --ff-only`、`docker compose build webhook`、`docker compose up -d webhook`、等 `/health`）。放在咨询低谷做；跑完看一眼 `docker compose logs --tail 50 webhook`。旧镜像会积累，隔一阵 `docker image prune -f`。
 - **告警去哪**：`healthcheck-alert.sh` 的第二个参数是任意接收 `{"text": "..."}` JSON POST 的地址（通用 webhook）；飞书 / 企业微信群机器人要的字段不同，接它们时在中间放一个转换端点，或改脚本里 `payload` 那一行。
+- **不只看进程活着**：`/health` 只查数据库能不能 ping，Token 配错、通知全失败、原始回调堆着没处理它照样 200。给 `healthcheck-alert.sh` 设环境变量 `TROMOX_METRICS_TOKEN`（值 = `.env` 里的 `BOTMAKER_WEBHOOK_TOKEN`），它在 `/health` 正常之后再带 `auth-bm-token` 头 `GET <health_url 去掉 /health>/metrics`（所以第一个参数必须以 `/health` 结尾），`raw_events_unprocessed > 0` 或 `notifications.failed_24h > 0` 就 stderr 报 `tromox webhook degraded: unprocessed=<n> failed_24h=<n>`、POST 告警、退出 1；`/metrics` 本身非 200 也算 degraded。变量不设，行为与只查 `/health` 完全一样。指标口径见 `../webhook-service/README.md` 第 1 节"指标"一行。手工跑与 cron 写法：
+
+  ```bash
+  TROMOX_METRICS_TOKEN=<BOTMAKER_WEBHOOK_TOKEN 的值> ./healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址>; echo "exit=$?"
+  ```
+
+  ```
+  # crontab：把 cron.example 里的健康检查那行换成这条（Token 别写进 cron.example 这类会进仓库的文件）
+  */5 * * * * TROMOX_METRICS_TOKEN=<BOTMAKER_WEBHOOK_TOKEN 的值> /opt/tromox/app/05-integration/deploy/healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址> 2>&1 | logger -t tromox
+  ```
+
+  收到 degraded 后怎么办：`unprocessed` 大于 0 说明重放没跟上或某条一直处理失败，`docker compose exec -T webhook python -m app.replay` 跑一遍再看日志里的 `error`；`failed_24h` 大于 0 说明群机器人地址或网络出了问题，看 `docker compose logs --tail 200 webhook | grep 'notification failed'`。
 
 ## 4. 本机 smoke test
 
@@ -73,11 +85,12 @@ curl -s -X POST http://127.0.0.1:18080/webhooks/botmaker \
 docker compose -p tromox-smoke restart webhook && sleep 3 && curl -s http://127.0.0.1:18080/health
 ls "$T/data"                                                # leads.db、leads.csv
 ./healthcheck-alert.sh http://127.0.0.1:18080/health; echo "exit=$?"   # 0、不出声
+TROMOX_METRICS_TOKEN=local-token ./healthcheck-alert.sh http://127.0.0.1:18080/health; echo "exit=$?"   # 0、不出声（顺带查了 /metrics）
 
 docker compose -p tromox-smoke down -v && rm -rf "$T"
 ```
 
-脚本单测不需要 Docker：`backup.sh` / `restore.sh` 对任意 SQLite 文件都能跑，`healthcheck-alert.sh` 对一个返回 503 的地址应退出 1 并在 stderr 打印 `tromox webhook down`。
+脚本单测不需要 Docker：`backup.sh` / `restore.sh` 对任意 SQLite 文件都能跑，`healthcheck-alert.sh` 对一个返回 503 的地址应退出 1 并在 stderr 打印 `tromox webhook down`。 设了 `TROMOX_METRICS_TOKEN` 时，对 `/metrics` 返回 `raw_events_unprocessed` 非 0 的地址应退出 1 并打印 `tromox webhook degraded`。
 
 ## 5. 与 deployment.md 的对应
 

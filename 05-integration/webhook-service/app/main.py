@@ -16,6 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from . import __version__
 from .config import Settings, get_settings
 from .logging_setup import setup_logging
+from .metrics import DEFAULT_HOURS, MAX_HOURS, MIN_HOURS, collect
 from .notify import Notifier, build_notifiers
 from .pipeline import Pipeline
 from .retry import RetryPolicy
@@ -60,6 +61,29 @@ def create_app(settings: Settings | None = None, *, notifiers: list[Notifier] | 
             "notifiers": [n.name for n in pipeline.notifiers],
         }
         return JSONResponse(body, status_code=200 if db_ok else 503)
+
+    @app.get("/metrics")
+    def metrics(request: Request) -> JSONResponse:
+        # 与 /webhooks/botmaker 同一把密钥：无配置 503、不对或缺 401。不套 ALLOWED_IPS —— 那是 Botmaker 出口 IP，
+        # 而这里的调用方是服务器自己的 cron（deploy/healthcheck-alert.sh）。
+        client_ip = request.client.host if request.client else None
+        if not settings.botmaker_webhook_token:
+            log.error("metrics rejected: BOTMAKER_WEBHOOK_TOKEN is not configured", extra={"status_code": 503})
+            return JSONResponse({"detail": "webhook token not configured"}, status_code=503)
+        if not verify_token(request.headers.get(TOKEN_HEADER), settings.botmaker_webhook_token):
+            log.warning("metrics rejected: bad or missing token", extra={"status_code": 401, "client_ip": client_ip})
+            return JSONResponse({"detail": "invalid token"}, status_code=401)
+        raw_hours = request.query_params.get("hours")
+        hours = DEFAULT_HOURS
+        if raw_hours is not None:
+            try:
+                hours = int(raw_hours)
+            except ValueError:
+                hours = 0
+            if not MIN_HOURS <= hours <= MAX_HOURS:
+                return JSONResponse({"detail": f"hours must be an integer between {MIN_HOURS} and {MAX_HOURS}"},
+                                    status_code=400)
+        return JSONResponse(collect(settings.database_path, hours=hours))
 
     @app.post("/webhooks/botmaker")
     async def botmaker_webhook(request: Request, background_tasks: BackgroundTasks) -> JSONResponse:
