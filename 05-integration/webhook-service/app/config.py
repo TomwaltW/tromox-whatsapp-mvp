@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # --- storage ------------------------------------------------------------------------
     database_path: Path = Path("data/leads.db")
     csv_export_path: Path = Path("data/leads.csv")
+    csv_export_min_interval_s: float = 5.0    # CSV mirror write-behind: one rewrite per interval; 0 = every callback
     storage_backends: str = "sqlite,csv"
     keep_raw_payloads: bool = False           # trial only: keep raw callbacks to capture real samples
     feishu_app_id: str = ""                   # feishu_bitable sink: self-built app credentials

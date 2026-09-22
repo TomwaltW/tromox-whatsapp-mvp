@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import Any
 
 from fastapi import BackgroundTasks, FastAPI, Request
@@ -44,8 +46,22 @@ def create_app(settings: Settings | None = None, *, notifiers: list[Notifier] | 
     if not settings.botmaker_webhook_token:
         log.error("BOTMAKER_WEBHOOK_TOKEN is not set: /webhooks/botmaker will answer 503 until it is configured")
 
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
+        yield
+        # A sink may buffer (the CSV mirror coalesces a burst into one rewrite): write what is
+        # pending before the process goes away, so a graceful stop never loses the last callbacks.
+        for sink in pipeline.sinks:
+            flush = getattr(sink, "flush", None)
+            if callable(flush):
+                try:
+                    flush()
+                except Exception as exc:  # shutdown must not raise
+                    log.exception("flushing sink failed at shutdown",
+                                  extra={"sink": sink.name, "error_type": type(exc).__name__})
+
     app = FastAPI(title="Tromox Botmaker webhook service", version=__version__,
-                  docs_url=None, redoc_url=None, openapi_url=None)
+                  docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
     app.state.pipeline = pipeline
     app.state.settings = settings
 

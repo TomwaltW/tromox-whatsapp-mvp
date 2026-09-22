@@ -193,6 +193,8 @@ def test_csv_export_mirrors_the_lead_table(client):
     _post(client, "message_user_first.json")
     _post(client, "message_with_variables_b2b.json")
     _post(client, "message_b2c_faq.json")
+    for sink in client.app.state.pipeline.sinks:   # 写后合并：这一阵回调的补写由 flush 触发（服务退出时同理）
+        sink.flush()
     path = client.app.state.settings.csv_export_path
     with path.open(encoding="utf-8-sig", newline="") as fh:
         rows = list(csv.DictReader(fh))

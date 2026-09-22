@@ -46,6 +46,10 @@ def main() -> int:
                         build_sinks(settings.storage_backend_list, store, settings.csv_export_path, settings=settings),
                         build_notifiers(settings))
     counts = replay(pipeline, args.max_attempts)
+    for sink in pipeline.sinks:  # the CSV mirror coalesces a burst: write what replaying left pending
+        flush = getattr(sink, "flush", None)
+        if callable(flush):
+            flush()
     if args.export:
         CsvExportSink(store, settings.csv_export_path).export()
     log.info("replay finished: %s", counts)
