@@ -120,6 +120,15 @@ docker exec tromox-webhook python -m app.forget --phone +<E.164 号码> --yes
 
 ## 9. 上线前检查
 
+下面 9 项里，1–5 与 8 可以用 `deploy/rehearsal.sh` 对着正在跑的部署自动跑一遍，打出一张同样行号的结果表，有 FAIL 就退出 1（第 3 项的"卡片 60 秒内到群里"仍要人工看一眼；6、7、9 是纯人工项）：
+
+```bash
+cd 05-integration/deploy
+./rehearsal.sh https://wa-hook.<客户域名> <BOTMAKER_WEBHOOK_TOKEN 的值> --compose-dir .; echo "exit=$?"
+```
+
+不带 `--compose-dir` 时第 5、8 项记 SKIP（脚本不碰容器，只把该跑的删除命令打出来）。用法与输出怎么读在 `deploy/README.md` 第 3 节。
+
 | # | 检查项 | 通过标准 |
 |---|---|---|
 | 1 | `/health` | 200，`webhook_token_configured` 为 true，`notifiers` 列出所选渠道 |
