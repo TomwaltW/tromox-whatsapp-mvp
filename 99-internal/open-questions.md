@@ -60,7 +60,7 @@
 |---|---|---|
 | 【待核实】 | 集成工程师（沈思锴） | 267 |
 | 【张宝文确认】 | 张宝文 | 85 |
-| 【待客户确认】 | 客户（经张宝文 / Kim 对接） | 230 |
+| 【待客户确认】 | 客户（经张宝文 / Kim 对接） | 232 |
 
 ## 3. 我要做的：平台、政策、价格类事实核实
 
@@ -462,205 +462,207 @@
 | 26 | 内容类型 / 建议审核人【待客户确认】 | `00-client/运维手册.md:50` | 客户（经张宝文 / Kim 对接） |
 | 27 | 转人工率与原因分布 / 转人工比例建议不高于 30%【待客户确认】；各原因各占多少 / 偏高说明知识库不够，补 FAQ；"AI 没把握"与"连续没听懂"偏多时结合第六项复盘 | `00-client/运维手册.md:132` | 客户（经张宝文 / Kim 对接） |
 | 28 | 周报之外还有几项不在周报里：超过 24 小时未回复的会话仍按第 2 节每天看；对话质量仍按第 4 节每周抽查；咨询量按天的走势与销售首次响应时间（工作时间内 B 端线索 2 小时内【待客户确认】）在 Botmaker 数据看板【待核实】里看；号码质量评级与连接状态在 Meta 后台的 WhatsApp 管理功能【待核实】里看，评级下降时立… | `00-client/运维手册.md:137` | 客户（经张宝文 / Kim 对接） |
-| 29 | 客户要求删除个人数据 / 记录请求的时间、号码，以及是不是客户本人提出 / 报业务负责人确认后，把号码交给技术，**不要自己在后台删**。技术会一次性删除线索库、导出的表格与多维表格镜像里的记录，并回复处理时间；运营据此答复客户并登记。答复期限【待客户确认】 / 每次都需要技术执行删除 | `00-client/运维手册.md:162` | 客户（经张宝文 / Kim 对接） |
-| 30 | 假设：响应时限、周末值班安排、线索分工为建议值【待客户确认】；Botmaker 后台的按钮名称以培训时看到的实际界面为准【待核实】；结束分类的名称为暂定【待核实】【待客户确认】。 | `00-client/销售接手SOP.md:5` | 客户（经张宝文 / Kim 对接） |
-| 31 | 谁来接：按销售负责人定的国家或类型分工【待客户确认】。接的人在群里回一句"我接"，避免两个人同时回复。 | `00-client/销售接手SOP.md:43` | 客户（经张宝文 / Kim 对接） |
-| 32 | 以下均为建议【待客户确认】： | `00-client/销售接手SOP.md:69` | 客户（经张宝文 / Kim 对接） |
-| 33 | 夜间进线时，AI 已经告诉客户"同事将在一个工作日内回复"，并说明了工作时间（默认周一至周五 09:00 至 18:00，北京时间【待客户确认】）。销售要做的就是兑现这句话。 | `00-client/销售接手SOP.md:79` | 客户（经张宝文 / Kim 对接） |
-| 34 | 同一位客户同一件事，模板最多发 2 次，两次至少间隔 3 天；两次都没有回复，就把线索状态改为培育或无意向，不再追发【待客户确认】。 | `00-client/销售接手SOP.md:100` | 客户（经张宝文 / Kim 对接） |
-| 35 | 结束会话时，在 Botmaker 里选择一个结束分类，系统会据此更新线索库里的状态。名称为暂定【待核实】【待客户确认】。 | `00-client/销售接手SOP.md:106` | 客户（经张宝文 / Kim 对接） |
-| 36 | 状态：已采纳方向（2026-09-21）；具体选 a 还是 b 取决于客户现有号码状况【待客户确认】。 | `01-design/adr/0002-number-strategy.md:4` | 客户（经张宝文 / Kim 对接） |
-| 37 | 客户现有号码的类型、国家码、持机人，是否已在 WhatsApp Business App 上使用 / 【待客户确认】 | `01-design/adr/0002-number-strategy.md:57` | 客户（经张宝文 / Kim 对接） |
-| 38 | 新号用哪个国家的号码、由哪个主体办理 / 【待客户确认】 | `01-design/adr/0002-number-strategy.md:58` | 客户（经张宝文 / Kim 对接） |
-| 39 | 客户团队日常用什么表格工具还不知道【待客户确认】。 | `01-design/adr/0004-lead-storage.md:11` | 客户（经张宝文 / Kim 对接） |
-| 40 | 备份**：每日把数据库文件与 CSV 复制到客户指定的存储位置【待客户确认】；保留期见 03-whatsapp/compliance.md。 | `01-design/adr/0004-lead-storage.md:19` | 客户（经张宝文 / Kim 对接） |
-| 41 | 直接写飞书多维表格 / 销售看着方便；权限现成 / 依赖客户是否用飞书；接口限流与字段变更会反过来约束服务；欧盟客户数据进入境内工具需法务评估【待客户确认】 | `01-design/adr/0004-lead-storage.md:25` | 客户（经张宝文 / Kim 对接） |
-| 42 | 客户用哪种表格或协作工具；是否需要同步适配器 / 【待客户确认】 | `01-design/adr/0004-lead-storage.md:41` | 客户（经张宝文 / Kim 对接） |
-| 43 | 备份放在哪里、保留多久 / 【待客户确认】 | `01-design/adr/0004-lead-storage.md:42` | 客户（经张宝文 / Kim 对接） |
-| 44 | 欧盟客户数据同步到境内工具的合规评估 / 【待客户确认】需法务复核 | `01-design/adr/0004-lead-storage.md:43` | 客户（经张宝文 / Kim 对接） |
-| 45 | 状态：已采纳适配器方案（2026-09-21）；具体接哪个工具【待客户确认】。 | `01-design/adr/0005-notification-channel.md:4` | 客户（经张宝文 / Kim 对接） |
-| 46 | 销售团队用哪种协作工具、通知发到哪个群 / 【待客户确认】 | `01-design/adr/0005-notification-channel.md:42` | 客户（经张宝文 / Kim 对接） |
-| 47 | 是否需要按语种或区域分群通知 / 【待客户确认】 | `01-design/adr/0005-notification-channel.md:43` | 客户（经张宝文 / Kim 对接） |
-| 48 | 含欧盟用户信息的通知进入境内协作工具的合规评估 / 【待客户确认】需法务复核 | `01-design/adr/0005-notification-channel.md:45` | 客户（经张宝文 / Kim 对接） |
-| 49 | 咨询以英语为主，另有西、德、法、葡等语种（具体语种【待客户确认】），小语种上的分类质量是主要不确定项。 | `01-design/adr/0006-model-selection.md:9` | 客户（经张宝文 / Kim 对接） |
-| 50 | 客户主体在中国大陆，另有欧洲服务中心（SOURCES 第 4 节）；由哪个主体签约、付款，决定了哪些模型开得出来【待客户确认】。 | `01-design/adr/0006-model-selection.md:10` | 客户（经张宝文 / Kim 对接） |
-| 51 | 主体可开通性 / 高：随 Botmaker 账号开通，无需另签 / 取决于签约主体：境内主体直接签约与付款可能受限，境外主体可行性更高【待客户确认】 / 高：人民币结算、可开票 | `01-design/adr/0006-model-selection.md:27` | 客户（经张宝文 / Kim 对接） |
-| 52 | 数据条款 / 服务条款写 Botmaker 对客户数据的使用限于提供服务，但隐私政策另有"改进服务、研究"用途；Co-pilot 原文写明用于训练 ChatGPT 模型（不启用）；AI Agent 的对话与下游模型供应商（至少两家）是否用于训练、有无 DPA 与子处理方清单，公开页面都没有，须书面问 Botmaker【待核实】（SOURC… | `01-design/adr/0006-model-selection.md:30` | 客户（经张宝文 / Kim 对接） |
-| 53 | 由哪个主体签约与付款 / 【待客户确认】 | `01-design/adr/0006-model-selection.md:57` | 客户（经张宝文 / Kim 对接） |
-| 54 | 欧盟用户数据进入境内模型服务的合规评估 / 【待客户确认】需法务复核 | `01-design/adr/0006-model-selection.md:60` | 客户（经张宝文 / Kim 对接） |
-| 55 | 销售群通知 / 60 秒内把 B 端线索摘要推给销售；号码默认打码 / 客户现有协作工具【待客户确认】 / 选型见 adr/0005-notification-channel.md | `01-design/architecture.md:132` | 客户（经张宝文 / Kim 对接） |
-| 56 | 销售群用哪种协作工具 / 【待客户确认】 | `01-design/architecture.md:199` | 客户（经张宝文 / Kim 对接） |
-| 57 | 假设：英文为母版；西、德、法、葡为占位，具体语种【待客户确认】；{privacy_url}、{working_hours}、{sla_b2b}、{sla_general} 为占位符，默认值见第 5 节，均【待客户确认】；话术里不出现任何参数、价格、质保条款。 | `01-design/conversation-flow.md:4` | 客户（经张宝文 / Kim 对接） |
-| 58 | 媒体、供应商、求职等与销售无关但与摩兽有关的来访：依据知识库给出对应的公开联系方式（内容【待客户确认】），segment 保持 unknown，随后结束。 | `01-design/conversation-flow.md:134` | 客户（经张宝文 / Kim 对接） |
-| 59 | 问题已解决且客户无后续：进 S8_CONSENT（该步骤是否启用【待客户确认】），否则直接结束。 | `01-design/conversation-flow.md:151` | 客户（经张宝文 / Kim 对接） |
-| 60 | 触发 / C 端问题已解决；是否启用【待客户确认】 | `01-design/conversation-flow.md:184` | 客户（经张宝文 / Kim 对接） |
-| 61 | S1 开场问候与三个按钮 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:219` | 客户（经张宝文 / Kim 对接） |
-| 62 | S2 一次问齐 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:220` | 客户（经张宝文 / Kim 对接） |
-| 63 | S2 交接话术 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:221` | 客户（经张宝文 / Kim 对接） |
-| 64 | S3 C 端接待与三个按钮 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:222` | 客户（经张宝文 / Kim 对接） |
-| 65 | S4 其他 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:223` | 客户（经张宝文 / Kim 对接） |
-| 66 | S6 一般转人工 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:224` | 客户（经张宝文 / Kim 对接） |
-| 67 | S7 非工作时间 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:225` | 客户（经张宝文 / Kim 对接） |
-| 68 | S8 营销同意与两个按钮 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:226` | 客户（经张宝文 / Kim 对接） |
-| 69 | 话题收口 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:227` | 客户（经张宝文 / Kim 对接） |
-| 70 | 价格与质保守卫 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:228` | 客户（经张宝文 / Kim 对接） |
-| 71 | 没听懂两次 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:229` | 客户（经张宝文 / Kim 对接） |
-| 72 | {privacy_url} / 客户官网隐私政策链接 / 【待客户确认】 | `01-design/conversation-flow.md:237` | 客户（经张宝文 / Kim 对接） |
-| 73 | {working_hours} / Monday to Friday, 09:00-18:00 China time (UTC+8) / 【待客户确认】 | `01-design/conversation-flow.md:238` | 客户（经张宝文 / Kim 对接） |
-| 74 | {sla_b2b} / one business day / 【待客户确认】 | `01-design/conversation-flow.md:239` | 客户（经张宝文 / Kim 对接） |
-| 75 | {sla_general} / one business day / 【待客户确认】 | `01-design/conversation-flow.md:240` | 客户（经张宝文 / Kim 对接） |
-| 76 | ai_summary / string / AI 抽取 / 给销售看的一两句话摘要（默认简体中文【待客户确认】） / 是 | `01-design/lead-schema.md:40` | 客户（经张宝文 / Kim 对接） |
-| 77 | 产品代码目录：MC10、UKKO、M05、MINO、M03、PESGO（来自官网公开车型名，SOURCES 第 4 节）。现售清单【待客户确认】。 | `01-design/lead-schema.md:91` | 客户（经张宝文 / Kim 对接） |
-| 78 | 假设：工作时间、响应时限、结束分类名称均为默认值，【待客户确认】。 | `01-design/routing-rules.md:5` | 客户（经张宝文 / Kim 对接） |
-| 79 | 回复语言：客户语言在支持清单内（SUPPORTED_LANGUAGES：en、es、de、fr、pt、it，最终清单【待客户确认】）则跟随；不在清单内用英文作答，并在需要时转人工 | `01-design/routing-rules.md:45` | 客户（经张宝文 / Kim 对接） |
-| 80 | 队列 / MVP 设一个销售队列；按语种或区域分队列放到调优期再定【待客户确认】 | `01-design/routing-rules.md:121` | 客户（经张宝文 / Kim 对接） |
-| 81 | 结束分类与线索状态的映射（分类名称【待核实】【待客户确认】）： | `01-design/routing-rules.md:126` | 客户（经张宝文 / Kim 对接） |
-| 82 | 默认工作时间：周一至周五 09:00 至 18:00，北京时间（UTC+8）【待客户确认】。 | `01-design/routing-rules.md:138` | 客户（经张宝文 / Kim 对接） |
-| 83 | 响应时限（全部【待客户确认】）： | `01-design/routing-rules.md:160` | 客户（经张宝文 / Kim 对接） |
-| 84 | 同一客户同一咨询，模板最多发 2 次，间隔不少于 3 天；两次都没回就把线索状态记为 nurture 或 closed_lost，不再追发【待客户确认】。（与 02-botmaker/templates/README.md 同一口径。） | `01-design/routing-rules.md:187` | 客户（经张宝文 / Kim 对接） |
-| 85 | 假设：{whatsapp_number} 为最终接入的公司号码【待客户确认】；预填文案母版为 Hi Tromox!。 | `01-design/source-tracking.md:5` | 客户（经张宝文 / Kim 对接） |
-| 86 | 可选扩展【待客户确认】：面向单一市场的账号可以用当地语言的预填文案（如德语账号用 Hallo Tromox! [IG-2609D]），短码解析不受影响，语言判定还能更早生效。 | `01-design/source-tracking.md:79` | 客户（经张宝文 / Kim 对接） |
-| 87 | IG-2609 / Instagram / 主页链接 / 全球 / 常驻 / 2026-09-21 / 【待客户确认】 / 示例行 | `01-design/source-tracking.md:87` | 客户（经张宝文 / Kim 对接） |
-| 88 | AD-2609A / Click-to-WhatsApp / 广告组 A / 【待客户确认】 / 【待客户确认】 /  /  / 示例行 | `01-design/source-tracking.md:88` | 客户（经张宝文 / Kim 对接） |
-| 89 | 产品 / prod_ / product_interest 中的产品代码小写；目录见 shared/tromox_lead/products.py【待客户确认】 / prod_mc10 /  / 上 | `01-design/tag-taxonomy.md:20` | 客户（经张宝文 / Kim 对接） |
-| 90 | 优先级 / prio_ / 规则：B 端且类型为 distributor / importer / fleet 为 high，其余 B 端为 normal；C 端仅在投诉、质保争议、法律、安全类升级时为 high【待客户确认】 / prio_high /  / 上 | `01-design/tag-taxonomy.md:25` | 客户（经张宝文 / Kim 对接） |
-| 91 | 假设：支持语种、工作时间、回复时限、隐私政策链接均为默认值【待客户确认】；AI Agent 可用的动作（转人工、跳转流程）与变量写入方式以试用账号实测为准【待核实】（SOURCES S-B9）。 | `02-botmaker/ai-agent-system-prompt.md:5` | 客户（经张宝文 / Kim 对接） |
-| 92 | 粘贴前替换占位符：{privacy_url}、{working_hours}、{sla_b2b}、{sla_general}、{safety_line}，取值均【待客户确认】；默认值见 2.8 下方的说明。 | `02-botmaker/ai-agent-system-prompt.md:11` | 客户（经张宝文 / Kim 对接） |
-| 93 | 本段待确认：支持语种清单【待客户确认】；精简版只对英语加 1 个主要语种做测试与调优，其余语种 AI 仍会应答但不在验收范围。 | `02-botmaker/ai-agent-system-prompt.md:55` | 客户（经张宝文 / Kim 对接） |
-| 94 | {privacy_url} / 客户隐私政策链接 / 【待客户确认】 | `02-botmaker/ai-agent-system-prompt.md:142` | 客户（经张宝文 / Kim 对接） |
-| 95 | {safety_line} / If anyone is in danger, please contact your local emergency services first. / 【待客户确认】，建议法务过目 | `02-botmaker/ai-agent-system-prompt.md:143` | 客户（经张宝文 / Kim 对接） |
-| 96 | 非英语的机器人回复仅示意"语言跟随客户"，译文上线前须由母语者审核【待客户确认】。 | `02-botmaker/ai-agent-system-prompt.md:277` | 客户（经张宝文 / Kim 对接） |
-| 97 | AI / {知识库答案：西班牙的试驾与购买渠道，以西班牙语作答}【待客户确认】 | `02-botmaker/ai-agent-system-prompt.md:355` | 客户（经张宝文 / Kim 对接） |
-| 98 | 占位符写法：{…}，填完后删除花括号与【待客户确认】标记。 | `02-botmaker/knowledge-base-template.md:13` | 客户（经张宝文 / Kim 对接） |
-| 99 | 字段说明：**ID**（分类前缀 + 序号）、**问题（EN）**、**答案**、**AI 直答**、**负责人**（起草）、**审核人**、**最后更新**。负责人与审核人的具体人选【待客户确认】。 | `02-botmaker/knowledge-base-template.md:18` | 客户（经张宝文 / Kim 对接） |
-| 100 | KB-PRD-001 / Which models does Tromox currently offer? / {现售车型清单与一句话定位；车型家族名见 SOURCES 第 4 节，现售清单以客户为准}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:24` | 客户（经张宝文 / Kim 对接） |
-| 101 | KB-PRD-002 / What are the main differences between the models? / {各车型面向的人群与用途，不写具体参数或写经确认的公开参数}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:25` | 客户（经张宝文 / Kim 对接） |
-| 102 | KB-PRD-003 / How fast can it go and how far on a single charge? / {按车型给出对外口径；无统一口径则引导到官网车型页}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:26` | 客户（经张宝文 / Kim 对接） |
-| 103 | KB-PRD-004 / How long does the battery take to charge, and what is its lifespan? / {对外口径}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:27` | 客户（经张宝文 / Kim 对接） |
-| 104 | KB-PRD-005 / Do I need a licence to ride it? Can I carry a passenger? / {按国家分条；无把握的国家写"请咨询当地经销商"}【待客户确认】 / 需转人工 / 运营 / 法务或区域负责人 | `02-botmaker/knowledge-base-template.md:28` | 客户（经张宝文 / Kim 对接） |
-| 105 | KB-PRD-006 / Is there an app? What can it do? / {对外口径}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:29` | 客户（经张宝文 / Kim 对接） |
-| 106 | KB-PRD-007 / Where can I find manuals and specifications? / {官网链接}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:30` | 客户（经张宝文 / Kim 对接） |
-| 107 | KB-PRD-008 / What is an e-motorcycle and how does it compare with a petrol one? / {通用科普口径}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:31` | 客户（经张宝文 / Kim 对接） |
-| 108 | KB-BUY-001 / Is Tromox available in my country? / {已覆盖国家清单；未覆盖国家的统一说法}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:37` | 客户（经张宝文 / Kim 对接） |
-| 109 | KB-BUY-002 / Where can I buy a Tromox? / {按国家分条：经销商查询页或当地总代联系方式}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:38` | 客户（经张宝文 / Kim 对接） |
-| 110 | KB-BUY-003 / Can I buy online? / {对外口径}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:39` | 客户（经张宝文 / Kim 对接） |
-| 111 | KB-BUY-004 / How much does it cost? / {是否有可对外说的零售指导价；没有则写"价格因国家而异，请联系当地经销商"}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:40` | 客户（经张宝文 / Kim 对接） |
-| 112 | KB-BUY-005 / How do I become a Tromox dealer or distributor? / {申请流程的对外说法；AI 会先收集公司、国家、业务类型、意向车型与数量，再转销售} 【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:41` | 客户（经张宝文 / Kim 对接） |
-| 113 | KB-BUY-006 / What are the requirements to become a reseller in my country? / {可对外说的基本要求；官网 FAQ 提到希望申请方已有至少 1 年的既有架构，是否沿用由销售确认}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:42` | 客户（经张宝文 / Kim 对接） |
-| 114 | KB-BUY-008 / Do you offer fleet, rental or corporate purchase programmes? / {是否有此类合作及对外说法}【待客户确认】 / 需转人工 / 销售 / 销售负责人 | `02-botmaker/knowledge-base-template.md:44` | 客户（经张宝文 / Kim 对接） |
-| 115 | KB-BUY-009 / How long does delivery take? / {对外口径；无统一口径则转人工}【待客户确认】 / 需转人工 / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:45` | 客户（经张宝文 / Kim 对接） |
-| 116 | KB-AFS-001 / How do I contact Tromox customer support? / {售后联系渠道与受理时间；官网公开的售后邮箱见 SOURCES 第 4 节，是否沿用由客户确认}【待客户确认】 / yes / 运营 / 售后负责人 | `02-botmaker/knowledge-base-template.md:51` | 客户（经张宝文 / Kim 对接） |
-| 117 | KB-AFS-002 / What does the warranty cover and for how long? / {可对外说的质保口径，按国家分条；未经审核前保持"需转人工"}【待客户确认】 / 需转人工 / 售后 / 售后负责人与法务 | `02-botmaker/knowledge-base-template.md:52` | 客户（经张宝文 / Kim 对接） |
-| 118 | KB-AFS-003 / How do I make a warranty claim? / {报修流程：找谁、要准备什么材料}【待客户确认】 / yes / 售后 / 售后负责人 | `02-botmaker/knowledge-base-template.md:53` | 客户（经张宝文 / Kim 对接） |
-| 119 | KB-AFS-005 / How do I maintain my vehicle? / {日常保养要点}【待客户确认】 / yes / 售后 / 售后负责人 | `02-botmaker/knowledge-base-template.md:55` | 客户（经张宝文 / Kim 对接） |
-| 120 | KB-AFS-006 / How should I charge and store the battery? / {充电与存放的对外口径}【待客户确认】 / yes / 售后 / 售后负责人 | `02-botmaker/knowledge-base-template.md:56` | 客户（经张宝文 / Kim 对接） |
-| 121 | KB-PRT-001 / Where can I buy spare parts? / {按国家分条：经销商或指定渠道}【待客户确认】 / yes / 运营 / 售后负责人 | `02-botmaker/knowledge-base-template.md:64` | 客户（经张宝文 / Kim 对接） |
-| 122 | KB-PRT-002 / Can I buy a second or replacement battery? / {对外口径}【待客户确认】 / yes / 运营 / 售后负责人 | `02-botmaker/knowledge-base-template.md:65` | 客户（经张宝文 / Kim 对接） |
-| 123 | KB-PRT-003 / Which accessories are available? / {配件清单或官网链接}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:66` | 客户（经张宝文 / Kim 对接） |
-| 124 | KB-TRD-001 / Where can I test ride a Tromox? / {按国家分条：可试驾的经销商或预约方式}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:73` | 客户（经张宝文 / Kim 对接） |
-| 125 | KB-TRD-002 / Is there a dealer or showroom near me? / {经销商查询页链接；各国经销商名单由客户提供}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:74` | 客户（经张宝文 / Kim 对接） |
-| 126 | KB-TRD-003 / Will Tromox be at an upcoming show or event? / {近期展会与活动；无则删除本条}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:75` | 客户（经张宝文 / Kim 对接） |
-| 127 | KB-COM-001 / Who is Tromox? Where is the company based? / {公司简介的对外口径}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:81` | 客户（经张宝文 / Kim 对接） |
-| 128 | KB-COM-002 / Is Tromox a European brand? / {对外口径}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:82` | 客户（经张宝文 / Kim 对接） |
-| 129 | KB-COM-003 / How can I contact Tromox for media, sponsorship or influencer cooperation? / {对外联系渠道；官网公开的媒体邮箱见 SOURCES 第 4 节，是否沿用由客户确认}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:83` | 客户（经张宝文 / Kim 对接） |
-| 130 | KB-COM-004 / I am a supplier and want to offer my products or services. / {统一回复口径或指定邮箱}【待客户确认】 / yes / 运营 / 采购或行政 | `02-botmaker/knowledge-base-template.md:84` | 客户（经张宝文 / Kim 对接） |
-| 131 | KB-COM-005 / Are you hiring? / {招聘信息入口}【待客户确认】 / yes / 运营 / 人事 | `02-botmaker/knowledge-base-template.md:85` | 客户（经张宝文 / Kim 对接） |
-| 132 | KB-COM-006 / How do you use my personal data? How can I have it deleted? / {隐私政策链接与一句话说明}；删除或查询请求一律转人工处理，流程见 03-whatsapp/compliance.md【待客户确认】 / yes（仅限链接与一句话说明） / 运营 / 法务 | `02-botmaker/knowledge-base-template.md:86` | 客户（经张宝文 / Kim 对接） |
-| 133 | 现售车型清单与对外卖点 / KB-PRD-001 至 KB-PRD-004 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:110` | 客户（经张宝文 / Kim 对接） |
-| 134 | 各国经销商名单或经销商查询页 / KB-BUY-001、KB-BUY-002、KB-TRD-001、KB-TRD-002、KB-PRT-001 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:111` | 客户（经张宝文 / Kim 对接） |
-| 135 | 可对外说的价格与质保口径 / KB-BUY-004、KB-AFS-002 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:112` | 客户（经张宝文 / Kim 对接） |
-| 136 | 售后受理渠道与时间 / KB-AFS-001、KB-AFS-003 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:113` | 客户（经张宝文 / Kim 对接） |
-| 137 | 隐私政策链接 / KB-COM-006 与开场话术 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:114` | 客户（经张宝文 / Kim 对接） |
-| 138 | 品牌语气要求与禁用词 / 全部条目的措辞 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:115` | 客户（经张宝文 / Kim 对接） |
-| 139 | 权限与交接 / 客户为所有者，各角色权限到位 / 0.5 小时 / 人员名单【待客户确认】 | `02-botmaker/setup-guide.md:29` | 客户（经张宝文 / Kim 对接） |
-| 140 | 由客户用企业邮箱注册 Botmaker 账号（开账号免费，附最多 300 个初始对话额度，SOURCES S-B3）。注册邮箱用公共邮箱（如 whatsapp-admin@客户域名）而不是个人邮箱，避免人员变动后账号失联。【待客户确认】 | `02-botmaker/setup-guide.md:35` | 客户（经张宝文 / Kim 对接） |
-| 141 | S1_GREETING / 一条带 3 个回复按钮的消息 / 按钮标题不超过 20 个字符，最多 3 个：Dealer/Distributor、Rider or Customer、Other；话术含 AI 身份告知与隐私政策链接 {privacy_url}【待客户确认】；**进入本状态先把变量 escalation_flag 置为 fal… | `02-botmaker/setup-guide.md:125` | 客户（经张宝文 / Kim 对接） |
-| 142 | S7_AFTER_HOURS / 工作时间判断：在 Botmaker 后台的营业时间功能中【待核实】配置 {working_hours}【待客户确认】 / 非工作时间转人工时改发夜间话术，AI 继续可答 FAQ | `02-botmaker/setup-guide.md:131` | 客户（经张宝文 / Kim 对接） |
-| 143 | S8_CONSENT / 可选步骤【待客户确认】：一条带 2 个按钮的消息 Yes, keep me posted / No, thanks / 写 consent_marketing；只在 C 端对话自然结束时问一次 | `02-botmaker/setup-guide.md:132` | 客户（经张宝文 / Kim 对接） |
-| 144 | 发交接话术（工作时间内发 S2 或通用交接话术，非工作时间发夜间话术），其中 {sla_b2b}、{sla_general}、{working_hours} 均【待客户确认】。 | `02-botmaker/setup-guide.md:141` | 客户（经张宝文 / Kim 对接） |
-| 145 | 知识库正文以英文为主库；AI 用客户的语言作答。涉及质保、退换、法律的条目，若要用当地语言的固定措辞，单独提供经审核的译文【待客户确认】。 | `02-botmaker/setup-guide.md:173` | 客户（经张宝文 / Kim 对接） |
-| 146 | sales_b2b / segment=B2B 的全部转人工 / 海外销售【待客户确认】 / 响应时限见 00-client/销售接手SOP.md | `02-botmaker/setup-guide.md:186` | 客户（经张宝文 / Kim 对接） |
-| 147 | support_b2c / C 端售后、质保、投诉、安全类 / 售后或运营【待客户确认】 | `02-botmaker/setup-guide.md:187` | 客户（经张宝文 / Kim 对接） |
-| 148 | 销售结束会话时必须选一个结束分类，集成服务据此回写线索状态（事件回调里带 typification，SOURCES S-B6）。分类名【待核实】【待客户确认】： | `02-botmaker/setup-guide.md:209` | 客户（经张宝文 / Kim 对接） |
-| 149 | 管理员（备份） / 客户运营负责人（Kim 或其指定的人）【待客户确认】 / 同上 / 避免单点 | `02-botmaker/setup-guide.md:316` | 客户（经张宝文 / Kim 对接） |
-| 150 | 坐席 / 海外销售、售后【待客户确认】 / 在所属队列接会话、回消息、结束会话选分类 / Standard 套餐含 10 个坐席（SOURCES S-B3） | `02-botmaker/setup-guide.md:318` | 客户（经张宝文 / Kim 对接） |
-| 151 | 假设：三条模板都按 utility（事务通知）类别提交；Meta 可能把它们改判为 marketing（营销）类，费率与发送条件随之变化【待核实】；ES / DE / FR / PT 译文为占位，语种清单与译文均【待客户确认】，须由母语者审核后再提交。 | `02-botmaker/templates/README.md:4` | 客户（经张宝文 / Kim 对接） |
-| 152 | 响应时限规则见 00-client/销售接手SOP.md：工作时间内 2 小时首次回复；非工作时间进线的，下一个工作日 10:00（北京时间）前回复；周末无人值班时，周一用模板再触达。时限数值均【待客户确认】。 | `02-botmaker/templates/README.md:21` | 客户（经张宝文 / Kim 对接） |
-| 153 | 每个语种单独提交 / 同名模板下按语种各建一份；语言代码（如西语、葡语的地区变体）按目标市场选【待客户确认】 | `02-botmaker/templates/README.md:30` | 客户（经张宝文 / Kim 对接） |
-| 154 | 同一客户同一咨询，模板最多发 2 次，间隔不少于 3 天；两次都没回就把线索状态记为 nurture 或 closed_lost，不再追发【待客户确认】。 | `02-botmaker/templates/README.md:54` | 客户（经张宝文 / Kim 对接） |
-| 155 | 假设：类别 utility；是否被 Meta 改判为 marketing【待核实】；译文与语种【待客户确认】。 | `02-botmaker/templates/tromox_info_request_v1.md:4` | 客户（经张宝文 / Kim 对接） |
-| 156 | es / {ES 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:27` | 客户（经张宝文 / Kim 对接） |
-| 157 | de / {DE 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:28` | 客户（经张宝文 / Kim 对接） |
-| 158 | fr / {FR 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:29` | 客户（经张宝文 / Kim 对接） |
-| 159 | pt / {PT 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:30` | 客户（经张宝文 / Kim 对接） |
-| 160 | 同一咨询最多发 2 次，间隔不少于 3 天【待客户确认】。 | `02-botmaker/templates/tromox_info_request_v1.md:53` | 客户（经张宝文 / Kim 对接） |
-| 161 | 假设：类别 utility；是否被 Meta 改判为 marketing【待核实】；译文与语种【待客户确认】；仅完整版包含本模板。 | `02-botmaker/templates/tromox_support_update_v1.md:4` | 客户（经张宝文 / Kim 对接） |
-| 162 | 同一请求最多发 2 次，间隔不少于 3 天【待客户确认】。 | `02-botmaker/templates/tromox_support_update_v1.md:51` | 客户（经张宝文 / Kim 对接） |
-| 163 | 测试号码 / 备用号码 1 个，走新号接入；另备 1 部装有 WhatsApp Business App（版本不低于 2.24.17）的手机与 1 个测试号，仅用于 T-1。商家认证未通过时一个商务组合最多注册 2 个号码（SOURCES S-M8），测试号接在客户的商务组合下也占名额：这两个测试号正好占满，上线号码要等认证通过（或升到 … | `02-botmaker/trial-test-plan.md:27` | 客户（经张宝文 / Kim 对接） |
-| 164 | T-6 / CTWA referral 透传 / 客户有广告账户且同意时，投 1 条最小预算的 Click-to-WhatsApp 测试广告【待客户确认】；否则书面询问 Botmaker 支持。检查回调 messages[] 里是否出现 whatsappReferral 及其子键 sourceId、sourceURL、headline、b… | `02-botmaker/trial-test-plan.md:43` | 客户（经张宝文 / Kim 对接） |
-| 165 | 语种分布：EN 8、DE 3、ES 3、FR 3、PT 2、IT 1。最终语种清单【待客户确认】后，把不在范围内的语种样例换成范围内的。 | `02-botmaker/trial-test-plan.md:82` | 客户（经张宝文 / Kim 对接） |
-| 166 | T-6 如需投测试广告，费用由客户广告账户承担，投放前征得客户同意【待客户确认】。 | `02-botmaker/trial-test-plan.md:156` | 客户（经张宝文 / Kim 对接） |
-| 167 | 假设：本文件是工程侧的合规设计说明，**不是法律意见**；欧盟隐私要求只写到"基本做法"的深度；客户以哪个主体作为数据责任方尚未确定【待客户确认】。平台条款引用见 SOURCES S-M5；账号与发送量规则已按 Meta 原文核实，见 SOURCES S-M8、S-M10；Botmaker 的 AI 数据条款见 SOURCES S-B17… | `03-whatsapp/compliance.md:4` | 客户（经张宝文 / Kim 对接） |
-| 168 | 与提供方之间有数据处理协议 / 客户作为业务方"聘用 AI 提供方作为第三方服务商"，需要相应的数据处理条款 / 【待客户确认】由哪一方签 | `03-whatsapp/compliance.md:40` | 客户（经张宝文 / Kim 对接） |
-| 169 | 营销类消息必须有明确的事先同意**：MVP 不发营销消息。流程里的同意步骤（S8，可选【待客户确认】）只是把同意记录进线索字段 consent_marketing，为第二阶段的主动再触达做准备；没有记录同意的客户，第二阶段也不得群发。 | `03-whatsapp/compliance.md:52` | 客户（经张宝文 / Kim 对接） |
-| 170 | 数据控制者 / 摩兽的某个主体【待客户确认】 / 决定处理目的与方式；若以欧洲主体面向欧盟客户，责任关系更直接 | `03-whatsapp/compliance.md:65` | 客户（经张宝文 / Kim 对接） |
-| 171 | 隐私告知 / 开场话术内放隐私政策链接 {privacy_url}；隐私政策需补充：通过 WhatsApp 处理咨询、使用 AI 助手、处理目的、保存期限、权利行使方式、联系人 / 【待客户确认】隐私政策由客户法务更新 | `03-whatsapp/compliance.md:73` | 客户（经张宝文 / Kim 对接） |
-| 172 | 处理依据 / 回应咨询：基于客户请求的前期沟通或正当利益；营销：单独同意（第 2 节） / 【待客户确认】法务定性 | `03-whatsapp/compliance.md:75` | 客户（经张宝文 / Kim 对接） |
-| 173 | 访问与删除请求 / 见 3.3 / 已设计，时限【待客户确认】 | `03-whatsapp/compliance.md:77` | 客户（经张宝文 / Kim 对接） |
-| 174 | 跨境传输 / 见 3.4 / 【待客户确认】法务评估 | `03-whatsapp/compliance.md:78` | 客户（经张宝文 / Kim 对接） |
-| 175 | 运营在 1 个工作日内登记到请求台账；法定答复期限通常为一个月【待核实】，内部目标 10 个工作日内完成【待客户确认】。 | `03-whatsapp/compliance.md:83` | 客户（经张宝文 / Kim 对接） |
-| 176 | 集成服务与线索库 / 线索字段、原始回调事件 / 境外小型 VPS；面向欧盟客户时优先选欧盟区域【待客户确认】 / 05-integration/deployment.md | `03-whatsapp/compliance.md:95` | 客户（经张宝文 / Kim 对接） |
-| 177 | 销售群通知（飞书或企业微信） / 线索摘要；号码默认只显示后四位 / 中国境内 / **这是一次向中国的跨境传输**：靠打码与最小化降低风险，是否还需标准合同条款等传输机制由法务评估【待客户确认】 | `03-whatsapp/compliance.md:96` | 客户（经张宝文 / Kim 对接） |
-| 178 | 境内主体处理境外个人信息时，国内个人信息保护方面的要求同样需要法务一并评估【待客户确认】。 | `03-whatsapp/compliance.md:99` | 客户（经张宝文 / Kim 对接） |
-| 179 | 数据保留（建议值，均【待客户确认】） | `03-whatsapp/compliance.md:101` | 客户（经张宝文 / Kim 对接） |
-| 180 | 提示法务复核的清单【待客户确认】 | `03-whatsapp/compliance.md:124` | 客户（经张宝文 / Kim 对接） |
-| 181 | daily_inquiries,10,30,120,个/天,【待客户确认】,日均新咨询数；月对话数 = 日均 x 30 | `03-whatsapp/cost-model-inputs.csv:2` | 客户（经张宝文 / Kim 对接） |
-| 182 | b2b_share,0.10,0.15,0.20,比例,【待客户确认】,B 端咨询占比 | `03-whatsapp/cost-model-inputs.csv:3` | 客户（经张宝文 / Kim 对接） |
-| 183 | ctwa_share,0.00,0.20,0.30,比例,【待客户确认】,经 Click-to-WhatsApp 广告或 Facebook 主页按钮进入的对话占比（72 小时免费） | `03-whatsapp/cost-model-inputs.csv:9` | 客户（经张宝文 / Kim 对接） |
-| 184 | OTHER,其他市场,0.30,,【待客户确认】,ALL,国家构成未知：取全部官方费率市场的均值作代理（含西欧高价市场，偏保守） | `03-whatsapp/cost-model-rates.csv:7` | 客户（经张宝文 / Kim 对接） |
-| 185 | 其他市场 / 30% / 0.0219（代理值） / 【待客户确认】 | `03-whatsapp/cost-model-results.md:16` | 客户（经张宝文 / Kim 对接） |
-| 186 | 加权平均费率：0.0302 USD/条（Meta 基础价，未含 BSP 加价）。代理值 = 全部有官方费率的市场的算术平均（SOURCES S-M4），只用于国家构成未知的其他市场，仅作量级估算；拿到真实国家分布后按实际国家填费率。【待客户确认】 | `03-whatsapp/cost-model-results.md:18` | 客户（经张宝文 / Kim 对接） |
-| 187 | cost-model-inputs.csv / 低/中/高三档的全部输入，含状态列（假设 / 【待核实】 / 【待客户确认】 / 已复核） / 是 | `03-whatsapp/cost-model.md:14` | 客户（经张宝文 / Kim 对接） |
-| 188 | 费率**：各市场单价取自 Meta 官方费率卡（SOURCES S-M4，10/1 起服务消息单价等于 utility 单价）。只有国家构成未知的"其他市场"仍用代理值：全部有官方费率市场的算术平均，含德、荷等高价市场，偏保守。拿到真实国家分布后按实际国家填 cost-model-rates.csv（区域组单价见 S-M4，如西欧其他 0… | `03-whatsapp/cost-model.md:51` | 客户（经张宝文 / Kim 对接） |
-| 189 | "拿到真实国家分布后按实际国家填费率。【待客户确认】", | `03-whatsapp/cost_model.py:236` | 客户（经张宝文 / Kim 对接） |
-| 190 | 假设：客户已有运营 Facebook / Instagram 的商务账户【待客户确认】；未认证时的收发范围、号码数上限、显示名审核机制、认证审核时长、发送量分级与质量评级已于 2026-09-22 按 Meta 原文逐条核实（SOURCES S-M8、S-M10）；认证材料清单、提交入口、显示名命名规范等细节未逐条核对原文，仍标【待核实】… | `03-whatsapp/meta-onboarding-checklist.md:4` | 客户（经张宝文 / Kim 对接） |
-| 191 | 是否已有商务账户 / 沿用现有的（运营 Facebook 主页与 Instagram 的那个），不新建重复账户；重复账户是认证被拒的常见原因 / 客户 / 【待客户确认】 | `03-whatsapp/meta-onboarding-checklist.md:23` | 客户（经张宝文 / Kim 对接） |
-| 192 | 管理员 / 至少 2 名客户员工为管理员，用本人实名 Facebook 账号，开启两步验证；不使用共用或新注册的空白账号 / 客户 / 【待客户确认】 | `03-whatsapp/meta-onboarding-checklist.md:24` | 客户（经张宝文 / Kim 对接） |
-| 193 | 先定用哪个主体【待客户确认】 | `03-whatsapp/meta-onboarding-checklist.md:33` | 客户（经张宝文 / Kim 对接） |
-| 194 | 国家码的选择【待客户确认】 / 权衡三点：目标市场客户对号码的观感；公司能否长期持有并稳定收验证码；境内号码接入的可行性【待核实】 | `03-whatsapp/meta-onboarding-checklist.md:79` | 客户（经张宝文 / Kim 对接） |
-| 195 | 必须与企业或品牌有明确关系，并与官网、社媒上的对外名称一致；建议直接用 Tromox【待客户确认】。 | `03-whatsapp/meta-onboarding-checklist.md:99` | 客户（经张宝文 / Kim 对接） |
-| 196 | 保留期限 / 验收结束后按客户制度删除或归档【待客户确认】 | `04-eval/labeling-guide.md:35` | 客户（经张宝文 / Kim 对接） |
-| 197 | 历史记录里有欧盟等地区居民的个人信息，导出与使用前请按 03-whatsapp/compliance.md 的要求确认合规依据【待客户确认】。 | `04-eval/labeling-guide.md:37` | 客户（经张宝文 / Kim 对接） |
-| 198 | product_interest / 客户点名的车型，用产品代码、分号分隔：MC10;UKKO；代码目录 MC10、UKKO、M05、MINO、M03、PESGO【待客户确认】；没点名留空 / 运营 | `04-eval/labeling-guide.md:52` | 客户（经张宝文 / Kim 对接） |
-| 199 | 请销售负责人在中秋碰面前后填好；is_valid_lead 一列按此判断，第二阶段的经销商评分也以此为起点。表中"摩兽的标准"一列全部【待客户确认】。 | `04-eval/labeling-guide.md:132` | 客户（经张宝文 / Kim 对接） |
-| 200 | 主体 / 哪些类型算有效：门店、分销商、进口商、车队/租赁、线上转售、企业团购？哪些不算？ / 【待客户确认】 | `04-eval/labeling-guide.md:136` | 客户（经张宝文 / Kim 对接） |
-| 201 | 市场 / 重点国家与区域；已有独家代理、暂不开放的国家 / 【待客户确认】 | `04-eval/labeling-guide.md:137` | 客户（经张宝文 / Kim 对接） |
-| 202 | 经营基础 / 是否要求已有实体门店或团队、经营年限（官网对外写的是希望申请方已有至少 1 年的既有架构） / 【待客户确认】 | `04-eval/labeling-guide.md:138` | 客户（经张宝文 / Kim 对接） |
-| 203 | 现有业务 / 是否要求有两轮或电动车经验；在售竞品是否影响判断 / 【待客户确认】 | `04-eval/labeling-guide.md:139` | 客户（经张宝文 / Kim 对接） |
-| 204 | 采购规模 / 首单与年采购量的最低预期；低于多少按个人或团购处理 / 【待客户确认】 | `04-eval/labeling-guide.md:140` | 客户（经张宝文 / Kim 对接） |
-| 205 | 资质能力 / 进口、认证、售后维修能力是否为必要条件 / 【待客户确认】 | `04-eval/labeling-guide.md:141` | 客户（经张宝文 / Kim 对接） |
-| 206 | 联系人 / 需要对方提供哪些信息才值得销售跟进：公司名、职位、官网、邮箱等 / 【待客户确认】 | `04-eval/labeling-guide.md:142` | 客户（经张宝文 / Kim 对接） |
-| 207 | 直接排除 / 明确不跟进的情形：个人代购、只要样车、要求寄售等 / 【待客户确认】 | `04-eval/labeling-guide.md:143` | 客户（经张宝文 / Kim 对接） |
-| 208 | 优先级 / 什么样的线索要当天处理 / 【待客户确认】 | `04-eval/labeling-guide.md:144` | 客户（经张宝文 / Kim 对接） |
-| 209 | 销售在 Botmaker 结束会话时选择结束分类，conversation-close 事件把它带回来，服务据此回写 status。分类名称需要在 Botmaker 后台的结束分类功能中预先建好【待核实】，名称与含义由客户销售确认【待客户确认】。 | `05-integration/botmaker-api-notes.md:87` | 客户（经张宝文 / Kim 对接） |
-| 210 | 假设：日均咨询在成本模型的低到高档之间（单机足够）；服务器账号、域名解析都开在客户名下；服务器放在中国大陆以外，保证 Botmaker 能稳定回调；具体云厂商与机房【待客户确认】。 | `05-integration/deployment.md:4` | 客户（经张宝文 / Kim 对接） |
-| 211 | 线索库里有个人数据：号码、姓名、公司、对话摘要。客户多在欧洲时，机房优先选欧洲经济区内，并与云厂商签数据处理协议；选其他地区前请客户法务确认。【待客户确认】 | `05-integration/deployment.md:111` | 客户（经张宝文 / Kim 对接） |
-| 212 | 云厂商、机房地区、由谁开账号 / 【待客户确认】 / 客户、张宝文 | `05-integration/deployment.md:150` | 客户（经张宝文 / Kim 对接） |
-| 213 | 子域名与 DNS 解析由谁操作 / 【待客户确认】 / 客户 | `05-integration/deployment.md:151` | 客户（经张宝文 / Kim 对接） |
-| 214 | 通知渠道用飞书还是企业微信 / 【待客户确认】 / 客户销售 | `05-integration/deployment.md:155` | 客户（经张宝文 / Kim 对接） |
-| 215 | 海外租户（Lark）的开放平台域名不同，服务的 base_url 参数目前只在代码里可改，没有环境变量；客户若用 Lark 而不是飞书，要加一个配置项。【待客户确认】 | `05-integration/feishu-bitable-setup.md:80` | 客户（经张宝文 / Kim 对接） |
-| 216 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 客户（经张宝文 / Kim 对接） |
-| 217 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 客户（经张宝文 / Kim 对接） |
-| 218 | 假设：在测试号或灰度入口上执行；测试人用自己的手机号，语种列为完整版的安排；精简版只保留 2 个语种，此处以英语加德语为例，第二语种【待客户确认】；示例里的公司与人名均为虚构；用例不涉及任何参数、价格、质保条款的具体内容。 | `06-acceptance/uat-test-cases.md:4` | 客户（经张宝文 / Kim 对接） |
-| 219 | U19 / 营销同意步骤 / DE / C 端问题解决后出现同意询问；会话一按 "Yes, keep me posted"，会话二按 "No, thanks" / 会话一 consent_marketing true；会话二 false；未询问的其他线索为空 / 记录后结束会话 / 无卡片 / 三种取值都正确；该步骤是否启用【待客户确认】… | `06-acceptance/uat-test-cases.md:36` | 客户（经张宝文 / Kim 对接） |
-| 220 | 德语 DE / U02、U06、U19、U20 / 保留（以德语为例，第二语种【待客户确认】） | `06-acceptance/uat-test-cases.md:65` | 客户（经张宝文 / Kim 对接） |
-| 221 | 假设：碰面约 2 小时；对方到场的有 Kim（海外社媒运营）、至少一位销售负责人，最好有一位能拍板账号与付款的领导【待客户确认】。 | `07-project/meeting-prep.md:4` | 客户（经张宝文 / Kim 对接） |
-| 222 | 假设：摩兽业务/FDE 一方以 Kim 为对接人；摩兽销售由销售主管代表【待客户确认】；工作项与周次对应 timeline.md。 | `07-project/raci.md:5` | 客户（经张宝文 / Kim 对接） |
-| 223 | R10 / **隐私合规**：客户中有欧盟用户；线索与通知会进入境内协作工具 / 中 / 高 / 开场即告知 AI 身份与隐私政策链接；只存业务必需字段；通知里号码打码；删除请求有流程；数据保留期限与跨境安排提交客户法务复核【待客户确认】 / 摩兽业务（法务对接）；集成工程师（技术措施） / 03-whatsapp/compliance.… | `07-project/risk-register.md:19` | 客户（经张宝文 / Kim 对接） |
-| 224 | 代写 FAQ 内容与专业翻译（Bot 话术的多语种版本由 AI 初译、客户审校）。【待客户确认】 | `99-internal/pricing-internal.md:55` | 客户（经张宝文 / Kim 对接） |
-| 225 | 车型名称（家族） / MC10（含 TrailX、StreetX）、UKKO（含 Ukko S+、UkkoPro）、M05、MINO（含 Mino B）、M03、Pesgo（含 Plus、C）。现售清单以客户提供为准【待客户确认】。 / （链接见出处） ； （链接见出处） | `SOURCES.md:76` | 客户（经张宝文 / Kim 对接） |
-| 226 | 市场与网络 / 官网 FAQ 提到中国、意大利、欧洲、日本、韩国、澳大利亚、北美；另有美国站、南非站、菲律宾经销商站；欧洲站有 "Dealer Partnership Program" 与 "EU Warehouse Support"；总部杭州，欧洲服务中心在比利时鲁汶。各国经销商名单【待客户确认】。 / 同上；搜索结果中的 tromox… | `SOURCES.md:77` | 客户（经张宝文 / Kim 对接） |
-| 227 | 经销申请 / 官网设经销商/分销商申请表单；FAQ 写明希望申请方"已有至少 1 年的既有架构"、有二级网络更佳。有效线索标准以销售填写的为准【待客户确认】。 / （链接见出处） | `SOURCES.md:78` | 客户（经张宝文 / Kim 对接） |
-| 228 | ISO 639-1 codes the MVP bot is expected to handle. Final list is 【待客户确认】. | `shared/tromox_lead/enums.py:92` | 客户（经张宝文 / Kim 对接） |
-| 229 | FieldSpec("ai_summary", "string", SRC_AI, "给销售看的一两句话摘要（默认简体中文【待客户确认】）", ai_extracted=True), | `shared/tromox_lead/fields.py:46` | 客户（经张宝文 / Kim 对接） |
-| 230 | line-up must be confirmed by the client 【待客户确认】. | `shared/tromox_lead/products.py:5` | 客户（经张宝文 / Kim 对接） |
+| 29 | 到期数据自动清理：线索在最后一次联系满 24 个月、原始回调事件满 90 天之后，由技术设置的定时任务在到期后自动删除；保留期为建议值【待客户确认】，与技术方案里的合规约定一致。运营只需确认当月的清理结果已记录：清理日期、删除条数。 | `00-client/运维手册.md:148` | 客户（经张宝文 / Kim 对接） |
+| 30 | 客户要求删除个人数据 / 记录请求的时间、号码，以及是不是客户本人提出 / 报业务负责人确认后，把号码交给技术，**不要自己在后台删**。技术会一次性删除线索库、导出的表格与多维表格镜像里的记录，并回复处理时间；运营据此答复客户并登记。答复期限【待客户确认】 / 每次都需要技术执行删除 | `00-client/运维手册.md:163` | 客户（经张宝文 / Kim 对接） |
+| 31 | 假设：响应时限、周末值班安排、线索分工为建议值【待客户确认】；Botmaker 后台的按钮名称以培训时看到的实际界面为准【待核实】；结束分类的名称为暂定【待核实】【待客户确认】。 | `00-client/销售接手SOP.md:5` | 客户（经张宝文 / Kim 对接） |
+| 32 | 谁来接：按销售负责人定的国家或类型分工【待客户确认】。接的人在群里回一句"我接"，避免两个人同时回复。 | `00-client/销售接手SOP.md:43` | 客户（经张宝文 / Kim 对接） |
+| 33 | 以下均为建议【待客户确认】： | `00-client/销售接手SOP.md:69` | 客户（经张宝文 / Kim 对接） |
+| 34 | 夜间进线时，AI 已经告诉客户"同事将在一个工作日内回复"，并说明了工作时间（默认周一至周五 09:00 至 18:00，北京时间【待客户确认】）。销售要做的就是兑现这句话。 | `00-client/销售接手SOP.md:79` | 客户（经张宝文 / Kim 对接） |
+| 35 | 同一位客户同一件事，模板最多发 2 次，两次至少间隔 3 天；两次都没有回复，就把线索状态改为培育或无意向，不再追发【待客户确认】。 | `00-client/销售接手SOP.md:100` | 客户（经张宝文 / Kim 对接） |
+| 36 | 结束会话时，在 Botmaker 里选择一个结束分类，系统会据此更新线索库里的状态。名称为暂定【待核实】【待客户确认】。 | `00-client/销售接手SOP.md:106` | 客户（经张宝文 / Kim 对接） |
+| 37 | 状态：已采纳方向（2026-09-21）；具体选 a 还是 b 取决于客户现有号码状况【待客户确认】。 | `01-design/adr/0002-number-strategy.md:4` | 客户（经张宝文 / Kim 对接） |
+| 38 | 客户现有号码的类型、国家码、持机人，是否已在 WhatsApp Business App 上使用 / 【待客户确认】 | `01-design/adr/0002-number-strategy.md:57` | 客户（经张宝文 / Kim 对接） |
+| 39 | 新号用哪个国家的号码、由哪个主体办理 / 【待客户确认】 | `01-design/adr/0002-number-strategy.md:58` | 客户（经张宝文 / Kim 对接） |
+| 40 | 客户团队日常用什么表格工具还不知道【待客户确认】。 | `01-design/adr/0004-lead-storage.md:11` | 客户（经张宝文 / Kim 对接） |
+| 41 | 备份**：每日把数据库文件与 CSV 复制到客户指定的存储位置【待客户确认】；保留期见 03-whatsapp/compliance.md。 | `01-design/adr/0004-lead-storage.md:19` | 客户（经张宝文 / Kim 对接） |
+| 42 | 直接写飞书多维表格 / 销售看着方便；权限现成 / 依赖客户是否用飞书；接口限流与字段变更会反过来约束服务；欧盟客户数据进入境内工具需法务评估【待客户确认】 | `01-design/adr/0004-lead-storage.md:25` | 客户（经张宝文 / Kim 对接） |
+| 43 | 客户用哪种表格或协作工具；是否需要同步适配器 / 【待客户确认】 | `01-design/adr/0004-lead-storage.md:41` | 客户（经张宝文 / Kim 对接） |
+| 44 | 备份放在哪里、保留多久 / 【待客户确认】 | `01-design/adr/0004-lead-storage.md:42` | 客户（经张宝文 / Kim 对接） |
+| 45 | 欧盟客户数据同步到境内工具的合规评估 / 【待客户确认】需法务复核 | `01-design/adr/0004-lead-storage.md:43` | 客户（经张宝文 / Kim 对接） |
+| 46 | 状态：已采纳适配器方案（2026-09-21）；具体接哪个工具【待客户确认】。 | `01-design/adr/0005-notification-channel.md:4` | 客户（经张宝文 / Kim 对接） |
+| 47 | 销售团队用哪种协作工具、通知发到哪个群 / 【待客户确认】 | `01-design/adr/0005-notification-channel.md:42` | 客户（经张宝文 / Kim 对接） |
+| 48 | 是否需要按语种或区域分群通知 / 【待客户确认】 | `01-design/adr/0005-notification-channel.md:43` | 客户（经张宝文 / Kim 对接） |
+| 49 | 含欧盟用户信息的通知进入境内协作工具的合规评估 / 【待客户确认】需法务复核 | `01-design/adr/0005-notification-channel.md:45` | 客户（经张宝文 / Kim 对接） |
+| 50 | 咨询以英语为主，另有西、德、法、葡等语种（具体语种【待客户确认】），小语种上的分类质量是主要不确定项。 | `01-design/adr/0006-model-selection.md:9` | 客户（经张宝文 / Kim 对接） |
+| 51 | 客户主体在中国大陆，另有欧洲服务中心（SOURCES 第 4 节）；由哪个主体签约、付款，决定了哪些模型开得出来【待客户确认】。 | `01-design/adr/0006-model-selection.md:10` | 客户（经张宝文 / Kim 对接） |
+| 52 | 主体可开通性 / 高：随 Botmaker 账号开通，无需另签 / 取决于签约主体：境内主体直接签约与付款可能受限，境外主体可行性更高【待客户确认】 / 高：人民币结算、可开票 | `01-design/adr/0006-model-selection.md:27` | 客户（经张宝文 / Kim 对接） |
+| 53 | 数据条款 / 服务条款写 Botmaker 对客户数据的使用限于提供服务，但隐私政策另有"改进服务、研究"用途；Co-pilot 原文写明用于训练 ChatGPT 模型（不启用）；AI Agent 的对话与下游模型供应商（至少两家）是否用于训练、有无 DPA 与子处理方清单，公开页面都没有，须书面问 Botmaker【待核实】（SOURC… | `01-design/adr/0006-model-selection.md:30` | 客户（经张宝文 / Kim 对接） |
+| 54 | 由哪个主体签约与付款 / 【待客户确认】 | `01-design/adr/0006-model-selection.md:57` | 客户（经张宝文 / Kim 对接） |
+| 55 | 欧盟用户数据进入境内模型服务的合规评估 / 【待客户确认】需法务复核 | `01-design/adr/0006-model-selection.md:60` | 客户（经张宝文 / Kim 对接） |
+| 56 | 销售群通知 / 60 秒内把 B 端线索摘要推给销售；号码默认打码 / 客户现有协作工具【待客户确认】 / 选型见 adr/0005-notification-channel.md | `01-design/architecture.md:132` | 客户（经张宝文 / Kim 对接） |
+| 57 | 销售群用哪种协作工具 / 【待客户确认】 | `01-design/architecture.md:199` | 客户（经张宝文 / Kim 对接） |
+| 58 | 假设：英文为母版；西、德、法、葡为占位，具体语种【待客户确认】；{privacy_url}、{working_hours}、{sla_b2b}、{sla_general} 为占位符，默认值见第 5 节，均【待客户确认】；话术里不出现任何参数、价格、质保条款。 | `01-design/conversation-flow.md:4` | 客户（经张宝文 / Kim 对接） |
+| 59 | 媒体、供应商、求职等与销售无关但与摩兽有关的来访：依据知识库给出对应的公开联系方式（内容【待客户确认】），segment 保持 unknown，随后结束。 | `01-design/conversation-flow.md:134` | 客户（经张宝文 / Kim 对接） |
+| 60 | 问题已解决且客户无后续：进 S8_CONSENT（该步骤是否启用【待客户确认】），否则直接结束。 | `01-design/conversation-flow.md:151` | 客户（经张宝文 / Kim 对接） |
+| 61 | 触发 / C 端问题已解决；是否启用【待客户确认】 | `01-design/conversation-flow.md:184` | 客户（经张宝文 / Kim 对接） |
+| 62 | S1 开场问候与三个按钮 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:219` | 客户（经张宝文 / Kim 对接） |
+| 63 | S2 一次问齐 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:220` | 客户（经张宝文 / Kim 对接） |
+| 64 | S2 交接话术 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:221` | 客户（经张宝文 / Kim 对接） |
+| 65 | S3 C 端接待与三个按钮 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:222` | 客户（经张宝文 / Kim 对接） |
+| 66 | S4 其他 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:223` | 客户（经张宝文 / Kim 对接） |
+| 67 | S6 一般转人工 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:224` | 客户（经张宝文 / Kim 对接） |
+| 68 | S7 非工作时间 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:225` | 客户（经张宝文 / Kim 对接） |
+| 69 | S8 营销同意与两个按钮 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:226` | 客户（经张宝文 / Kim 对接） |
+| 70 | 话题收口 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:227` | 客户（经张宝文 / Kim 对接） |
+| 71 | 价格与质保守卫 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:228` | 客户（经张宝文 / Kim 对接） |
+| 72 | 没听懂两次 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 / 待翻译【待客户确认】 | `01-design/conversation-flow.md:229` | 客户（经张宝文 / Kim 对接） |
+| 73 | {privacy_url} / 客户官网隐私政策链接 / 【待客户确认】 | `01-design/conversation-flow.md:237` | 客户（经张宝文 / Kim 对接） |
+| 74 | {working_hours} / Monday to Friday, 09:00-18:00 China time (UTC+8) / 【待客户确认】 | `01-design/conversation-flow.md:238` | 客户（经张宝文 / Kim 对接） |
+| 75 | {sla_b2b} / one business day / 【待客户确认】 | `01-design/conversation-flow.md:239` | 客户（经张宝文 / Kim 对接） |
+| 76 | {sla_general} / one business day / 【待客户确认】 | `01-design/conversation-flow.md:240` | 客户（经张宝文 / Kim 对接） |
+| 77 | ai_summary / string / AI 抽取 / 给销售看的一两句话摘要（默认简体中文【待客户确认】） / 是 | `01-design/lead-schema.md:40` | 客户（经张宝文 / Kim 对接） |
+| 78 | 产品代码目录：MC10、UKKO、M05、MINO、M03、PESGO（来自官网公开车型名，SOURCES 第 4 节）。现售清单【待客户确认】。 | `01-design/lead-schema.md:91` | 客户（经张宝文 / Kim 对接） |
+| 79 | 假设：工作时间、响应时限、结束分类名称均为默认值，【待客户确认】。 | `01-design/routing-rules.md:5` | 客户（经张宝文 / Kim 对接） |
+| 80 | 回复语言：客户语言在支持清单内（SUPPORTED_LANGUAGES：en、es、de、fr、pt、it，最终清单【待客户确认】）则跟随；不在清单内用英文作答，并在需要时转人工 | `01-design/routing-rules.md:45` | 客户（经张宝文 / Kim 对接） |
+| 81 | 队列 / MVP 设一个销售队列；按语种或区域分队列放到调优期再定【待客户确认】 | `01-design/routing-rules.md:121` | 客户（经张宝文 / Kim 对接） |
+| 82 | 结束分类与线索状态的映射（分类名称【待核实】【待客户确认】）： | `01-design/routing-rules.md:126` | 客户（经张宝文 / Kim 对接） |
+| 83 | 默认工作时间：周一至周五 09:00 至 18:00，北京时间（UTC+8）【待客户确认】。 | `01-design/routing-rules.md:138` | 客户（经张宝文 / Kim 对接） |
+| 84 | 响应时限（全部【待客户确认】）： | `01-design/routing-rules.md:160` | 客户（经张宝文 / Kim 对接） |
+| 85 | 同一客户同一咨询，模板最多发 2 次，间隔不少于 3 天；两次都没回就把线索状态记为 nurture 或 closed_lost，不再追发【待客户确认】。（与 02-botmaker/templates/README.md 同一口径。） | `01-design/routing-rules.md:187` | 客户（经张宝文 / Kim 对接） |
+| 86 | 假设：{whatsapp_number} 为最终接入的公司号码【待客户确认】；预填文案母版为 Hi Tromox!。 | `01-design/source-tracking.md:5` | 客户（经张宝文 / Kim 对接） |
+| 87 | 可选扩展【待客户确认】：面向单一市场的账号可以用当地语言的预填文案（如德语账号用 Hallo Tromox! [IG-2609D]），短码解析不受影响，语言判定还能更早生效。 | `01-design/source-tracking.md:79` | 客户（经张宝文 / Kim 对接） |
+| 88 | IG-2609 / Instagram / 主页链接 / 全球 / 常驻 / 2026-09-21 / 【待客户确认】 / 示例行 | `01-design/source-tracking.md:87` | 客户（经张宝文 / Kim 对接） |
+| 89 | AD-2609A / Click-to-WhatsApp / 广告组 A / 【待客户确认】 / 【待客户确认】 /  /  / 示例行 | `01-design/source-tracking.md:88` | 客户（经张宝文 / Kim 对接） |
+| 90 | 产品 / prod_ / product_interest 中的产品代码小写；目录见 shared/tromox_lead/products.py【待客户确认】 / prod_mc10 /  / 上 | `01-design/tag-taxonomy.md:20` | 客户（经张宝文 / Kim 对接） |
+| 91 | 优先级 / prio_ / 规则：B 端且类型为 distributor / importer / fleet 为 high，其余 B 端为 normal；C 端仅在投诉、质保争议、法律、安全类升级时为 high【待客户确认】 / prio_high /  / 上 | `01-design/tag-taxonomy.md:25` | 客户（经张宝文 / Kim 对接） |
+| 92 | 假设：支持语种、工作时间、回复时限、隐私政策链接均为默认值【待客户确认】；AI Agent 可用的动作（转人工、跳转流程）与变量写入方式以试用账号实测为准【待核实】（SOURCES S-B9）。 | `02-botmaker/ai-agent-system-prompt.md:5` | 客户（经张宝文 / Kim 对接） |
+| 93 | 粘贴前替换占位符：{privacy_url}、{working_hours}、{sla_b2b}、{sla_general}、{safety_line}，取值均【待客户确认】；默认值见 2.8 下方的说明。 | `02-botmaker/ai-agent-system-prompt.md:11` | 客户（经张宝文 / Kim 对接） |
+| 94 | 本段待确认：支持语种清单【待客户确认】；精简版只对英语加 1 个主要语种做测试与调优，其余语种 AI 仍会应答但不在验收范围。 | `02-botmaker/ai-agent-system-prompt.md:55` | 客户（经张宝文 / Kim 对接） |
+| 95 | {privacy_url} / 客户隐私政策链接 / 【待客户确认】 | `02-botmaker/ai-agent-system-prompt.md:142` | 客户（经张宝文 / Kim 对接） |
+| 96 | {safety_line} / If anyone is in danger, please contact your local emergency services first. / 【待客户确认】，建议法务过目 | `02-botmaker/ai-agent-system-prompt.md:143` | 客户（经张宝文 / Kim 对接） |
+| 97 | 非英语的机器人回复仅示意"语言跟随客户"，译文上线前须由母语者审核【待客户确认】。 | `02-botmaker/ai-agent-system-prompt.md:277` | 客户（经张宝文 / Kim 对接） |
+| 98 | AI / {知识库答案：西班牙的试驾与购买渠道，以西班牙语作答}【待客户确认】 | `02-botmaker/ai-agent-system-prompt.md:355` | 客户（经张宝文 / Kim 对接） |
+| 99 | 占位符写法：{…}，填完后删除花括号与【待客户确认】标记。 | `02-botmaker/knowledge-base-template.md:13` | 客户（经张宝文 / Kim 对接） |
+| 100 | 字段说明：**ID**（分类前缀 + 序号）、**问题（EN）**、**答案**、**AI 直答**、**负责人**（起草）、**审核人**、**最后更新**。负责人与审核人的具体人选【待客户确认】。 | `02-botmaker/knowledge-base-template.md:18` | 客户（经张宝文 / Kim 对接） |
+| 101 | KB-PRD-001 / Which models does Tromox currently offer? / {现售车型清单与一句话定位；车型家族名见 SOURCES 第 4 节，现售清单以客户为准}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:24` | 客户（经张宝文 / Kim 对接） |
+| 102 | KB-PRD-002 / What are the main differences between the models? / {各车型面向的人群与用途，不写具体参数或写经确认的公开参数}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:25` | 客户（经张宝文 / Kim 对接） |
+| 103 | KB-PRD-003 / How fast can it go and how far on a single charge? / {按车型给出对外口径；无统一口径则引导到官网车型页}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:26` | 客户（经张宝文 / Kim 对接） |
+| 104 | KB-PRD-004 / How long does the battery take to charge, and what is its lifespan? / {对外口径}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:27` | 客户（经张宝文 / Kim 对接） |
+| 105 | KB-PRD-005 / Do I need a licence to ride it? Can I carry a passenger? / {按国家分条；无把握的国家写"请咨询当地经销商"}【待客户确认】 / 需转人工 / 运营 / 法务或区域负责人 | `02-botmaker/knowledge-base-template.md:28` | 客户（经张宝文 / Kim 对接） |
+| 106 | KB-PRD-006 / Is there an app? What can it do? / {对外口径}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:29` | 客户（经张宝文 / Kim 对接） |
+| 107 | KB-PRD-007 / Where can I find manuals and specifications? / {官网链接}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:30` | 客户（经张宝文 / Kim 对接） |
+| 108 | KB-PRD-008 / What is an e-motorcycle and how does it compare with a petrol one? / {通用科普口径}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:31` | 客户（经张宝文 / Kim 对接） |
+| 109 | KB-BUY-001 / Is Tromox available in my country? / {已覆盖国家清单；未覆盖国家的统一说法}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:37` | 客户（经张宝文 / Kim 对接） |
+| 110 | KB-BUY-002 / Where can I buy a Tromox? / {按国家分条：经销商查询页或当地总代联系方式}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:38` | 客户（经张宝文 / Kim 对接） |
+| 111 | KB-BUY-003 / Can I buy online? / {对外口径}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:39` | 客户（经张宝文 / Kim 对接） |
+| 112 | KB-BUY-004 / How much does it cost? / {是否有可对外说的零售指导价；没有则写"价格因国家而异，请联系当地经销商"}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:40` | 客户（经张宝文 / Kim 对接） |
+| 113 | KB-BUY-005 / How do I become a Tromox dealer or distributor? / {申请流程的对外说法；AI 会先收集公司、国家、业务类型、意向车型与数量，再转销售} 【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:41` | 客户（经张宝文 / Kim 对接） |
+| 114 | KB-BUY-006 / What are the requirements to become a reseller in my country? / {可对外说的基本要求；官网 FAQ 提到希望申请方已有至少 1 年的既有架构，是否沿用由销售确认}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:42` | 客户（经张宝文 / Kim 对接） |
+| 115 | KB-BUY-008 / Do you offer fleet, rental or corporate purchase programmes? / {是否有此类合作及对外说法}【待客户确认】 / 需转人工 / 销售 / 销售负责人 | `02-botmaker/knowledge-base-template.md:44` | 客户（经张宝文 / Kim 对接） |
+| 116 | KB-BUY-009 / How long does delivery take? / {对外口径；无统一口径则转人工}【待客户确认】 / 需转人工 / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:45` | 客户（经张宝文 / Kim 对接） |
+| 117 | KB-AFS-001 / How do I contact Tromox customer support? / {售后联系渠道与受理时间；官网公开的售后邮箱见 SOURCES 第 4 节，是否沿用由客户确认}【待客户确认】 / yes / 运营 / 售后负责人 | `02-botmaker/knowledge-base-template.md:51` | 客户（经张宝文 / Kim 对接） |
+| 118 | KB-AFS-002 / What does the warranty cover and for how long? / {可对外说的质保口径，按国家分条；未经审核前保持"需转人工"}【待客户确认】 / 需转人工 / 售后 / 售后负责人与法务 | `02-botmaker/knowledge-base-template.md:52` | 客户（经张宝文 / Kim 对接） |
+| 119 | KB-AFS-003 / How do I make a warranty claim? / {报修流程：找谁、要准备什么材料}【待客户确认】 / yes / 售后 / 售后负责人 | `02-botmaker/knowledge-base-template.md:53` | 客户（经张宝文 / Kim 对接） |
+| 120 | KB-AFS-005 / How do I maintain my vehicle? / {日常保养要点}【待客户确认】 / yes / 售后 / 售后负责人 | `02-botmaker/knowledge-base-template.md:55` | 客户（经张宝文 / Kim 对接） |
+| 121 | KB-AFS-006 / How should I charge and store the battery? / {充电与存放的对外口径}【待客户确认】 / yes / 售后 / 售后负责人 | `02-botmaker/knowledge-base-template.md:56` | 客户（经张宝文 / Kim 对接） |
+| 122 | KB-PRT-001 / Where can I buy spare parts? / {按国家分条：经销商或指定渠道}【待客户确认】 / yes / 运营 / 售后负责人 | `02-botmaker/knowledge-base-template.md:64` | 客户（经张宝文 / Kim 对接） |
+| 123 | KB-PRT-002 / Can I buy a second or replacement battery? / {对外口径}【待客户确认】 / yes / 运营 / 售后负责人 | `02-botmaker/knowledge-base-template.md:65` | 客户（经张宝文 / Kim 对接） |
+| 124 | KB-PRT-003 / Which accessories are available? / {配件清单或官网链接}【待客户确认】 / yes / 运营 / 产品负责人 | `02-botmaker/knowledge-base-template.md:66` | 客户（经张宝文 / Kim 对接） |
+| 125 | KB-TRD-001 / Where can I test ride a Tromox? / {按国家分条：可试驾的经销商或预约方式}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:73` | 客户（经张宝文 / Kim 对接） |
+| 126 | KB-TRD-002 / Is there a dealer or showroom near me? / {经销商查询页链接；各国经销商名单由客户提供}【待客户确认】 / yes / 运营 / 销售负责人 | `02-botmaker/knowledge-base-template.md:74` | 客户（经张宝文 / Kim 对接） |
+| 127 | KB-TRD-003 / Will Tromox be at an upcoming show or event? / {近期展会与活动；无则删除本条}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:75` | 客户（经张宝文 / Kim 对接） |
+| 128 | KB-COM-001 / Who is Tromox? Where is the company based? / {公司简介的对外口径}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:81` | 客户（经张宝文 / Kim 对接） |
+| 129 | KB-COM-002 / Is Tromox a European brand? / {对外口径}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:82` | 客户（经张宝文 / Kim 对接） |
+| 130 | KB-COM-003 / How can I contact Tromox for media, sponsorship or influencer cooperation? / {对外联系渠道；官网公开的媒体邮箱见 SOURCES 第 4 节，是否沿用由客户确认}【待客户确认】 / yes / 运营 / 市场负责人 | `02-botmaker/knowledge-base-template.md:83` | 客户（经张宝文 / Kim 对接） |
+| 131 | KB-COM-004 / I am a supplier and want to offer my products or services. / {统一回复口径或指定邮箱}【待客户确认】 / yes / 运营 / 采购或行政 | `02-botmaker/knowledge-base-template.md:84` | 客户（经张宝文 / Kim 对接） |
+| 132 | KB-COM-005 / Are you hiring? / {招聘信息入口}【待客户确认】 / yes / 运营 / 人事 | `02-botmaker/knowledge-base-template.md:85` | 客户（经张宝文 / Kim 对接） |
+| 133 | KB-COM-006 / How do you use my personal data? How can I have it deleted? / {隐私政策链接与一句话说明}；删除或查询请求一律转人工处理，流程见 03-whatsapp/compliance.md【待客户确认】 / yes（仅限链接与一句话说明） / 运营 / 法务 | `02-botmaker/knowledge-base-template.md:86` | 客户（经张宝文 / Kim 对接） |
+| 134 | 现售车型清单与对外卖点 / KB-PRD-001 至 KB-PRD-004 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:110` | 客户（经张宝文 / Kim 对接） |
+| 135 | 各国经销商名单或经销商查询页 / KB-BUY-001、KB-BUY-002、KB-TRD-001、KB-TRD-002、KB-PRT-001 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:111` | 客户（经张宝文 / Kim 对接） |
+| 136 | 可对外说的价格与质保口径 / KB-BUY-004、KB-AFS-002 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:112` | 客户（经张宝文 / Kim 对接） |
+| 137 | 售后受理渠道与时间 / KB-AFS-001、KB-AFS-003 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:113` | 客户（经张宝文 / Kim 对接） |
+| 138 | 隐私政策链接 / KB-COM-006 与开场话术 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:114` | 客户（经张宝文 / Kim 对接） |
+| 139 | 品牌语气要求与禁用词 / 全部条目的措辞 / 【待客户确认】 | `02-botmaker/knowledge-base-template.md:115` | 客户（经张宝文 / Kim 对接） |
+| 140 | 权限与交接 / 客户为所有者，各角色权限到位 / 0.5 小时 / 人员名单【待客户确认】 | `02-botmaker/setup-guide.md:29` | 客户（经张宝文 / Kim 对接） |
+| 141 | 由客户用企业邮箱注册 Botmaker 账号（开账号免费，附最多 300 个初始对话额度，SOURCES S-B3）。注册邮箱用公共邮箱（如 whatsapp-admin@客户域名）而不是个人邮箱，避免人员变动后账号失联。【待客户确认】 | `02-botmaker/setup-guide.md:35` | 客户（经张宝文 / Kim 对接） |
+| 142 | S1_GREETING / 一条带 3 个回复按钮的消息 / 按钮标题不超过 20 个字符，最多 3 个：Dealer/Distributor、Rider or Customer、Other；话术含 AI 身份告知与隐私政策链接 {privacy_url}【待客户确认】；**进入本状态先把变量 escalation_flag 置为 fal… | `02-botmaker/setup-guide.md:125` | 客户（经张宝文 / Kim 对接） |
+| 143 | S7_AFTER_HOURS / 工作时间判断：在 Botmaker 后台的营业时间功能中【待核实】配置 {working_hours}【待客户确认】 / 非工作时间转人工时改发夜间话术，AI 继续可答 FAQ | `02-botmaker/setup-guide.md:131` | 客户（经张宝文 / Kim 对接） |
+| 144 | S8_CONSENT / 可选步骤【待客户确认】：一条带 2 个按钮的消息 Yes, keep me posted / No, thanks / 写 consent_marketing；只在 C 端对话自然结束时问一次 | `02-botmaker/setup-guide.md:132` | 客户（经张宝文 / Kim 对接） |
+| 145 | 发交接话术（工作时间内发 S2 或通用交接话术，非工作时间发夜间话术），其中 {sla_b2b}、{sla_general}、{working_hours} 均【待客户确认】。 | `02-botmaker/setup-guide.md:141` | 客户（经张宝文 / Kim 对接） |
+| 146 | 知识库正文以英文为主库；AI 用客户的语言作答。涉及质保、退换、法律的条目，若要用当地语言的固定措辞，单独提供经审核的译文【待客户确认】。 | `02-botmaker/setup-guide.md:173` | 客户（经张宝文 / Kim 对接） |
+| 147 | sales_b2b / segment=B2B 的全部转人工 / 海外销售【待客户确认】 / 响应时限见 00-client/销售接手SOP.md | `02-botmaker/setup-guide.md:186` | 客户（经张宝文 / Kim 对接） |
+| 148 | support_b2c / C 端售后、质保、投诉、安全类 / 售后或运营【待客户确认】 | `02-botmaker/setup-guide.md:187` | 客户（经张宝文 / Kim 对接） |
+| 149 | 销售结束会话时必须选一个结束分类，集成服务据此回写线索状态（事件回调里带 typification，SOURCES S-B6）。分类名【待核实】【待客户确认】： | `02-botmaker/setup-guide.md:209` | 客户（经张宝文 / Kim 对接） |
+| 150 | 管理员（备份） / 客户运营负责人（Kim 或其指定的人）【待客户确认】 / 同上 / 避免单点 | `02-botmaker/setup-guide.md:316` | 客户（经张宝文 / Kim 对接） |
+| 151 | 坐席 / 海外销售、售后【待客户确认】 / 在所属队列接会话、回消息、结束会话选分类 / Standard 套餐含 10 个坐席（SOURCES S-B3） | `02-botmaker/setup-guide.md:318` | 客户（经张宝文 / Kim 对接） |
+| 152 | 假设：三条模板都按 utility（事务通知）类别提交；Meta 可能把它们改判为 marketing（营销）类，费率与发送条件随之变化【待核实】；ES / DE / FR / PT 译文为占位，语种清单与译文均【待客户确认】，须由母语者审核后再提交。 | `02-botmaker/templates/README.md:4` | 客户（经张宝文 / Kim 对接） |
+| 153 | 响应时限规则见 00-client/销售接手SOP.md：工作时间内 2 小时首次回复；非工作时间进线的，下一个工作日 10:00（北京时间）前回复；周末无人值班时，周一用模板再触达。时限数值均【待客户确认】。 | `02-botmaker/templates/README.md:21` | 客户（经张宝文 / Kim 对接） |
+| 154 | 每个语种单独提交 / 同名模板下按语种各建一份；语言代码（如西语、葡语的地区变体）按目标市场选【待客户确认】 | `02-botmaker/templates/README.md:30` | 客户（经张宝文 / Kim 对接） |
+| 155 | 同一客户同一咨询，模板最多发 2 次，间隔不少于 3 天；两次都没回就把线索状态记为 nurture 或 closed_lost，不再追发【待客户确认】。 | `02-botmaker/templates/README.md:54` | 客户（经张宝文 / Kim 对接） |
+| 156 | 假设：类别 utility；是否被 Meta 改判为 marketing【待核实】；译文与语种【待客户确认】。 | `02-botmaker/templates/tromox_info_request_v1.md:4` | 客户（经张宝文 / Kim 对接） |
+| 157 | es / {ES 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:27` | 客户（经张宝文 / Kim 对接） |
+| 158 | de / {DE 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:28` | 客户（经张宝文 / Kim 对接） |
+| 159 | fr / {FR 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:29` | 客户（经张宝文 / Kim 对接） |
+| 160 | pt / {PT 译文待定} / 【待客户确认】 | `02-botmaker/templates/tromox_info_request_v1.md:30` | 客户（经张宝文 / Kim 对接） |
+| 161 | 同一咨询最多发 2 次，间隔不少于 3 天【待客户确认】。 | `02-botmaker/templates/tromox_info_request_v1.md:53` | 客户（经张宝文 / Kim 对接） |
+| 162 | 假设：类别 utility；是否被 Meta 改判为 marketing【待核实】；译文与语种【待客户确认】；仅完整版包含本模板。 | `02-botmaker/templates/tromox_support_update_v1.md:4` | 客户（经张宝文 / Kim 对接） |
+| 163 | 同一请求最多发 2 次，间隔不少于 3 天【待客户确认】。 | `02-botmaker/templates/tromox_support_update_v1.md:51` | 客户（经张宝文 / Kim 对接） |
+| 164 | 测试号码 / 备用号码 1 个，走新号接入；另备 1 部装有 WhatsApp Business App（版本不低于 2.24.17）的手机与 1 个测试号，仅用于 T-1。商家认证未通过时一个商务组合最多注册 2 个号码（SOURCES S-M8），测试号接在客户的商务组合下也占名额：这两个测试号正好占满，上线号码要等认证通过（或升到 … | `02-botmaker/trial-test-plan.md:27` | 客户（经张宝文 / Kim 对接） |
+| 165 | T-6 / CTWA referral 透传 / 客户有广告账户且同意时，投 1 条最小预算的 Click-to-WhatsApp 测试广告【待客户确认】；否则书面询问 Botmaker 支持。检查回调 messages[] 里是否出现 whatsappReferral 及其子键 sourceId、sourceURL、headline、b… | `02-botmaker/trial-test-plan.md:43` | 客户（经张宝文 / Kim 对接） |
+| 166 | 语种分布：EN 8、DE 3、ES 3、FR 3、PT 2、IT 1。最终语种清单【待客户确认】后，把不在范围内的语种样例换成范围内的。 | `02-botmaker/trial-test-plan.md:82` | 客户（经张宝文 / Kim 对接） |
+| 167 | T-6 如需投测试广告，费用由客户广告账户承担，投放前征得客户同意【待客户确认】。 | `02-botmaker/trial-test-plan.md:156` | 客户（经张宝文 / Kim 对接） |
+| 168 | 假设：本文件是工程侧的合规设计说明，**不是法律意见**；欧盟隐私要求只写到"基本做法"的深度；客户以哪个主体作为数据责任方尚未确定【待客户确认】。平台条款引用见 SOURCES S-M5；账号与发送量规则已按 Meta 原文核实，见 SOURCES S-M8、S-M10；Botmaker 的 AI 数据条款见 SOURCES S-B17… | `03-whatsapp/compliance.md:4` | 客户（经张宝文 / Kim 对接） |
+| 169 | 与提供方之间有数据处理协议 / 客户作为业务方"聘用 AI 提供方作为第三方服务商"，需要相应的数据处理条款 / 【待客户确认】由哪一方签 | `03-whatsapp/compliance.md:40` | 客户（经张宝文 / Kim 对接） |
+| 170 | 营销类消息必须有明确的事先同意**：MVP 不发营销消息。流程里的同意步骤（S8，可选【待客户确认】）只是把同意记录进线索字段 consent_marketing，为第二阶段的主动再触达做准备；没有记录同意的客户，第二阶段也不得群发。 | `03-whatsapp/compliance.md:52` | 客户（经张宝文 / Kim 对接） |
+| 171 | 数据控制者 / 摩兽的某个主体【待客户确认】 / 决定处理目的与方式；若以欧洲主体面向欧盟客户，责任关系更直接 | `03-whatsapp/compliance.md:65` | 客户（经张宝文 / Kim 对接） |
+| 172 | 隐私告知 / 开场话术内放隐私政策链接 {privacy_url}；隐私政策需补充：通过 WhatsApp 处理咨询、使用 AI 助手、处理目的、保存期限、权利行使方式、联系人 / 【待客户确认】隐私政策由客户法务更新 | `03-whatsapp/compliance.md:73` | 客户（经张宝文 / Kim 对接） |
+| 173 | 处理依据 / 回应咨询：基于客户请求的前期沟通或正当利益；营销：单独同意（第 2 节） / 【待客户确认】法务定性 | `03-whatsapp/compliance.md:75` | 客户（经张宝文 / Kim 对接） |
+| 174 | 访问与删除请求 / 见 3.3 / 已设计，时限【待客户确认】 | `03-whatsapp/compliance.md:77` | 客户（经张宝文 / Kim 对接） |
+| 175 | 跨境传输 / 见 3.4 / 【待客户确认】法务评估 | `03-whatsapp/compliance.md:78` | 客户（经张宝文 / Kim 对接） |
+| 176 | 运营在 1 个工作日内登记到请求台账；法定答复期限通常为一个月【待核实】，内部目标 10 个工作日内完成【待客户确认】。 | `03-whatsapp/compliance.md:83` | 客户（经张宝文 / Kim 对接） |
+| 177 | 集成服务与线索库 / 线索字段、原始回调事件 / 境外小型 VPS；面向欧盟客户时优先选欧盟区域【待客户确认】 / 05-integration/deployment.md | `03-whatsapp/compliance.md:95` | 客户（经张宝文 / Kim 对接） |
+| 178 | 销售群通知（飞书或企业微信） / 线索摘要；号码默认只显示后四位 / 中国境内 / **这是一次向中国的跨境传输**：靠打码与最小化降低风险，是否还需标准合同条款等传输机制由法务评估【待客户确认】 | `03-whatsapp/compliance.md:96` | 客户（经张宝文 / Kim 对接） |
+| 179 | 境内主体处理境外个人信息时，国内个人信息保护方面的要求同样需要法务一并评估【待客户确认】。 | `03-whatsapp/compliance.md:99` | 客户（经张宝文 / Kim 对接） |
+| 180 | 数据保留（建议值，均【待客户确认】） | `03-whatsapp/compliance.md:101` | 客户（经张宝文 / Kim 对接） |
+| 181 | 提示法务复核的清单【待客户确认】 | `03-whatsapp/compliance.md:124` | 客户（经张宝文 / Kim 对接） |
+| 182 | daily_inquiries,10,30,120,个/天,【待客户确认】,日均新咨询数；月对话数 = 日均 x 30 | `03-whatsapp/cost-model-inputs.csv:2` | 客户（经张宝文 / Kim 对接） |
+| 183 | b2b_share,0.10,0.15,0.20,比例,【待客户确认】,B 端咨询占比 | `03-whatsapp/cost-model-inputs.csv:3` | 客户（经张宝文 / Kim 对接） |
+| 184 | ctwa_share,0.00,0.20,0.30,比例,【待客户确认】,经 Click-to-WhatsApp 广告或 Facebook 主页按钮进入的对话占比（72 小时免费） | `03-whatsapp/cost-model-inputs.csv:9` | 客户（经张宝文 / Kim 对接） |
+| 185 | OTHER,其他市场,0.30,,【待客户确认】,ALL,国家构成未知：取全部官方费率市场的均值作代理（含西欧高价市场，偏保守） | `03-whatsapp/cost-model-rates.csv:7` | 客户（经张宝文 / Kim 对接） |
+| 186 | 其他市场 / 30% / 0.0219（代理值） / 【待客户确认】 | `03-whatsapp/cost-model-results.md:16` | 客户（经张宝文 / Kim 对接） |
+| 187 | 加权平均费率：0.0302 USD/条（Meta 基础价，未含 BSP 加价）。代理值 = 全部有官方费率的市场的算术平均（SOURCES S-M4），只用于国家构成未知的其他市场，仅作量级估算；拿到真实国家分布后按实际国家填费率。【待客户确认】 | `03-whatsapp/cost-model-results.md:18` | 客户（经张宝文 / Kim 对接） |
+| 188 | cost-model-inputs.csv / 低/中/高三档的全部输入，含状态列（假设 / 【待核实】 / 【待客户确认】 / 已复核） / 是 | `03-whatsapp/cost-model.md:14` | 客户（经张宝文 / Kim 对接） |
+| 189 | 费率**：各市场单价取自 Meta 官方费率卡（SOURCES S-M4，10/1 起服务消息单价等于 utility 单价）。只有国家构成未知的"其他市场"仍用代理值：全部有官方费率市场的算术平均，含德、荷等高价市场，偏保守。拿到真实国家分布后按实际国家填 cost-model-rates.csv（区域组单价见 S-M4，如西欧其他 0… | `03-whatsapp/cost-model.md:51` | 客户（经张宝文 / Kim 对接） |
+| 190 | "拿到真实国家分布后按实际国家填费率。【待客户确认】", | `03-whatsapp/cost_model.py:236` | 客户（经张宝文 / Kim 对接） |
+| 191 | 假设：客户已有运营 Facebook / Instagram 的商务账户【待客户确认】；未认证时的收发范围、号码数上限、显示名审核机制、认证审核时长、发送量分级与质量评级已于 2026-09-22 按 Meta 原文逐条核实（SOURCES S-M8、S-M10）；认证材料清单、提交入口、显示名命名规范等细节未逐条核对原文，仍标【待核实】… | `03-whatsapp/meta-onboarding-checklist.md:4` | 客户（经张宝文 / Kim 对接） |
+| 192 | 是否已有商务账户 / 沿用现有的（运营 Facebook 主页与 Instagram 的那个），不新建重复账户；重复账户是认证被拒的常见原因 / 客户 / 【待客户确认】 | `03-whatsapp/meta-onboarding-checklist.md:23` | 客户（经张宝文 / Kim 对接） |
+| 193 | 管理员 / 至少 2 名客户员工为管理员，用本人实名 Facebook 账号，开启两步验证；不使用共用或新注册的空白账号 / 客户 / 【待客户确认】 | `03-whatsapp/meta-onboarding-checklist.md:24` | 客户（经张宝文 / Kim 对接） |
+| 194 | 先定用哪个主体【待客户确认】 | `03-whatsapp/meta-onboarding-checklist.md:33` | 客户（经张宝文 / Kim 对接） |
+| 195 | 国家码的选择【待客户确认】 / 权衡三点：目标市场客户对号码的观感；公司能否长期持有并稳定收验证码；境内号码接入的可行性【待核实】 | `03-whatsapp/meta-onboarding-checklist.md:79` | 客户（经张宝文 / Kim 对接） |
+| 196 | 必须与企业或品牌有明确关系，并与官网、社媒上的对外名称一致；建议直接用 Tromox【待客户确认】。 | `03-whatsapp/meta-onboarding-checklist.md:99` | 客户（经张宝文 / Kim 对接） |
+| 197 | 保留期限 / 验收结束后按客户制度删除或归档【待客户确认】 | `04-eval/labeling-guide.md:35` | 客户（经张宝文 / Kim 对接） |
+| 198 | 历史记录里有欧盟等地区居民的个人信息，导出与使用前请按 03-whatsapp/compliance.md 的要求确认合规依据【待客户确认】。 | `04-eval/labeling-guide.md:37` | 客户（经张宝文 / Kim 对接） |
+| 199 | product_interest / 客户点名的车型，用产品代码、分号分隔：MC10;UKKO；代码目录 MC10、UKKO、M05、MINO、M03、PESGO【待客户确认】；没点名留空 / 运营 | `04-eval/labeling-guide.md:52` | 客户（经张宝文 / Kim 对接） |
+| 200 | 请销售负责人在中秋碰面前后填好；is_valid_lead 一列按此判断，第二阶段的经销商评分也以此为起点。表中"摩兽的标准"一列全部【待客户确认】。 | `04-eval/labeling-guide.md:132` | 客户（经张宝文 / Kim 对接） |
+| 201 | 主体 / 哪些类型算有效：门店、分销商、进口商、车队/租赁、线上转售、企业团购？哪些不算？ / 【待客户确认】 | `04-eval/labeling-guide.md:136` | 客户（经张宝文 / Kim 对接） |
+| 202 | 市场 / 重点国家与区域；已有独家代理、暂不开放的国家 / 【待客户确认】 | `04-eval/labeling-guide.md:137` | 客户（经张宝文 / Kim 对接） |
+| 203 | 经营基础 / 是否要求已有实体门店或团队、经营年限（官网对外写的是希望申请方已有至少 1 年的既有架构） / 【待客户确认】 | `04-eval/labeling-guide.md:138` | 客户（经张宝文 / Kim 对接） |
+| 204 | 现有业务 / 是否要求有两轮或电动车经验；在售竞品是否影响判断 / 【待客户确认】 | `04-eval/labeling-guide.md:139` | 客户（经张宝文 / Kim 对接） |
+| 205 | 采购规模 / 首单与年采购量的最低预期；低于多少按个人或团购处理 / 【待客户确认】 | `04-eval/labeling-guide.md:140` | 客户（经张宝文 / Kim 对接） |
+| 206 | 资质能力 / 进口、认证、售后维修能力是否为必要条件 / 【待客户确认】 | `04-eval/labeling-guide.md:141` | 客户（经张宝文 / Kim 对接） |
+| 207 | 联系人 / 需要对方提供哪些信息才值得销售跟进：公司名、职位、官网、邮箱等 / 【待客户确认】 | `04-eval/labeling-guide.md:142` | 客户（经张宝文 / Kim 对接） |
+| 208 | 直接排除 / 明确不跟进的情形：个人代购、只要样车、要求寄售等 / 【待客户确认】 | `04-eval/labeling-guide.md:143` | 客户（经张宝文 / Kim 对接） |
+| 209 | 优先级 / 什么样的线索要当天处理 / 【待客户确认】 | `04-eval/labeling-guide.md:144` | 客户（经张宝文 / Kim 对接） |
+| 210 | 销售在 Botmaker 结束会话时选择结束分类，conversation-close 事件把它带回来，服务据此回写 status。分类名称需要在 Botmaker 后台的结束分类功能中预先建好【待核实】，名称与含义由客户销售确认【待客户确认】。 | `05-integration/botmaker-api-notes.md:87` | 客户（经张宝文 / Kim 对接） |
+| 211 | 假设：日均咨询在成本模型的低到高档之间（单机足够）；服务器账号、域名解析都开在客户名下；服务器放在中国大陆以外，保证 Botmaker 能稳定回调；具体云厂商与机房【待客户确认】。 | `05-integration/deployment.md:4` | 客户（经张宝文 / Kim 对接） |
+| 212 | 线索库里有个人数据：号码、姓名、公司、对话摘要。客户多在欧洲时，机房优先选欧洲经济区内，并与云厂商签数据处理协议；选其他地区前请客户法务确认。【待客户确认】 | `05-integration/deployment.md:111` | 客户（经张宝文 / Kim 对接） |
+| 213 | 云厂商、机房地区、由谁开账号 / 【待客户确认】 / 客户、张宝文 | `05-integration/deployment.md:150` | 客户（经张宝文 / Kim 对接） |
+| 214 | 子域名与 DNS 解析由谁操作 / 【待客户确认】 / 客户 | `05-integration/deployment.md:151` | 客户（经张宝文 / Kim 对接） |
+| 215 | 通知渠道用飞书还是企业微信 / 【待客户确认】 / 客户销售 | `05-integration/deployment.md:155` | 客户（经张宝文 / Kim 对接） |
+| 216 | 海外租户（Lark）的开放平台域名不同，服务的 base_url 参数目前只在代码里可改，没有环境变量；客户若用 Lark 而不是飞书，要加一个配置项。【待客户确认】 | `05-integration/feishu-bitable-setup.md:80` | 客户（经张宝文 / Kim 对接） |
+| 217 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 客户（经张宝文 / Kim 对接） |
+| 218 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 客户（经张宝文 / Kim 对接） |
+| 219 | 假设：在测试号或灰度入口上执行；测试人用自己的手机号，语种列为完整版的安排；精简版只保留 2 个语种，此处以英语加德语为例，第二语种【待客户确认】；示例里的公司与人名均为虚构；用例不涉及任何参数、价格、质保条款的具体内容。 | `06-acceptance/uat-test-cases.md:4` | 客户（经张宝文 / Kim 对接） |
+| 220 | U19 / 营销同意步骤 / DE / C 端问题解决后出现同意询问；会话一按 "Yes, keep me posted"，会话二按 "No, thanks" / 会话一 consent_marketing true；会话二 false；未询问的其他线索为空 / 记录后结束会话 / 无卡片 / 三种取值都正确；该步骤是否启用【待客户确认】… | `06-acceptance/uat-test-cases.md:36` | 客户（经张宝文 / Kim 对接） |
+| 221 | 德语 DE / U02、U06、U19、U20 / 保留（以德语为例，第二语种【待客户确认】） | `06-acceptance/uat-test-cases.md:65` | 客户（经张宝文 / Kim 对接） |
+| 222 | 假设：碰面约 2 小时；对方到场的有 Kim（海外社媒运营）、至少一位销售负责人，最好有一位能拍板账号与付款的领导【待客户确认】。 | `07-project/meeting-prep.md:4` | 客户（经张宝文 / Kim 对接） |
+| 223 | 假设：摩兽业务/FDE 一方以 Kim 为对接人；摩兽销售由销售主管代表【待客户确认】；工作项与周次对应 timeline.md。 | `07-project/raci.md:5` | 客户（经张宝文 / Kim 对接） |
+| 224 | R10 / **隐私合规**：客户中有欧盟用户；线索与通知会进入境内协作工具 / 中 / 高 / 开场即告知 AI 身份与隐私政策链接；只存业务必需字段；通知里号码打码；删除请求有流程；数据保留期限与跨境安排提交客户法务复核【待客户确认】 / 摩兽业务（法务对接）；集成工程师（技术措施） / 03-whatsapp/compliance.… | `07-project/risk-register.md:19` | 客户（经张宝文 / Kim 对接） |
+| 225 | 代写 FAQ 内容与专业翻译（Bot 话术的多语种版本由 AI 初译、客户审校）。【待客户确认】 | `99-internal/pricing-internal.md:55` | 客户（经张宝文 / Kim 对接） |
+| 226 | 运维手册按上面两件事补了三处（都是运营看得到的现象）：第 9 节排查表新增两行——多维表格里线索晚到或没到、群里收到 tromox webhook 的告警消息；第 8 节每月事项新增第 8 条到期数据自动清理（线索最后一次联系满 24 个月、原始回调事件满 90 天，保留期仍是建议值【待客户确认】）；第 10 节"什么情况找技术"新增第 … | `99-internal/zhang-baowen-changelog-2026-09-22.md:78` | 客户（经张宝文 / Kim 对接） |
+| 227 | 车型名称（家族） / MC10（含 TrailX、StreetX）、UKKO（含 Ukko S+、UkkoPro）、M05、MINO（含 Mino B）、M03、Pesgo（含 Plus、C）。现售清单以客户提供为准【待客户确认】。 / （链接见出处） ； （链接见出处） | `SOURCES.md:76` | 客户（经张宝文 / Kim 对接） |
+| 228 | 市场与网络 / 官网 FAQ 提到中国、意大利、欧洲、日本、韩国、澳大利亚、北美；另有美国站、南非站、菲律宾经销商站；欧洲站有 "Dealer Partnership Program" 与 "EU Warehouse Support"；总部杭州，欧洲服务中心在比利时鲁汶。各国经销商名单【待客户确认】。 / 同上；搜索结果中的 tromox… | `SOURCES.md:77` | 客户（经张宝文 / Kim 对接） |
+| 229 | 经销申请 / 官网设经销商/分销商申请表单；FAQ 写明希望申请方"已有至少 1 年的既有架构"、有二级网络更佳。有效线索标准以销售填写的为准【待客户确认】。 / （链接见出处） | `SOURCES.md:78` | 客户（经张宝文 / Kim 对接） |
+| 230 | ISO 639-1 codes the MVP bot is expected to handle. Final list is 【待客户确认】. | `shared/tromox_lead/enums.py:92` | 客户（经张宝文 / Kim 对接） |
+| 231 | FieldSpec("ai_summary", "string", SRC_AI, "给销售看的一两句话摘要（默认简体中文【待客户确认】）", ai_extracted=True), | `shared/tromox_lead/fields.py:46` | 客户（经张宝文 / Kim 对接） |
+| 232 | line-up must be confirmed by the client 【待客户确认】. | `shared/tromox_lead/products.py:5` | 客户（经张宝文 / Kim 对接） |
