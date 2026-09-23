@@ -649,7 +649,7 @@
 | 213 | 云厂商、机房地区、由谁开账号 / 【待客户确认】 / 客户、张宝文 | `05-integration/deployment.md:150` | 客户（经张宝文 / Kim 对接） |
 | 214 | 子域名与 DNS 解析由谁操作 / 【待客户确认】 / 客户 | `05-integration/deployment.md:151` | 客户（经张宝文 / Kim 对接） |
 | 215 | 通知渠道用飞书还是企业微信 / 【待客户确认】 / 客户销售 | `05-integration/deployment.md:155` | 客户（经张宝文 / Kim 对接） |
-| 216 | 海外租户（Lark）的开放平台域名不同：FEISHU_BASE_URL 填 open.larksuite.com（默认 open.feishu.cn）；客户用的是飞书还是 Lark 要客户说明。【待客户确认】 | `05-integration/feishu-bitable-setup.md:82` | 客户（经张宝文 / Kim 对接） |
+| 216 | 海外租户（Lark）的开放平台地址不同：国内飞书用默认的 （链接见出处） 即可，Lark 租户要把 FEISHU_BASE_URL 设成 （链接见出处） 这个完整来源（带 https，只写域名服务会拒绝启动）；客户用的是飞书还是 Lark 要客户说明。【待客户确认】 | `05-integration/feishu-bitable-setup.md:82` | 客户（经张宝文 / Kim 对接） |
 | 217 | defines the close categories in Botmaker 【待核实】【待客户确认】 (see botmaker-api-notes.md). | `05-integration/webhook-service/app/normalize.py:53` | 客户（经张宝文 / Kim 对接） |
 | 218 | "_note": "【待核实】结构依据 Botmaker 帮助中心的 webhook 示例（SOURCES S-B6）整理，尚未用真实回调样本核对；拿到真实样本后替换本文件并同步 app/models.py。号码、姓名、公司均为虚构。 场景：销售在 Botmaker 结束会话并选择结束分类（typification），用于回写线索状态。分… | `05-integration/webhook-service/fixtures/event_conversation_close.json:2` | 客户（经张宝文 / Kim 对接） |
 | 219 | 假设：在测试号或灰度入口上执行；测试人用自己的手机号，语种列为完整版的安排；精简版只保留 2 个语种，此处以英语加德语为例，第二语种【待客户确认】；示例里的公司与人名均为虚构；用例不涉及任何参数、价格、质保条款的具体内容。 | `06-acceptance/uat-test-cases.md:4` | 客户（经张宝文 / Kim 对接） |

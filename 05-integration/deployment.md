@@ -53,7 +53,7 @@ apt-get update && apt-get install -y unattended-upgrades sqlite3    # 自动安�
 
 ### 4.3 环境变量文件
 
-`deploy/.env`（由 `webhook-service/.env.example` 复制，权限 600，已被 `.gitignore` 排除）同时做两件事：作为 `env_file` 传给容器，也给 compose 文件里的 `TROMOX_*` 变量插值（数据目录、端口、绑定地址）。必填 `BOTMAKER_WEBHOOK_TOKEN`（`openssl rand -hex 32` 生成）、`NOTIFIERS` 及对应的群机器人地址；容器内路径已由镜像设定，`DATABASE_PATH` / `CSV_EXPORT_PATH` 两行删掉；加一行 `TROMOX_DATA_DIR=/opt/tromox/data`，把数据放在仓库之外。
+`deploy/.env`（由 `webhook-service/.env.example` 复制，权限 600，已被 `.gitignore` 排除）同时做两件事：作为 `env_file` 传给容器，也给 compose 文件里的 `TROMOX_*` 变量插值（数据目录、端口、绑定地址）——后一件只因为它就在 `deploy/` 目录里；用 `TROMOX_ENV_FILE` 把容器环境文件指到别处时，那个文件不参与插值（`deploy/README.md` 第 1 节）。必填 `BOTMAKER_WEBHOOK_TOKEN`（`openssl rand -hex 32` 生成）、`NOTIFIERS` 及对应的群机器人地址；容器内路径已由镜像设定，`DATABASE_PATH` / `CSV_EXPORT_PATH` 两行删掉；加一行 `TROMOX_DATA_DIR=/opt/tromox/data`，把数据放在仓库之外。
 
 ### 4.4 数据目录与启动
 
@@ -65,7 +65,7 @@ apt-get update && apt-get install -y unattended-upgrades sqlite3    # 自动安�
 
 代理这一层顺手做了三件减害的事，配置已经写在 `Caddyfile.example` 里：只转发 `/webhooks/botmaker`、`/health`、`/metrics` 三条路径，其余一律 404（扫描器探到的路径到不了上游）；请求体上限 1 MB；回包加 `X-Content-Type-Options` / `X-Frame-Options` / `Referrer-Policy` / `Strict-Transport-Security` 四个安全头并去掉 `Server`。以后服务新增对外路径，要同步加进那行路径匹配。容器侧的最小权限（只读根文件系统、去掉全部 capabilities、禁止提权、进程数上限）同样已经写死在 `deploy/docker-compose.yml` 里，逐项理由见 `deploy/README.md` 第 4 节。
 
-来源 IP 与代理头：容器看到的对端是 Caddy 容器（宿主机跑 Caddy 时则是 Docker 网桥网关）而不是真实来源，所以镜像里 uvicorn 带 `--proxy-headers` 启动，compose 也已经把 `FORWARDED_ALLOW_IPS` 设成 `*` —— 只有来源在这个名单里时 `X-Forwarded-For` 才被采信，伪造的一律忽略，`ALLOWED_IPS` 因此可以直接用，不必再配什么。默认 `*` 的前提是 8000 端口只绑 `127.0.0.1`，只有 Caddy 与本机能到达。把端口暴露到公网、或在宿主机上直接跑代理时要收紧：在 `deploy/.env` 里写 `TROMOX_FORWARDED_ALLOW_IPS=<代理的固定 IP>`（网桥网关常见为 `172.17.0.1`，`docker network inspect bridge` 可查），或留空表示谁的代理头都不信。注意改的是 `TROMOX_FORWARDED_ALLOW_IPS`：compose 里的 `environment` 盖过 `env_file`，直接写 `FORWARDED_ALLOW_IPS` 不生效。密钥校验仍是主防线，`ALLOWED_IPS` 只是纵深防御。
+来源 IP 与代理头：容器看到的对端是 Caddy 容器（宿主机跑 Caddy 时则是 compose 网络 `tromox_default` 的网关）而不是真实来源，所以镜像里 uvicorn 带 `--proxy-headers` 启动，compose 也已经把 `FORWARDED_ALLOW_IPS` 设成 `${TROMOX_FORWARDED_ALLOW_IPS-*}`（未设即 `*`） —— 只有来源在这个名单里时 `X-Forwarded-For` 才被采信，伪造的一律忽略，`ALLOWED_IPS` 因此可以直接用，不必再配什么。默认 `*` 的前提是 8000 端口只绑 `127.0.0.1`，只有 Caddy 与本机能到达。把端口暴露到公网、或在宿主机上直接跑代理时要收紧：在 `deploy/.env` 里写 `TROMOX_FORWARDED_ALLOW_IPS=<代理的固定 IP>`（宿主机跑代理时填 `docker network inspect tromox_default -f '{{(index .IPAM.Config 0).Gateway}}'` 查到的网关，不是默认网桥的 `172.17.0.1`——服务不在那个网络上，照它配 `ALLOWED_IPS` 会让每条回调 403；`docker compose down` 再 `up` 后子网可能重新分配，要复查），或留空 `TROMOX_FORWARDED_ALLOW_IPS=` 表示谁的代理头都不信（`-*` 不带冒号，设成空就真是空）。注意改的是 `TROMOX_FORWARDED_ALLOW_IPS`：compose 里的 `environment` 盖过 `env_file`，直接写 `FORWARDED_ALLOW_IPS` 不生效。密钥校验仍是主防线，`ALLOWED_IPS` 只是纵深防御。
 
 ### 4.6 验证
 
@@ -102,7 +102,7 @@ webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置�
 
 ## 7. 更新
 
-`deploy/update.sh`：`git pull --ff-only` → `docker compose build webhook` → `docker compose up -d webhook` → 等 `/health` 返回 200（最多 60 秒），任一步失败退出非 0。
+`deploy/update.sh`：记下当前提交、把当前镜像另存为 `tromox-webhook:rollback` → `git pull --ff-only` → `docker compose build webhook` → `docker compose up -d webhook` → 等 `/health` 返回 200（默认 60 秒，环境变量 `TROMOX_UPDATE_WAIT_S` 可改）。新版本在时限内不健康时**自动回滚**：把 `:rollback` 标回 `:latest`、`docker compose up -d --no-build webhook`、再等一轮 `/health`；回滚后健康则退出 1，stderr 说明代码仍停在新提交，并给出把代码钉回旧提交的命令 `git -C /opt/tromox/app reset --hard <旧 sha>`（会丢掉工作区改动，部署克隆里本来就不该有）。回滚后仍不健康、或首次部署没有可回滚的镜像，退出 2，线上此刻没有健康版本，要立刻人工处理。构建失败时线上容器没动，同样退出 1 并给出钉回命令。加 `--no-rollback` 则失败时只报告不回滚（坏容器留着排查）。逐条处置见 `deploy/README.md` 第 3 节「更新」。
 
 切换有数秒不可用。Botmaker 对单条回调失败是否重试尚不清楚【待核实】；若不重试，这几秒里的回调会丢失，`app.replay` 也补不回（它只重放已落盘的事件）。数秒的切换一般碰不到熔断线（10 分钟内失败超过 100 次，SOURCES S-B5）。所以更新放在咨询低谷（北京时间上午，欧美的深夜）进行；更新后看一眼 `/health` 与最近日志。表结构用 `CREATE TABLE IF NOT EXISTS` 建立，线索以 JSON 存放，升级字段不需要迁移脚本。
 
@@ -116,8 +116,8 @@ webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置�
 
 ```bash
 # 先预演（只打印会删什么，不改任何东西），确认后加 --yes 执行；输出与日志里只有 lead_id，不出现号码
-docker exec tromox-webhook python -m app.forget --phone +<E.164 号码> --dry-run
-docker exec tromox-webhook python -m app.forget --phone +<E.164 号码> --yes
+cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.forget --phone +<E.164 号码> --dry-run
+cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.forget --phone +<E.164 号码> --yes
 ```
 
 ## 9. 上线前检查

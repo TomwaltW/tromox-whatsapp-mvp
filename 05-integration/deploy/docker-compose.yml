@@ -1,10 +1,12 @@
 # Tromox 回调服务：一台 VPS、一个容器、一个 SQLite 文件（deployment.md 第 1 节）。
 # 在本目录执行 docker compose 命令。可插值变量（写在本目录 .env 或 shell 环境里）：
-#   TROMOX_ENV_FILE   传给容器的环境变量文件，默认 .env（同一个文件也给下面几项插值）
+#   TROMOX_ENV_FILE   传给容器的环境变量文件，默认 .env。它只管传给容器：下面几项 TROMOX_* 的插值只认
+#                     本目录 .env 与 shell 环境；指到别处时写在那个文件里的 TROMOX_DATA_DIR 等会被静默忽略，
+#                     要么在 shell 里 export 这几项，要么 docker compose --env-file <那个文件> ...
 #   TROMOX_BIND       宿主机绑定地址，默认 127.0.0.1（公网流量一律经反向代理进入）
 #   TROMOX_HTTP_PORT  宿主机端口，默认 8000
 #   TROMOX_DATA_DIR   宿主机数据目录（SQLite + CSV），默认 ./data；服务器上建议放仓库之外，如 /opt/tromox/data
-#   TROMOX_FORWARDED_ALLOW_IPS  uvicorn 信任哪些来源的代理头，默认 *（见下面 webhook 服务的注释）
+#   TROMOX_FORWARDED_ALLOW_IPS  uvicorn 信任哪些来源的代理头：未设取 *，设成空就是谁都不信（见下面 webhook 服务的注释）
 # caddy 服务带 profile "proxy"：不加 --profile proxy 就不起（本机 smoke test 不占 80/443）。
 # 容器按最小权限跑：根文件系统只读、去掉全部 capabilities、禁止提权（deploy/README.md「安全基线」一节）。
 name: tromox
@@ -28,10 +30,12 @@ services:
       # TROMOX_FORWARDED_ALLOW_IPS 改成 Caddy 的固定 IP，或留空（谁的代理头都不信）。
       # 注意：这里的 environment 会盖掉 env_file，改值要改 TROMOX_FORWARDED_ALLOW_IPS，
       # 直接在 .env 里写 FORWARDED_ALLOW_IPS 不生效。
-      FORWARDED_ALLOW_IPS: "${TROMOX_FORWARDED_ALLOW_IPS:-*}"
+      # 下面是 "-*" 不带冒号，是故意的：未设取 *，设成空（TROMOX_FORWARDED_ALLOW_IPS=）就是空串，
+      # uvicorn 谁的代理头都不信；带冒号的写法在变量为空时也取 *，"留空" 就不生效了。
+      FORWARDED_ALLOW_IPS: "${TROMOX_FORWARDED_ALLOW_IPS-*}"
     read_only: true                                    # 根文件系统只读；要写的只有 /srv/data 卷与下面的 /tmp
     tmpfs:
-      - /tmp                                           # app.demo 等用到的临时目录，进内存、重启即清
+      - /tmp                                           # 临时目录（Python tempfile 的默认位置），进内存、重启即清；app.forget / app.retention 等运维命令只写 /srv/data
     cap_drop:
       - ALL                                            # 服务不需要任何 capability（以 uid 10001 跑、只监听 8000）
     security_opt:

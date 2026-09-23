@@ -11,7 +11,7 @@
 
 ## 2. 在飞书开放平台建自建应用
 
-1. 用客户租户的管理员账号登录飞书开放平台（域名 open.feishu.cn；海外租户是 open.larksuite.com，见第 7 节），进入「开发者后台」，选「创建企业自建应用」。名字建议「Tromox 线索镜像」，图标随意。
+1. 用客户租户的管理员账号登录飞书开放平台（`https://open.feishu.cn`；海外租户是 Lark 开放平台 `https://open.larksuite.com`，见第 7 节），进入「开发者后台」，选「创建企业自建应用」。名字建议「Tromox 线索镜像」，图标随意。
 2. 打开应用的「凭证与基础信息」页，记下 **App ID** 与 **App Secret**。App Secret 只显示一次，当场存进密码管理器；泄漏就在这一页重置。
 3. 「权限管理」页，搜索并开通多维表格相关权限：**查看、评论、编辑和管理多维表格**（权限标识以 `bitable:app` 开头的那一条）。只开这一条即可，不要开通讯录、消息类权限。
 4. 「版本管理与发布」页，创建一个版本并申请发布；管理员在「管理后台」审核通过后应用才可用。可用范围选「全员」或只选一个部门都行，因为服务用的是应用自己的身份（租户令牌），不代表任何用户。
@@ -56,7 +56,7 @@
 | `FEISHU_BITABLE_APP_TOKEN` | 表格网址 `/base/` 后的那段 |
 | `FEISHU_BITABLE_TABLE_ID` | 表格网址 `table=` 后的那段（`tbl` 开头） |
 
-可选：`FEISHU_BASE_URL`，开放平台域名，默认 open.feishu.cn；海外 Lark 租户填 open.larksuite.com（见第 7 节），留空即默认值。
+可选：`FEISHU_BASE_URL`，开放平台地址，要写完整来源（带 `https://`，不带路径）：默认 `https://open.feishu.cn`；海外 Lark 租户填 `https://open.larksuite.com`（见第 7 节）；留空即默认值。只写域名、不带 `https://` 时服务拒绝启动，启动日志会写明。
 
 再把 `STORAGE_BACKENDS` 改成 `sqlite,csv,feishu_bitable`。服务的日志与错误信息不会输出 App Secret 与租户令牌。
 
@@ -71,7 +71,7 @@
      --data @05-integration/webhook-service/fixtures/message_with_variables_b2b.json
    ```
 
-   期望：响应 `{"outcome": "lead_upserted", ...}`；表格里多出一行，`segment` 是 `B2B`，`product_interest` 是两个选项，`first_message_ts` 显示成日期。
+   期望：响应 `{"status": "lead_upserted", ...}`；表格里多出一行，`segment` 是 `B2B`，`product_interest` 是两个选项，`first_message_ts` 显示成日期。
 3. 把同一个 fixture 再发一次（或改一个变量再发）：表里**仍是一行**，内容被更新，不会多出重复行。这就是按 `lead_id` 查找后更新的效果。
 4. 故意把 `FEISHU_BITABLE_TABLE_ID` 改错再发一条：响应仍是 `lead_upserted`（账本照常，应答不等飞书），几秒后服务日志有一行 `mirror failed`，`sink` 为 `feishu_bitable`，`/metrics` 的 `mirror_outbox_pending` 加 1。改回来之后不用再发：这一行留在 `mirror_outbox` 里，每 5 分钟一次的 `python -m app.replay` 会把它补发（等不及就手动跑一次）；连失败 10 次的行会停在 `mirror_outbox_exhausted` 里，排查 `last_error` 之后用 `python -m app.replay --reset-mirrors` 重置再补发。
 
@@ -79,6 +79,6 @@
 
 - 接口路径、请求体与返回体按飞书开放平台公开文档整理（租户令牌、记录查询 `records/search`、记录创建、记录更新），未用真实租户跑通。尤其是查询接口的 filter 写法与「单选列自动补选项」的行为。【待核实】
 - 日期列接受毫秒时间戳、复选框列接受布尔、多选列接受字符串数组，是按文档写的；若某列类型建错（例如把日期建成文本），写入会报错码，日志里能看到。【待核实】
-- 海外租户（Lark）的开放平台域名不同：`FEISHU_BASE_URL` 填 open.larksuite.com（默认 open.feishu.cn）；客户用的是飞书还是 Lark 要客户说明。【待客户确认】
+- 海外租户（Lark）的开放平台地址不同：国内飞书用默认的 `https://open.feishu.cn` 即可，Lark 租户要把 `FEISHU_BASE_URL` 设成 `https://open.larksuite.com` 这个完整来源（带 https，只写域名服务会拒绝启动）；客户用的是飞书还是 Lark 要客户说明。【待客户确认】
 - 频控：飞书对单个应用的写接口有每秒次数限制，MVP 的线索量远低于该限制；历史导入一次写几千行时要分批。【待核实】
 - 建在知识库里的多维表格，其网址 token 是知识库节点的，不能直接当 app_token；需要把表格移出知识库或换用节点接口取 app_token。【待核实】
