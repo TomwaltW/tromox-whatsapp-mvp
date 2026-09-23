@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -12,12 +13,27 @@ from fastapi.testclient import TestClient
 
 from app import report
 from app.notify import GenericWebhookNotifier
+from tromox_lead import EscalationReason, Lead
 from webhook_test_helpers import HEADERS, load_fixture
 
 # U01 B2B 合格（IG-2609）、U05 C 端不转人工、U09 unknown 要人工、U13 连续没听懂、U14 低置信度
 CASES = ["U01a", "U01b", "U01c", "U05a", "U05b", "U05c", "U09", "U13a", "U13b", "U14"]
 TOP_KEYS = {"window", "leads", "by_source_channel", "by_source_code", "escalation", "notifications", "status_funnel", "valid_lead_rate"}
 NOTIFICATION_KEYS = {"rows", "sent", "partial", "failed", "pending", "skipped", "latency_p50_s", "latency_p95_s", "over_threshold", "threshold_s"}
+CANDIDATE_KEYS = {"lead_id", "reason", "ai_summary"}
+_LEAD_ID_RE = re.compile(r"L-[0-9a-f]{12}")
+
+
+def _section6_rows(md: str) -> list[str]:
+    """第 6 节表格里的数据行（以 `| L-` 开头）。"""
+    section = md.split("## 6. 复盘清单", 1)[1].split("\n## ", 1)[0]
+    return [line for line in section.splitlines() if line.startswith("| L-")]
+
+
+def _leaks_phone(row: str) -> bool:
+    """lead_id 能算回号码，所以同一行里不能再有尾号：去掉 lead_id 之后不许有「尾号」或 4 位以上的连续数字。"""
+    rest = _LEAD_ID_RE.sub("", row)
+    return "尾号" in rest or re.search(r"\d{4,}", rest) is not None
 
 
 def _replay(client: TestClient, names: list[str]) -> list[str]:
@@ -86,12 +102,35 @@ def test_empty_window_is_all_zero(client, settings, tmp_path):
 
 def test_markdown_masks_every_phone_number(client, settings, tmp_path):
     phones = _replay(client, CASES)
-    _, md = _run(settings.database_path, tmp_path, _window())
+    data, md = _run(settings.database_path, tmp_path, _window())
     for phone in phones:
         assert phone not in md and phone.lstrip("+") not in md
     section = md.split("## 6. 复盘清单", 1)[1]
     assert "not_understood_twice" in section and "low_confidence" in section
-    assert "尾号 " in section  # 候选行只给尾号 4 位
+    assert "| lead_id | 原因 | AI 摘要 |" in section and "尾号" not in section  # 不列号码，也不列尾号
+    rows = _section6_rows(md)
+    assert len(rows) == 2 and not [row for row in rows if _leaks_phone(row)]
+    # --json 里没有复盘候选的号码 / 尾号字段（逐条候选只在 Markdown 里）
+    blob = json.dumps(data, ensure_ascii=False)
+    assert "尾号" not in blob and '"phone"' not in blob
+    assert all(set(c) == CANDIDATE_KEYS for c in data.get("review_candidates", []))
+
+
+def test_review_rows_never_carry_the_phone_or_its_tail(tmp_path):
+    """摘要里写了号码也一样：第 6 节整串打码、不留尾号，候选字典里没有号码字段。"""
+    leads = [
+        Lead(lead_id="L-0123456789ab", phone="+4917604069011", escalation_flag=True,
+             escalation_reason=EscalationReason.LOW_CONFIDENCE, ai_summary="客户说回拨 +49 17604069011 或 017604069011。"),
+        Lead(lead_id="L-ba9876543210", phone="+14155550123", escalation_flag=True,
+             escalation_reason=EscalationReason.NOT_UNDERSTOOD_TWICE, ai_summary=""),
+    ]
+    candidates = report.review_candidates(leads)
+    assert [set(c) for c in candidates] == [CANDIDATE_KEYS, CANDIDATE_KEYS]
+    assert candidates[0]["ai_summary"] == "客户说回拨 +49 *** 或 ***。" and candidates[1]["ai_summary"] == "（无摘要）"
+    data = report.summarize(leads, [], *report.parse_window("2026-11-09", "2026-11-16"), 60)
+    rows = _section6_rows(report.render_markdown(data, candidates, tmp_path / "leads.db"))
+    assert len(rows) == 2 and not [row for row in rows if _leaks_phone(row)]
+    assert "9011" not in "".join(rows)  # 号码的尾号不出现在第 6 节
 
 
 def test_window_excludes_until_day(client, settings, tmp_path):

@@ -4,8 +4,10 @@
 
 只读打开 SQLite（`mode=ro`），不经过服务、不改库。窗口 `[since, until)` 按 UTC 日期，`until` 不含当天，默认最近 7 天。
 线索按 `leads.updated_at` 计，通知按 `notifications.created_at` 计。指标口径见 README 第 10 节。
-号码只显示尾号 4 位：报告会贴到群里，完整号码一个都不出现。
-`--post` 额外把六项指标的摘要发到 `NOTIFIERS` 配置的渠道（摘要只有汇总数，不含线索明细）。
+隐私：报告里不出现号码，也不出现尾号，`ai_summary` 里像号码的数字串一律打码。但第 6 节的 `lead_id` 由号码推出
+（`'L-' + sha1(E.164)[:12]`，不加盐），拿到它的人可以算回号码——含 `lead_id` 的报告只在有线索库权限的人之间传，
+不要贴到客户或外部群。
+`--post` 额外把六项指标的摘要发到 `NOTIFIERS` 配置的渠道（摘要只有汇总数，不含 `lead_id` 与线索明细）。
 """
 from __future__ import annotations
 
@@ -67,14 +69,10 @@ def parse_window(since: str | None, until: str | None, today: date | None = None
     return since_d, until_d
 
 
-def mask_phone(phone: str | None) -> str:
-    digits = "".join(ch for ch in (phone or "") if ch.isdigit())
-    return f"尾号 {digits[-4:]}" if len(digits) >= 4 else "无号码"
-
-
-def scrub(text: str) -> str:
-    """兜底：文本里任何像号码的数字串都打码，只留尾号 4 位。"""
-    return _PHONE_RE.sub(lambda m: f"***{m.group(0)[-4:]}", text or "")
+def scrub(text: str, keep_tail: bool = True) -> str:
+    """兜底：文本里任何像号码的数字串都打码。默认留尾号 4 位（推送摘要用）；
+    `keep_tail=False` 整串换成 `***`，给第 6 节用——那一行有 `lead_id`，尾号不能和它同行。"""
+    return _PHONE_RE.sub(lambda m: f"***{m.group(0)[-4:]}" if keep_tail else "***", text or "")
 
 
 def _percentile(values: Sequence[float], pct: float) -> float | None:
@@ -167,10 +165,11 @@ def summarize(leads: list[Lead], notifications: Sequence[sqlite3.Row], since: da
 
 
 def review_candidates(leads: list[Lead]) -> list[dict[str, str]]:
-    """第 6 节：误判候选。号码只给尾号，摘要里像号码的数字串也打码。"""
+    """第 6 节：误判候选。不带号码也不带尾号——`lead_id` 能算回号码，两者不能同行；
+    摘要里像号码的数字串整串打码（不留尾号）。"""
     return [
-        {"lead_id": lead.lead_id, "reason": lead.escalation_reason.value, "phone": mask_phone(lead.phone),
-         "ai_summary": scrub(lead.ai_summary) or "（无摘要）"}
+        {"lead_id": lead.lead_id, "reason": lead.escalation_reason.value,
+         "ai_summary": scrub(lead.ai_summary, keep_tail=False) or "（无摘要）"}
         for lead in leads if lead.escalation_flag and lead.escalation_reason in REVIEW_REASONS
     ]
 
@@ -258,12 +257,14 @@ def render_markdown(data: dict[str, Any], candidates: list[dict[str, str]], db_p
         "",
         "## 6. 复盘清单",
         "",
-        f"窗口内 `low_confidence` / `not_understood_twice` 的线索共 {len(candidates)} 条，是本周误判复盘的候选；号码只给尾号。",
+        f"窗口内 `low_confidence` / `not_understood_twice` 的线索共 {len(candidates)} 条，是本周误判复盘的候选；"
+        "按 `lead_id` 去 `data/leads.csv` 或 Botmaker 后台对账，表里不列号码。"
+        "`lead_id` 能算回号码，本报告只在有线索库权限的人之间传，不要贴到客户或外部群。",
         "",
     ]
     if candidates:
-        lines += ["| lead_id | 原因 | 号码 | AI 摘要 |", "|---|---|---|---|"]
-        lines += [f"| {c['lead_id']} | {c['reason']} | {c['phone']} | {c['ai_summary'].replace('|', '／')} |" for c in candidates]
+        lines += ["| lead_id | 原因 | AI 摘要 |", "|---|---|---|"]
+        lines += [f"| {c['lead_id']} | {c['reason']} | {c['ai_summary'].replace('|', '／')} |" for c in candidates]
     else:
         lines.append("（本窗口没有候选。）")
     lines.append("")

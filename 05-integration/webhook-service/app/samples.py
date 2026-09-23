@@ -5,9 +5,12 @@
 只读打开 SQLite（`mode=ro`），不经过服务、不改库。样本只有在 `KEEP_RAW_PAYLOADS=true` 时才留在库里
 （默认落盘即删，见 README 第 6 节），所以这条命令是试用期专用的。
 
-默认脱敏：号码（≥ 9 位的数字串，可带 `+`）只留尾号 4 位，姓名类字段整个换成 `<redacted>`，邮箱换成
-`<email>`；消息正文保留——要看结构就得看到正文落在哪个字段里，正文里的号码与邮箱同样打码。`--no-redact`
-导出原文，只在本机比对时用，stderr 会提醒不要把目录留在仓库里。
+默认脱敏：号码（≥ 9 位的数字串，可带 `+`）只留尾号 4 位；姓名类字段整个换成 `<redacted>`——键名先去掉下划线、
+不分大小写再比对，所以 Botmaker 变量的 `contact_name` 与 `contactName` 同算；`events[].info[]` 里 `name` 是
+`agentName` 这类的条目，`value` 也换掉；邮箱换成 `<email>`。事件名与结束分类（`events[].name`、`events[].info[].name`）
+不是个人数据，照原文保留。消息正文与 `ai_summary` 这类自由文本保留——要看结构就得看到正文落在哪个字段里，
+里面的号码与邮箱同样打码，但提到的人名不会被换掉。`--no-redact` 导出原文，只在本机比对时用，stderr 会提醒
+不要把目录留在仓库里。
 
 `<out>/schema-summary.md` 是结构摘要：只统计键名与出现次数，不含任何字段值，因此不含号码、姓名与正文；
 第 3 节把样本的键与 `fixtures/` 的键对起来，差异就是 README 第 8 节第 1、2、6 条要改 `app/models.py`
@@ -35,8 +38,11 @@ SUMMARY_NAME = "schema-summary.md"
 FIXTURES_DIR = Path(__file__).resolve().parents[1] / "fixtures"
 RAW_WARNING = "WARNING: raw payloads contain personal data; keep this directory out of the repo"
 
-# 键名（不分大小写）落在这里的字符串值整个换掉：这些字段装的就是人名，打码留尾号没有意义。
+# 键名按 name_key() 规范化（小写、去下划线）后落在这里的字符串值整个换掉：这些字段装的就是人名，打码留尾号没有意义。
+# contact_name / first_name / profile_name（Botmaker 变量的写法）与驼峰写法都命中。
 NAME_KEYS = frozenset({"firstname", "lastname", "fromname", "contactname", "profilename"})  # 不含裸 name：events[].name / info[].name 是事件类型与结束分类，不是个人数据
+# events[].info[] 是 {"name": …, "value": …} 成对的条目：name 规范化后落在这里时，人名在 value 里，value 整个换掉。
+NAME_INFO_LABELS = NAME_KEYS | {"agentname", "operatorname"}
 REDACTED_NAME = "<redacted>"
 REDACTED_EMAIL = "<email>"
 _EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
@@ -54,16 +60,25 @@ ALL_SCOPES = CORE_SCOPES + (SCOPE_EVENTS, SCOPE_EVENT_INFO)
 
 
 # ------------------------------------------------------------------ 脱敏
+def name_key(key: str) -> str:
+    """名字类键的比对口径：小写、去下划线，于是 contact_name / contactName / CONTACT_NAME 是同一个键。"""
+    return key.lower().replace("_", "")
+
+
 def redact_value(value: Any, key: str | None = None) -> Any:
     """递归脱敏一整份 JSON。只动值，不动键名：键名是结构，摘要与差异都靠它。"""
     if isinstance(value, dict):
-        return {k: redact_value(v, k) for k, v in value.items()}
+        out = {k: redact_value(v, k) for k, v in value.items()}
+        label = value.get("name")
+        if isinstance(label, str) and name_key(label) in NAME_INFO_LABELS and isinstance(out.get("value"), str):
+            out["value"] = REDACTED_NAME  # {"name": "agentName", "value": "Li Wei"}：名字在 value 里，name 本身照留
+        return out
     if isinstance(value, list):
         return [redact_value(item, key) for item in value]
     if isinstance(value, bool) or value is None:
         return value
     if isinstance(value, str):
-        if key is not None and key.lower() in NAME_KEYS:
+        if key is not None and name_key(key) in NAME_KEYS:
             return REDACTED_NAME
         return redact(_EMAIL_RE.sub(REDACTED_EMAIL, value))
     if isinstance(value, int) and len(str(abs(value))) >= MIN_PHONE_DIGITS:
@@ -184,9 +199,13 @@ def render_summary(sample_stats: dict[str, dict[str, Any]], fixture_stats: dict[
         "因此不含号码、姓名与消息正文，可以直接贴进仓库或发给同事。",
         f"生成时间：{datetime.now().astimezone().isoformat(timespec='seconds')}",
         "",
-        f"同目录的样本文件默认脱敏：键名是 {'、'.join(sorted(NAME_KEYS))} 的字符串值整个换成 `{REDACTED_NAME}`，"
-        f"`events[].name` 与 `events[].info[].name` 也在内——要看事件名与结束分类的原文，"
-        "在本机加 `--no-redact` 重导一次，别把结果留在仓库里。",
+        f"同目录的样本文件默认脱敏：键名去掉下划线、不分大小写后是 {'、'.join(sorted(NAME_KEYS))} 的字符串值"
+        f"整个换成 `{REDACTED_NAME}`（`contact_name`、`first_name`、`profileName` 都算）；"
+        f"`events[].info[]` 里 `name` 是 `agentName` / `operatorName` 或上述名字类键的条目，`value` 也换成 `{REDACTED_NAME}`；"
+        f"号码（≥ {MIN_PHONE_DIGITS} 位的数字串）只留尾号 4 位，邮箱换成 `{REDACTED_EMAIL}`。"
+        "事件名与结束分类不打码：`events[].name`、`events[].info[].name` 是事件类型，不是个人数据，导出里照原文保留。"
+        "消息正文与 `ai_summary` 这类自由文本同样保留（结构对照要看正文落在哪个字段），里面的号码与邮箱照样处理，"
+        "但提到的人名不会被换掉——样本文件只留在本机，别提交。",
         "",
         "## 1. 样本",
         "",
