@@ -116,7 +116,7 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 | 变量 | 默认值 | 说明 |
 |---|---|---|
 | `BOTMAKER_WEBHOOK_TOKEN` | 空 | 必填。与 Botmaker webhook 配置里的 Token 相同；为空时接口返回 503 |
-| `ALLOWED_IPS` | 空 | 可选，逗号分隔的 IP 或 CIDR |
+| `ALLOWED_IPS` | 空 | 可选，英文逗号分隔的 IP 或 CIDR（如 `203.0.113.0/24,198.51.100.7`）；配错启动即报：任一项解析不了（如 `/33`、用空格或中文逗号分隔）服务拒绝启动，报错里指出是哪一项 |
 | `DATABASE_PATH` | `data/leads.db` | SQLite 主库 |
 | `CSV_EXPORT_PATH` | `data/leads.csv` | CSV 镜像 |
 | `STORAGE_BACKENDS` | `sqlite,csv` | `sqlite` 恒开；`feishu_bitable` 把线索镜像到飞书多维表格（需下面四个 `FEISHU_*` 变量，设置步骤见 `05-integration/feishu-bitable-setup.md`）；`gsheets` 为占位桩 |
@@ -124,20 +124,25 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 | `FEISHU_APP_SECRET` | 空 | 飞书自建应用的 App Secret；密钥，只放 `.env` 或部署平台的密钥配置 |
 | `FEISHU_BITABLE_APP_TOKEN` | 空 | 多维表格网址 `/base/` 后的那段 |
 | `FEISHU_BITABLE_TABLE_ID` | 空 | 多维表格网址 `table=` 后的那段（`tbl` 开头） |
-| `FEISHU_BASE_URL` | `open.feishu.cn` | 飞书开放平台域名，默认国内飞书；海外 Lark 租户填 Lark 开放平台的域名 `open.larksuite.com`；留空即默认值，必须是 https 开头；只对 `feishu_bitable` 生效 |
+| `FEISHU_BASE_URL` | `https://open.feishu.cn` | 飞书开放平台地址，默认国内飞书；海外 Lark 租户填 `https://open.larksuite.com`；留空即默认值；必须 https 开头，只写域名不带 `https://` 会启动失败；只对 `feishu_bitable` 生效 |
 | `NOTIFIERS` | 空 | 逗号分隔：`feishu`、`wecom`、`generic`、`email`；为空则只记警告不通知 |
-| `FEISHU_WEBHOOK_URL`、`FEISHU_SIGNING_SECRET` | 空 | 飞书群自定义机器人地址；开启签名校验时填密钥 |
-| `WECOM_WEBHOOK_URL` | 空 | 企业微信群机器人地址 |
-| `GENERIC_WEBHOOK_URL` | 空 | 任意接收 JSON POST 的地址 |
-| `SMTP_HOST`、`SMTP_PORT`、`SMTP_USERNAME`、`SMTP_PASSWORD`、`EMAIL_FROM`、`EMAIL_TO` | 端口 587 | 邮件通知；465 走隐式 TLS，其余走 STARTTLS |
+| `FEISHU_WEBHOOK_URL`、`FEISHU_SIGNING_SECRET` | 空 | 飞书群自定义机器人地址；开启签名校验时填密钥。地址必须 https，配错启动即报（报错不回显地址） |
+| `WECOM_WEBHOOK_URL` | 空 | 企业微信群机器人地址；必须 https，配错启动即报（报错不回显地址） |
+| `GENERIC_WEBHOOK_URL` | 空 | 任意接收 JSON POST 的地址；不限 http / https（可能是内网的转换端点） |
+| `SMTP_HOST`、`SMTP_PORT`、`SMTP_USERNAME`、`SMTP_PASSWORD`、`EMAIL_FROM`、`EMAIL_TO` | 端口 587 | 邮件通知；465 走隐式 TLS，其余走 STARTTLS；两种都校验服务器证书与主机名，校验不过算发送失败 |
 | `NOTIFY_MASK_PHONE` | `true` | 通知里号码只显示后四位 |
 | `BOTMAKER_CHAT_URL_TEMPLATE` | `https://go.botmaker.com/#/chats/{customer_id}` | 卡片上的"接手"链接【待核实】 |
 | `TAG_TIER` | `full` | `full` 九个标签维度，`lite` 只有国家与客户类型 |
-| `DISPLAY_TIMEZONE` | `Asia/Shanghai` | 卡片上窗口截止时间所用时区 |
+| `DISPLAY_TIMEZONE` | `Asia/Shanghai` | 卡片上窗口截止时间所用时区，IANA 时区名（如 `Europe/Berlin`）；拼错配错启动即报 |
 | `LOG_LEVEL` | `INFO` | |
 | `KEEP_RAW_PAYLOADS` | `false` | **契约外的扩展项**：试用期设为 `true` 可保留回调原文，用来采集真实样本；生产保持 `false` |
 
-通知地址内含密钥，只放在 `.env` 或部署平台的密钥配置里；服务的日志与错误信息不会输出这些地址。
+通知地址内含密钥（飞书是 hook 路径的最后一段，企业微信是 `key=` 的值），只放在 `.env` 或部署平台的密钥配置里。服务的日志与错误信息不输出这些地址，靠两层：
+
+1. HTTP 客户端库（httpx / httpcore）的日志级别固定在 WARNING 及以上（`LOG_LEVEL` 更高时跟随）。httpx 在 INFO 级别会把每个请求连同完整地址打进日志，钉住之后 `LOG_LEVEL=DEBUG` 也不打请求行。
+2. JSON 日志输出前兜底：消息、附加字段与异常堆栈里 `open.feishu.cn`、`open.larksuite.com`、`qyapi.weixin.qq.com` 这几个主机的地址只留协议和主机名，路径与查询串换成 `<redacted>`。
+
+通知失败的错误信息只有渠道名和原因（如 `feishu: HTTP 302`），不含地址；机器人返回非 2xx（包括 3xx 重定向）一律算发送失败，不会记成已送达。
 
 ## 7. 运维
 
