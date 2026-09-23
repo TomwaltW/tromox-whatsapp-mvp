@@ -9,12 +9,12 @@
 |---|---|
 | `docker-compose.yml` | 服务 `webhook`（从仓库根目录构建镜像、只绑 127.0.0.1、日志轮转、健康检查、最小权限见第 4 节）与服务 `caddy`（profile `proxy`，不加参数不起） |
 | `Caddyfile.example` | 反向代理配置：只放行三条路径、加安全头与请求体上限（第 4 节），复制为 `Caddyfile` 后改域名 |
-| `backup.sh` | `backup.sh <data_dir> <backup_dir> [keep_days=30]`：`sqlite3 .backup` 在线一致性备份，删过期备份，打印备份文件路径 |
-| `restore.sh` | `restore.sh <backup_file> <data_dir>`：覆盖 `leads.db`、删 `-wal` / `-shm`、留底现有库；不停起容器，只提示下一步 |
+| `backup.sh` | `backup.sh <data_dir> <backup_dir> [keep_days=30]`，以 root 运行（`/etc/cron.d/tromox-backup` 或 `sudo`）：`sqlite3 .backup` 在线一致性备份，先写临时文件、`integrity_check` 通过且有 `leads` 表才落盘，备份 0600；失败不留文件、退出非 0；删过期备份，打印备份文件路径 |
+| `restore.sh` | `sudo ./restore.sh <backup_file> <data_dir>`：拒 0 字节 / 无 `leads` 表 / 不完好的文件（不留底、不碰 `leads.db`）；留底现有库连同 `-wal` / `-shm`（移到留底文件旁）、覆盖 `leads.db`、打印恢复前后的线索条数；不停起容器，只提示下一步 |
 | `update.sh` | `update.sh [compose_dir]`：`git pull --ff-only` → 重建镜像 → 重建容器 → 等 `/health` 200（最多 60 秒） |
 | `healthcheck-alert.sh` | `healthcheck-alert.sh <health_url> [alert_webhook_url]`：健康则安静退出 0；否则 stderr 报 `tromox webhook down`，POST `{"text": "..."}` 到告警地址，退出 1。设了环境变量 `TROMOX_METRICS_TOKEN` 再查 `/metrics`，回调堆积、通知失败或镜像卡住（用满重试预算）时报 `tromox webhook degraded`（第 3 节） |
 | `rehearsal.sh` | `rehearsal.sh <base_url> <token> [--compose-dir DIR] [--fixture PATH] [--no-cleanup]`：上线演练，把 `../deployment.md` 第 9 节里能自动做的项跑一遍，标准输出打一张 Markdown 结果表，有 FAIL 退出 1（第 3 节） |
-| `cron.example` | 三条定时任务：每 5 分钟 `app.replay`、每日备份、每 5 分钟健康检查 |
+| `cron.example` | deploy 用户 crontab 四条（每 5 分钟 `app.replay`、每 5 分钟健康检查、每月保留期清理、每周一周报）+ root 的 `/etc/cron.d/tromox-backup` 一条（每日备份） |
 | `.gitignore` | 本目录的 `.env`、`Caddyfile`、`data/` 不进仓库 |
 
 compose 文件里五个可插值变量（写在本目录 `.env` 或 shell 环境里）：
@@ -47,11 +47,11 @@ cd /opt/tromox/app/05-integration/deploy
 
 ## 3. 日常运维
 
-- **定时任务**：`crontab -e`（deploy 用户），把 `cron.example` 贴进去，改路径、域名与告警地址。三条任务分别是：每 5 分钟重放未处理事件（`app.replay`）、每日 03:15 备份并清理 30 天前的备份、每 5 分钟健康检查并告警。
+- **定时任务**：`cron.example` 分两段装。第一段贴进 deploy 用户的 `crontab -e`，改路径、域名与告警地址，四条分别是：每 5 分钟重放未处理事件（`app.replay`）、每 5 分钟健康检查并告警、每月 1 日按保留期清理（`app.retention`）、每周一 09:00 推送周报（`app.report --post`）。第二段是每日 03:15 备份并清理 30 天前的备份，写进 root 的 `/etc/cron.d/tromox-backup`（cron.d 格式多一列运行用户 `root`；文件属 root、0644，装法见 `cron.example` 里的注释）：数据目录属容器用户 uid 10001，deploy 用户跑 `sqlite3 .backup` 会失败。
 - **看日志**：`docker compose logs -f webhook`（json-file，单文件 10 MB、保留 5 个）。
 - **进容器跑运维命令**：`docker compose exec -T webhook python -m app.replay --export`（重放并重写 CSV）。
-- **备份**：`./backup.sh /opt/tromox/data /opt/tromox/backup 30`，产出 `/opt/tromox/backup/leads-YYYY-MM-DD.db`。每天把最新备份同步到机器之外（`../deployment.md` 第 6 节）。
-- **恢复**：`docker compose stop webhook` → `./restore.sh /opt/tromox/backup/leads-YYYY-MM-DD.db /opt/tromox/data` → 按脚本打印的提示 `docker compose up -d webhook`、重放并重写 CSV。上线前演练一次。
+- **备份**：`sudo ./backup.sh /opt/tromox/data /opt/tromox/backup 30`，产出 `/opt/tromox/backup/leads-YYYY-MM-DD.db`（0600；备份目录由脚本新建时是 0700，已有的目录不改权限，需要时 `sudo chmod 700` 一次）。先写临时文件、校验通过才改名，失败时退出非 0、stderr 说明原因，备份目录里不留 0 字节或半截文件。每天把最新备份同步到机器之外（`../deployment.md` 第 6 节）。
+- **恢复**：`docker compose stop webhook` → `sudo ./restore.sh /opt/tromox/backup/leads-YYYY-MM-DD.db /opt/tromox/data` → 按脚本打印的提示 `docker compose up -d webhook`、重放并重写 CSV。0 字节、没有 `leads` 表或不完好的备份文件会被拒绝（退出非 0，不留底、不碰 `leads.db`），换前一天的备份再试。现有库留底为 `leads.db.pre-restore-<时间>`，原有的 `-wal` / `-shm` 一起移到留底文件旁边（非正常停机后还在 WAL 里的已提交事务不丢），确认恢复无误后一并删除。上线前演练一次。
 - **更新**：`./update.sh`（等价于 `git pull --ff-only`、`docker compose build webhook`、`docker compose up -d webhook`、等 `/health`）。放在咨询低谷做；跑完看一眼 `docker compose logs --tail 50 webhook`。旧镜像会积累，隔一阵 `docker image prune -f`。
 - **告警去哪**：`healthcheck-alert.sh` 的第二个参数是任意接收 `{"text": "..."}` JSON POST 的地址（通用 webhook）；飞书 / 企业微信群机器人要的字段不同，接它们时在中间放一个转换端点，或改脚本里 `payload` 那一行。
 - **不只看进程活着**：`/health` 只查数据库能不能 ping，Token 配错、通知全失败、原始回调堆着没处理它照样 200。给 `healthcheck-alert.sh` 设环境变量 `TROMOX_METRICS_TOKEN`（值 = `.env` 里的 `BOTMAKER_WEBHOOK_TOKEN`），它在 `/health` 正常之后再带 `auth-bm-token` 头 `GET <health_url 去掉 /health>/metrics`（所以第一个参数必须以 `/health` 结尾），`raw_events_unprocessed > 0`、`notifications.failed_24h > 0` 或 `mirror_outbox_exhausted > 0`（镜像行用满重试预算卡住）就 stderr 报 `tromox webhook degraded: unprocessed=<n> failed_24h=<n> mirror_exhausted=<n>`、POST 告警、退出 1；`/metrics` 本身非 200 也算 degraded。`mirror_outbox_pending` 与 `mirror_outbox_failed_24h` 不报警：飞书故障期间积压是正常的，由每 5 分钟的 `app.replay` 消化，不是人工项。变量不设，行为与只查 `/health` 完全一样。指标口径见 `../webhook-service/README.md` 第 1 节"指标"一行。上面这些行为由 `tests/test_healthcheck_alert.py` 固定。手工跑与 cron 写法：
