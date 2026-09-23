@@ -115,9 +115,12 @@ class Pipeline:
             return HandleResult("stored_unprocessed", kind, event_key)
 
         self.store.mark_processed(event_key, result.outcome, keep_payload=self.settings.keep_raw_payloads)
-        if fresh_key != event_key:  # replayed under its stored key: record the fresh one too, so that Botmaker
-            # redelivering the same message later is recognised as a duplicate
-            self.store.mark_processed(fresh_key, result.outcome, keep_payload=self.settings.keep_raw_payloads)
+        if fresh_key != event_key:
+            # Replayed under its stored key: mark the key a redelivery of this message gets now as processed too.
+            # `record_raw_event` only consults processed_events when the raw row already exists, so that key
+            # needs its own raw_events row; its copy of the payload is dropped at once (the stored row has one).
+            self.store.record_raw_event(fresh_key, kind, raw_json)
+            self.store.mark_processed(fresh_key, result.outcome, keep_payload=False)
         log.info("callback processed", extra={"event_key": event_key, "kind": kind, "outcome": result.outcome,
                                               "lead_id": result.lead_id, "notification_id": result.notification_id})
         return result
