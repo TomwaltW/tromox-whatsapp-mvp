@@ -4,9 +4,11 @@ Nothing secret lives in code. `.env` in the working directory is read when prese
 """
 from __future__ import annotations
 
+import ipaddress
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -17,6 +19,19 @@ NOTIFIERS_AVAILABLE = ("feishu", "wecom", "generic", "email")
 
 def _split(value: str) -> list[str]:
     return [item.strip().lower() for item in value.split(",") if item.strip()]
+
+
+def check_timezone(value: str) -> str:
+    """Return `value` when ZoneInfo can load it; otherwise ValueError naming the value and an example.
+
+    Used for DISPLAY_TIMEZONE and for `app.demo --timezone`: a typo such as `Asia/Shangai` is
+    refused up front instead of every card silently showing UTC.
+    """
+    try:
+        ZoneInfo(value)
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        raise ValueError(f"unknown time zone {value!r}; use an IANA name such as Asia/Shanghai") from None
+    return value
 
 
 class Settings(BaseSettings):
@@ -64,6 +79,31 @@ class Settings(BaseSettings):
     @classmethod
     def _v_tier(cls, value: object) -> object:
         return str(value).strip().lower() if isinstance(value, str) else value
+
+    @field_validator("display_timezone")
+    @classmethod
+    def _v_display_timezone(cls, value: str) -> str:
+        return check_timezone(value)
+
+    @field_validator("allowed_ips")
+    @classmethod
+    def _v_allowed_ips(cls, value: str) -> str:
+        """Every comma-separated entry must be an IP or CIDR; empty means no allowlist.
+
+        A bad entry used to be skipped silently when matching, so a space-separated list
+        matched nobody and every callback got 403 as if the caller were at fault.
+        """
+        for item in (part.strip() for part in value.split(",")):
+            if not item:
+                continue
+            try:
+                ipaddress.ip_network(item, strict=False)
+            except ValueError:
+                raise ValueError(
+                    f"ALLOWED_IPS entry {item!r} is not an IP address or CIDR; "
+                    "多个地址用英文逗号分隔, e.g. 203.0.113.0/24,198.51.100.7"
+                ) from None
+        return value
 
     @property
     def storage_backend_list(self) -> list[str]:

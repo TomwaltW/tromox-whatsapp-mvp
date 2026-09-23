@@ -31,7 +31,7 @@ from typing import Any, Sequence
 
 from tromox_lead import LEAD_FIELDS, Lead
 
-from .config import Settings
+from .config import Settings, check_timezone
 from .notify import FeishuNotifier, LeadCard
 from .notify.card import REASON_ZH
 from .pipeline import Pipeline
@@ -273,13 +273,22 @@ def select_cases(manifest: dict[str, dict[str, Any]], spec: str | None) -> list[
     return list(dict.fromkeys(wanted))
 
 
+def _timezone_arg(value: str) -> str:
+    """argparse `type=` for --timezone: the same check as DISPLAY_TIMEZONE; a typo is a usage error (exit 2)."""
+    try:
+        return check_timezone(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="python -m app.demo", description=__doc__,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", required=True, type=Path, help="output directory (created when missing)")
     parser.add_argument("--cases", help="comma-separated case ids, e.g. U01,U03 (default: all)")
     parser.add_argument("--now", help="ISO-8601 instant used as 'now' (default: current UTC time)")
-    parser.add_argument("--timezone", default="Asia/Shanghai", help="display timezone for the 24 h window")
+    parser.add_argument("--timezone", default="Asia/Shanghai", type=_timezone_arg,
+                        help="display timezone for the 24 h window (IANA name)")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.ERROR, stream=sys.stderr)  # keep stdout for the summary line

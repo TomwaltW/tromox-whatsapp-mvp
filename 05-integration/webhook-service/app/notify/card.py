@@ -5,6 +5,7 @@ the chat inside Botmaker, on the company number, to see the rest.
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -14,6 +15,8 @@ from tromox_lead import EscalationReason, Lead, Segment, effective_country
 from ..logging_setup import mask_phone
 
 WINDOW = timedelta(hours=24)
+
+log = logging.getLogger(__name__)
 
 REASON_ZH: dict[EscalationReason, str] = {
     EscalationReason.HUMAN_REQUESTED: "客户要求人工",
@@ -67,11 +70,18 @@ class LeadCard:
         }
 
 
-def _tz(name: str) -> ZoneInfo | timezone:
+def _tz(name: str) -> tuple[ZoneInfo | timezone, str]:
+    """The zone for the window deadline and the label printed next to it.
+
+    Settings refuses an unknown DISPLAY_TIMEZONE at startup, so the fallback is defence only:
+    an unknown name renders the deadline in UTC, labels it (UTC) -- never the name that was not
+    used -- and logs a WARNING on every card built that way.
+    """
     try:
-        return ZoneInfo(name)
-    except (ZoneInfoNotFoundError, ValueError):
-        return timezone.utc
+        return ZoneInfo(name), name
+    except (ZoneInfoNotFoundError, ValueError, OSError):
+        log.warning("unknown display timezone %r, card deadline shown in UTC", name)
+        return timezone.utc, "UTC"
 
 
 def window_deadline(lead: Lead) -> datetime | None:
@@ -82,7 +92,7 @@ def window_deadline(lead: Lead) -> datetime | None:
 def build_card(lead: Lead, *, customer_id: str | None, mask: bool, chat_url_template: str,
                display_timezone: str, now: datetime | None = None) -> LeadCard:
     now = now or datetime.now(timezone.utc)
-    zone = _tz(display_timezone)
+    zone, zone_label = _tz(display_timezone)
     country = effective_country(lead.country_stated, lead.country_by_phone) or "未知"
     kind = lead.b2b_type.value if lead.b2b_type else (lead.b2c_intent.value if lead.b2c_intent else "")
     segment_label = SEGMENT_ZH[lead.segment] + (f" / {kind}" if kind else "")
@@ -124,7 +134,7 @@ def build_card(lead: Lead, *, customer_id: str | None, mask: bool, chat_url_temp
         remaining = (deadline - now).total_seconds() / 3600
         local = deadline.astimezone(zone).strftime("%Y-%m-%d %H:%M")
         state = f"剩余约 {remaining:.1f} 小时" if remaining > 0 else "已关闭，只能发已审核的模板消息"
-        fields.append(("24 小时窗口截止", f"{local}（{display_timezone}），{state}"))
+        fields.append(("24 小时窗口截止", f"{local}（{zone_label}），{state}"))
 
     link = None
     if customer_id and chat_url_template:
