@@ -43,7 +43,7 @@ def test_allowed_ips_from_the_environment_is_checked_at_startup(monkeypatch):
         Settings(_env_file=None)
 
 
-@pytest.mark.parametrize("value", ["Asia/Shangai", "Shanghai", "", "../etc/passwd"])
+@pytest.mark.parametrize("value", ["Asia/Shangai", "Shanghai", "../etc/passwd"])
 def test_display_timezone_typo_refuses_to_load(value):
     with pytest.raises(ValidationError) as excinfo:
         Settings(_env_file=None, display_timezone=value)
@@ -61,6 +61,14 @@ def test_display_timezone_from_the_environment_is_checked_at_startup(monkeypatch
 def test_default_and_real_time_zones_load(value):
     assert Settings(_env_file=None).display_timezone == "Asia/Shanghai"
     assert Settings(_env_file=None, display_timezone=value).display_timezone == value
+
+
+@pytest.mark.parametrize("value", ["", "  "])
+def test_empty_display_timezone_means_the_default(value, monkeypatch):
+    # `DISPLAY_TIMEZONE=` left empty in .env behaves like FEISHU_BASE_URL: the default, not a start-up error
+    assert Settings(_env_file=None, display_timezone=value).display_timezone == "Asia/Shanghai"
+    monkeypatch.setenv("DISPLAY_TIMEZONE", value)
+    assert Settings(_env_file=None).display_timezone == "Asia/Shanghai"
 
 
 def test_demo_timezone_typo_is_a_usage_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]):

@@ -26,7 +26,7 @@ FIELD_SPECS: tuple[FieldSpec, ...] = (
     FieldSpec("phone", "string (E.164) | null", SRC_SYSTEM, "客户 WhatsApp 号码，统一为 E.164（如 +4915112345678）；客户以用户名联系、平台只给出业务范围用户 ID 时为空【待核实】", label_column=True),
     FieldSpec("country_by_phone", "string (ISO 3166-1 alpha-2)", SRC_RULE, "由号码国家码判定的国家，不让 AI 猜"),
     FieldSpec("country_stated", "string (ISO 3166-1 alpha-2) | null", SRC_AI, "客户自述的国家/市场；仅对 B 端追问确认", ai_extracted=True),
-    FieldSpec("language", "string (ISO 639-1)", f"{SRC_AI}（{SRC_RULE}兜底）", "客户首条消息的语言", ai_extracted=True, label_column=True),
+    FieldSpec("language", "string (ISO 639-1)", f"{SRC_AI}（{SRC_RULE}兜底）", "客户所用语言：AI 每次给出新的确定值就更新（und 不覆盖）；规则兜底只看客户自己写的消息，预填句与问候不定语言", ai_extracted=True, label_column=True),
     FieldSpec("contact_name", "string | null", SRC_AI, "联系人姓名（AI 从对话里抽取；WhatsApp 资料名不写入此字段）", ai_extracted=True),
     FieldSpec("profile_name", "string | null", SRC_SYSTEM, "WhatsApp 资料名（firstName + lastName），只作显示兜底，不参与合格判定"),
     FieldSpec("company", "string | null", SRC_AI, "公司/门店名称", ai_extracted=True),

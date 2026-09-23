@@ -83,7 +83,8 @@ class Settings(BaseSettings):
     @field_validator("display_timezone")
     @classmethod
     def _v_display_timezone(cls, value: str) -> str:
-        return check_timezone(value)
+        # `DISPLAY_TIMEZONE=` left empty means the default, like FEISHU_BASE_URL; a typo still refuses to start
+        return check_timezone(value.strip() or "Asia/Shanghai")
 
     @field_validator("allowed_ips")
     @classmethod

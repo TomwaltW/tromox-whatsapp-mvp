@@ -44,7 +44,7 @@
 | `data_origin` | `real` | 运营 |
 | `phone` | 客户 WhatsApp 号码，带国家码；`+4917612345678` 或 `4917612345678` 均可；确实没有就留空。用 Excel 编辑时，保存前先把这一列设成**文本格式**，否则长号码会被改成 `4.91761E+12` 之类，工具会报错 | 运营 |
 | `conversation_text` | 见第 2 节 | 运营 |
-| `language` | 客户首条消息的语言，ISO 639-1 小写：`en`、`es`、`de`、`fr`、`pt`、`it` 等；只有表情或无法判断填 `und` | 运营 |
+| `language` | 客户所用语言（按客户自己写的消息判断，wa.me 预填句与 Hi / Hello 这类问候不算），ISO 639-1 小写：`en`、`es`、`de`、`fr`、`pt`、`it` 等；只有表情或无法判断填 `und` | 运营 |
 | `segment` | `B2B` / `B2C` / `unknown`，见 5.1 | 销售复核 |
 | `b2b_type` | 仅 B2B 填：`dealer` / `distributor` / `fleet` / `importer` / `other`，见 5.2 | 销售复核 |
 | `b2c_intent` | 仅 B2C 填：`buy` / `support` / `parts` / `warranty` / `test_ride` / `other`，见 5.3 | 运营 |

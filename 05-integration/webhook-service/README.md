@@ -133,7 +133,7 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 | `NOTIFY_MASK_PHONE` | `true` | 通知里号码只显示后四位 |
 | `BOTMAKER_CHAT_URL_TEMPLATE` | `https://go.botmaker.com/#/chats/{customer_id}` | 卡片上的"接手"链接【待核实】 |
 | `TAG_TIER` | `full` | `full` 九个标签维度，`lite` 只有国家与客户类型 |
-| `DISPLAY_TIMEZONE` | `Asia/Shanghai` | 卡片上窗口截止时间所用时区，IANA 时区名（如 `Europe/Berlin`）；拼错配错启动即报 |
+| `DISPLAY_TIMEZONE` | `Asia/Shanghai` | 卡片上窗口截止时间所用时区，IANA 时区名（如 `Europe/Berlin`）；留空即默认值，拼错配错启动即报 |
 | `LOG_LEVEL` | `INFO` | |
 | `KEEP_RAW_PAYLOADS` | `false` | **契约外的扩展项**：试用期设为 `true` 可保留回调原文，用来采集真实样本；生产保持 `false` |
 
