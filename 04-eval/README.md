@@ -62,18 +62,24 @@ python -m eval.import_history --input data/export-2026-08.xlsx --out data/labeli
 python -m eval.import_history --input data/export.csv --out data/labeling-batch-1.csv --text-col 客户消息 --phone-col 手机
 ```
 
-- 列自动识别（大小写不敏感、按"包含"匹配）：正文 `message / text / content / 内容 / 消息 / 咨询 / conversation / 正文`；号码 `phone / number / mobile / 号码 / 电话 / whatsapp / wa`；日期 `date / time / 时间 / 日期`；渠道 `channel / source / platform / 来源 / 渠道 / 平台`。认不出正文列时退出码 2 并在 stderr 列出实际表头，用 `--text-col` 等参数显式指定。XLSX 默认读第一个工作表，`--sheet` 可换。
-- 每行：`sample_id` 由号码与脱敏正文哈希得到（`H-` 开头，同一条重跑不变）；`phone` 归一化为 E.164，认不出的留空；`conversation_text` 里的邮箱与 7 位以上数字串已替换成 `<email>` / `<number>`；`language` 已按规则预填（可能是 `und`，标注人复核）；`label_notes` 记 `来源:<渠道>;日期:<日期>`；其余标注列留空。
+- 列自动识别（大小写不敏感、按"包含"匹配）：正文 `message / text / content / 内容 / 消息 / 咨询 / conversation / 正文`；号码 `phone / number / mobile / 号码 / 电话 / whatsapp`，外加整词 `wa`（`WA Number`、`wa_id`；不会命中 `Awaiting reply`）；日期 `date / time / 时间 / 日期`；渠道 `channel / source / platform / 来源 / 渠道 / 平台`。按正文、号码、日期、渠道的顺序认领，已认领的列不再参与。同一角色有几列命中时不再取最左边那列：
+  - 正文列跳过同时命中日期提示或编号提示（整词 `id`、`编号`、`序号`、`number`）的表头，别无选择才退回它们。中文 CRM 常见的 `咨询时间,客户电话,咨询内容` 选 `咨询内容`，`Message ID,Message` 选 `Message`。
+  - 号码列里命中 `phone / 号码 / 电话 / mobile / whatsapp / wa` 的优先于只命中 `number` 的，`Ticket Number,Phone` 选 `Phone`。
+  - 每次运行都在 stderr 打一行选中的列，例如 `columns: text=咨询内容 phone=客户电话 date=咨询时间 channel=-`（`-` 表示没有），先看这一行再交给标注人；认错了用 `--text-col` / `--phone-col` 等参数显式指定。输出里过半是 `language=und` 时 stderr 另有一句提醒，多半是正文列选错了。
+  - 认不出正文列时退出码 2 并在 stderr 列出实际表头。XLSX 默认读第一个工作表，`--sheet` 可换。
+- CSV 必须是 UTF-8（带不带 BOM 都行）。中文 Windows 上 Excel 的"CSV（逗号分隔）"是 GBK 编码，导入器会报错退出 1：请另存为"CSV UTF-8（逗号分隔）"，或直接交 .xlsx。CSV 按记录读，单元格里的换行、分页符、U+2028 之类不会把一条咨询切成两条。
+- 每行：`sample_id` 由号码与脱敏正文哈希得到（`H-` 开头，同一条重跑不变）；`phone` 归一化为 E.164，认不出的留空；号码被 Excel 当成数字改坏的（科学计数法 `4.91761E+12`、带 `.0` 尾巴的 `4917612345678.0`）不去猜，同样留空，并计入摘要的 `phone_excel_mangled`；`conversation_text` 里的邮箱与 7 位以上数字串已替换成 `<email>` / `<number>`；`language` 已按规则预填（可能是 `und`，标注人复核）；`label_notes` 记 `来源:<渠道>;日期:<日期>`；其余标注列留空。
 - 丢弃正文为空的行和（号码，正文）重复的行，`--limit N` 只留前 N 条。`--check` 只校验输出表头与 `labeling-template.csv` 一致。
 - 输出文件含未打码的号码，只能放在 `data/` 下（已被 git 忽略）。
 
-摘要打在 stdout，一行一个键值，看三处：`rows_out` 是标注人要处理的条数；`languages=de:41,en:23,...` 与 `countries=DE:38,ES:12,unknown:5,...` 看语种、国家分布是否覆盖目标市场，`unknown` 多说明导出里的号码格式有问题；`dropped_duplicate` 偏大说明导出重复拉了同一段对话。
+摘要打在 stdout，一行一个键值，看四处：`rows_out` 是标注人要处理的条数；`languages=de:41,en:23,...` 与 `countries=DE:38,ES:12,unknown:5,...` 看语种、国家分布是否覆盖目标市场，`unknown` 多说明导出里的号码格式有问题；`phone_excel_mangled` 大于 0 说明号码列被 Excel 改坏了，请客户从原系统重新导出（号码列设为文本格式，或直接导出 .xlsx）；`dropped_duplicate` 偏大说明导出重复拉了同一段对话。
 
 ```
 rows_in=6
 rows_out=4
 dropped_empty=1
 dropped_duplicate=1
+phone_excel_mangled=0
 languages=de:1,en:1,es:1,fr:1
 countries=AU:1,DE:1,ES:1,unknown:1
 ```
@@ -81,7 +87,10 @@ countries=AU:1,DE:1,ES:1,unknown:1
 ### 4.1 标注与质检
 
 1. 按 `labeling-guide.md` 标注，保存为 `data/labeled-v1.csv`，`data_origin` 填 `real`。表头必须与 `labeling-template.csv` 完全一致（导入器的输出已满足）。
-2. 先用 mock 跑一遍做格式质检：加载器会一次性列出所有问题行（行号 + 原因），例如 B2B 行缺 `b2b_type`、产品代码不在目录内、号码不是合法 E.164。
+2. 先用 mock 跑一遍做格式质检：加载器会一次性列出所有问题行（行号 + 原因），例如 B2B 行缺 `b2b_type`、产品代码不在目录内、号码不是合法 E.164。数据问题退出码 2（与"门槛不过"的 1 区分开）。
+   - 文件必须是 UTF-8：Excel 保存时选"CSV UTF-8（逗号分隔）"。选成"CSV（逗号分隔）"在中文 Windows 上是 GBK，会报"不是 UTF-8 编码"。
+   - `product_interest` 写产品代码，多个之间用分号、逗号、顿号、`/` 或 `|` 分隔，半角全角都行（`MC10;UKKO`、`MC10；UKKO`、`MC10、UKKO`）。空格不算分隔：`MC10 UKKO` 会报"一格里有两个代码"，请加分号。单个产品的常见写法照常认（`Ukko S+`、`UKKO S+ 2026`、`mc10 trail x`、`MINO B`、`M05 Pro`、`mc-10`）；目录外的写法（`MC10 Vespa`）报错，金标只收目录里的代码。
+   - `phone` 若被 Excel 改成 `4.91761E+12` 或 `4917612345678.0`，报"号码列被 Excel 当成数字改坏了"：从导入批次恢复该列，并在 Excel 里把号码列设成文本格式后再保存。
 3. 再用真实模型跑（第 5 节）。报告第 2 节的"真实样本数"只统计 `data_origin=real`。
 
 ```bash
@@ -156,7 +165,10 @@ export EVAL_PRICE_OUTPUT_PER_1M=25    # USD / 百万输出 token
 | 国家准确率 | 有号码的样本；判定国家 = 模型抽取的客户自述国家，没有则取号码国家码；与 `country_gold` 比较 |
 | 产品识别率 | 标注了产品的样本，识别出的产品代码集合与标注完全一致 |
 | 升级率 | 经路由规则后被标记需要人工接管的比例，含 B 端字段收集完成后的正常交接 |
-| JSON 解析成功率 | 输出能解析且通过 `AIExtraction` 字段校验的比例；容忍代码围栏与前后缀文字，不容忍截断和枚举外取值 |
+| JSON 解析成功率 | 模型输出能解析且通过 `AIExtraction` 字段校验的比例，分母 = 样本数 - 调用失败数；容忍代码围栏与前后缀文字，不容忍截断，也不容忍 `b2b_type`、`b2c_intent`、`escalation_reason` 的枚举外取值 |
+
+- 调用失败（重试后仍是 429 / 5xx / 断连）没有模型输出，不计入 JSON 解析成功率的分母；这些样本仍按生产兜底计入 B 端召回率与升级率，报告第 9 节单列"调用失败 N 条"。全部调用都失败时该项为 n/a，按"无可统计样本"判不达标。
+- `segment` 的枚举外取值（例如 `business`）按生产口径处理：共享模型把 B2B / B2C 以外的值一律归为 `unknown`，这是生产有意的宽容，所以计为解析成功；标注为 B2B 的样本照常计为 B 端漏判。
 
 每条预测都会先过 `tromox_lead.apply_routing_rules`，与集成服务是同一个函数。解析失败或调用失败的样本按生产兜底处理（`segment=unknown` 且转人工），因此会拉低 B 端召回率，这是有意为之。
 
