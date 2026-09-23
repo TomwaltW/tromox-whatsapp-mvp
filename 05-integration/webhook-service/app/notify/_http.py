@@ -1,4 +1,9 @@
-"""Shared HTTP helper for webhook-style notifiers. Error messages never include the URL."""
+"""Shared HTTP helper for webhook-style notifiers. Error messages never include the URL.
+
+Only a 2xx counts as delivered. httpx does not follow redirects, and a 3xx has no JSON body:
+treating it as success would read `{}`, pass the Feishu `code` / WeCom `errcode` checks and
+record the card as sent while it went nowhere.
+"""
 from __future__ import annotations
 
 from typing import Any
@@ -20,7 +25,7 @@ def post_json(url: str, body: dict[str, Any], *, channel: str, client: httpx.Cli
     finally:
         if owns_client:
             http.close()
-    if response.status_code >= 400:
+    if not response.is_success:
         raise NotifyError(f"{channel}: HTTP {response.status_code}")
     try:
         data = response.json()

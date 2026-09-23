@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import smtplib
+import ssl
 from datetime import datetime, timezone
 
 import httpx
@@ -153,6 +155,7 @@ class FakeSMTP:
 
     def __init__(self, host: str, port: int) -> None:
         self.host, self.port, self.steps, self.messages = host, port, [], []
+        self.tls_context: ssl.SSLContext | None = None
         FakeSMTP.instances.append(self)
 
     def __enter__(self):
@@ -162,8 +165,9 @@ class FakeSMTP:
         self.steps.append("quit")
         return False
 
-    def starttls(self):
+    def starttls(self, *, context: ssl.SSLContext | None = None):
         self.steps.append("starttls")
+        self.tls_context = context
 
     def login(self, username, password):
         self.steps.append(f"login:{username}")
@@ -191,6 +195,65 @@ def test_email_failure_is_a_notify_error():
 
     with pytest.raises(NotifyError):
         EmailNotifier(host="h", port=587, sender="a@example.com", recipients=["b@example.com"], smtp_factory=Broken).send(_card())
+
+
+def _verifies(context: ssl.SSLContext | None) -> bool:
+    return context is not None and context.verify_mode == ssl.CERT_REQUIRED and context.check_hostname is True
+
+
+def test_email_starttls_verifies_the_server_certificate():
+    FakeSMTP.instances.clear()
+    EmailNotifier(host="smtp.example.com", port=587, sender="bot@example.com", recipients=["a@example.com"],
+                  username="bot", password="pw", smtp_factory=FakeSMTP).send(_card())
+    assert _verifies(FakeSMTP.instances[0].tls_context)
+
+
+def test_email_implicit_tls_on_465_verifies_the_server_certificate(monkeypatch):
+    opened: list[dict] = []
+
+    class RecordingSSL(FakeSMTP):
+        def __init__(self, host, port, **kwargs):
+            super().__init__(host, port)
+            opened.append(kwargs)
+
+    monkeypatch.setattr(smtplib, "SMTP_SSL", RecordingSSL)
+    FakeSMTP.instances.clear()
+    EmailNotifier(host="smtp.example.com", port=465, sender="bot@example.com", recipients=["a@example.com"],
+                  username="bot", password="pw").send(_card())   # default factory
+    assert opened[0]["timeout"] == 15 and _verifies(opened[0]["context"])
+    assert FakeSMTP.instances[0].steps == ["login:bot", "send", "quit"]   # no STARTTLS on an implicit-TLS port
+
+
+def test_email_certificate_failure_is_a_notify_error_without_the_password():
+    class Intercepted(FakeSMTP):
+        def starttls(self, *, context=None):
+            raise ssl.SSLCertVerificationError(1, "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: "
+                                                  "self-signed certificate (_ssl.c:1006)")
+
+    with pytest.raises(NotifyError) as excinfo:
+        EmailNotifier(host="smtp.example.com", port=587, sender="a@example.com", recipients=["b@example.com"],
+                      username="bot", password="SMTP-PASSWORD-VALUE", smtp_factory=Intercepted).send(_card())
+    assert str(excinfo.value) == "email: SSLCertVerificationError"
+
+
+# ------------------------------------------------------------------ 非 2xx 一律算发送失败（3xx 也是）
+_REDIRECT_TARGETS = [
+    ("generic", lambda client: GenericWebhookNotifier("https://hooks.example.com/SECRET-TOKEN-VALUE", client=client)),
+    ("feishu", lambda client: FeishuNotifier(SECRET_URL, client=client)),
+    ("wecom", lambda client: WeComNotifier("https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=SECRET-TOKEN-VALUE",
+                                           client=client)),
+]
+
+
+@pytest.mark.parametrize("status", [301, 302])
+@pytest.mark.parametrize(("channel", "make"), _REDIRECT_TARGETS, ids=[c for c, _ in _REDIRECT_TARGETS])
+def test_a_redirect_is_a_failed_delivery_not_a_sent_card(channel, make, status):
+    client = httpx.Client(transport=httpx.MockTransport(
+        lambda request: httpx.Response(status, headers={"location": "https://elsewhere.example.com/"})))
+    with pytest.raises(NotifyError) as excinfo:
+        make(client).send(_card())
+    assert str(excinfo.value) == f"{channel}: HTTP {status}"
+    assert "SECRET-TOKEN-VALUE" not in str(excinfo.value) and "elsewhere" not in str(excinfo.value)
 
 
 # ------------------------------------------------------------------ send_text（周报摘要等纯文字消息）
@@ -285,3 +348,19 @@ def test_build_notifiers_validates_configuration():
         build_notifiers(Settings(**base, notifiers="feishu"))
     with pytest.raises(ValueError, match="unknown notifier"):
         build_notifiers(Settings(**base, notifiers="pager"))
+
+
+@pytest.mark.parametrize(("field", "env_name", "url"), [
+    ("feishu_webhook_url", "FEISHU_WEBHOOK_URL", "http://open.feishu.cn/open-apis/bot/v2/hook/SECRET-TOKEN-VALUE"),
+    ("wecom_webhook_url", "WECOM_WEBHOOK_URL", "http://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=SECRET-TOKEN-VALUE"),
+])
+def test_build_notifiers_requires_https_for_the_bot_urls(field, env_name, url):
+    channel = field.split("_")[0]
+    with pytest.raises(ValueError, match=f"{env_name} must start with https://") as excinfo:
+        build_notifiers(Settings(_env_file=None, notifiers=channel, **{field: url}))
+    assert "SECRET-TOKEN-VALUE" not in str(excinfo.value)   # the URL is the secret: never echoed
+
+
+def test_build_notifiers_leaves_the_generic_webhook_scheme_alone():
+    notifiers = build_notifiers(Settings(_env_file=None, notifiers="generic", generic_webhook_url="http://10.0.0.5/hook"))
+    assert [n.name for n in notifiers] == ["generic"]

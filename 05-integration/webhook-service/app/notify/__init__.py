@@ -16,14 +16,20 @@ __all__ = [
 
 
 def build_notifiers(settings: Settings) -> list[Notifier]:
-    """Instantiate the channels named in NOTIFIERS; a named channel without its URL is a config error."""
+    """Instantiate the channels named in NOTIFIERS; a named channel without its URL is a config error.
+
+    The Feishu and WeCom bot URLs embed their secret, so they must be https (plain http would
+    send the token in clear). GENERIC_WEBHOOK_URL is not restricted: it may be an internal relay.
+    """
     notifiers: list[Notifier] = []
     for name in settings.notifier_list:
         if name == "feishu":
             _require(settings.feishu_webhook_url, "FEISHU_WEBHOOK_URL")
+            _require_https(settings.feishu_webhook_url, "FEISHU_WEBHOOK_URL")
             notifiers.append(FeishuNotifier(settings.feishu_webhook_url, settings.feishu_signing_secret or None))
         elif name == "wecom":
             _require(settings.wecom_webhook_url, "WECOM_WEBHOOK_URL")
+            _require_https(settings.wecom_webhook_url, "WECOM_WEBHOOK_URL")
             notifiers.append(WeComNotifier(settings.wecom_webhook_url))
         elif name == "generic":
             _require(settings.generic_webhook_url, "GENERIC_WEBHOOK_URL")
@@ -45,3 +51,10 @@ def build_notifiers(settings: Settings) -> list[Notifier]:
 def _require(value: str, env_name: str) -> None:
     if not value:
         raise ValueError(f"{env_name} must be set for the selected notifier")
+
+
+def _require_https(value: str, env_name: str) -> None:
+    # The value itself is not echoed: the URL is the secret.
+    if not value.startswith("https://"):
+        raise ValueError(f"{env_name} must start with https:// (the bot URL carries its secret; "
+                         "copy the full address the bot settings page shows)")
