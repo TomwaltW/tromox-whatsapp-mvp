@@ -122,7 +122,7 @@ def create_app(settings: Settings | None = None, *, notifiers: list[Notifier] | 
             return JSONResponse({"detail": "payload too large"}, status_code=413)
         try:
             payload: Any = json.loads(raw)
-        except ValueError:
+        except (ValueError, RecursionError):  # RecursionError: nesting deeper than the decoder's stack
             return JSONResponse({"detail": "body is not valid JSON"}, status_code=400)
         if not isinstance(payload, dict):
             return JSONResponse({"detail": "body must be a JSON object"}, status_code=400)

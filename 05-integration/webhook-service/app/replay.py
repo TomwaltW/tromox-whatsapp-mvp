@@ -25,7 +25,7 @@ log = logging.getLogger("app.replay")
 def replay(pipeline: Pipeline, max_attempts: int = 10, reset_mirrors: bool = False) -> dict[str, int]:
     counts = {"events": 0, "notifications": 0, "mirrors": 0, "mirrors_reset": 0}
     for event_key, payload_json in pipeline.store.unprocessed_events():
-        result = pipeline.handle(json.loads(payload_json))
+        result = pipeline.handle(json.loads(payload_json), event_key=event_key)
         counts["events"] += 1
         if result.notification_id is not None:
             pipeline.deliver(result.notification_id)
