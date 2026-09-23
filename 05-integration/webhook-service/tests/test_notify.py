@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import smtplib
 import ssl
 from datetime import datetime, timezone
@@ -59,6 +60,16 @@ def test_card_content_masked_phone_and_window_deadline():
     assert card.link_url == "https://go.botmaker.com/#/chats/TRXDEMOCUSTOMER00001"
     assert "个人 WhatsApp" in card.footer and "Nordrad" in card.summary
     assert "4917604069011" not in card.to_markdown() + card.to_text() + json.dumps(card.to_dict())
+
+
+def test_card_with_an_unknown_time_zone_says_utc_not_the_unused_name(caplog):
+    with caplog.at_level(logging.WARNING, logger="app.notify.card"):
+        card = _card(display_timezone="Asia/Shangai")
+    line = dict(card.fields)["24 小时窗口截止"]
+    # same instant as the Asia/Shanghai test above (03:16 +08:00), rendered and labelled as UTC
+    assert line == "2026-11-05 19:16（UTC），剩余约 24.0 小时"
+    assert "Shangai" not in card.to_markdown() + card.to_text()
+    assert [r.levelno for r in caplog.records] == [logging.WARNING] and "Asia/Shangai" in caplog.records[0].getMessage()
 
 
 def test_card_can_show_full_phone_and_reports_a_closed_window():
