@@ -74,6 +74,7 @@ def test_chinese_csv_autodetect_header_ids_phones_language(tmp_path, capsys):
     assert "[IG-2609]" in rows[4]["conversation_text"]             # short source codes survive scrubbing
     summary = summary_of(capsys.readouterr().out)
     assert summary == {"rows_in": "7", "rows_out": "5", "dropped_empty": "1", "dropped_duplicate": "1",
+                       "phone_excel_mangled": "0",
                        "languages": "de:1,en:1,es:1,fr:1,pt:1", "countries": "AU:1,BR:1,DE:1,ES:1,unknown:1"}
 
 
