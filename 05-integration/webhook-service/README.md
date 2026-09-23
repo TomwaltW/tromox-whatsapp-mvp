@@ -248,10 +248,10 @@ cd 05-integration/webhook-service
 每周一 09:00 自动发一次，宿主机 crontab 写：
 
 ```cron
-0 9 * * 1 docker exec tromox-webhook python -m app.report --post >> /var/log/tromox-report.log 2>&1
+0 9 * * 1 cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.report --post 2>&1 | logger -t tromox
 ```
 
-容器里的 `NOTIFIERS` 等配置沿用第 5 节的 `--env-file`，不用再传一遍；`--db` 不给就取 `DATABASE_PATH`，窗口不给就是「上一整周」，所以周一早上这一条命令就够了。
+这是 compose 部署（`../deploy/`）的写法：先 `cd` 到 compose 目录再 `docker compose exec -T`（cron 没有终端），容器名由 compose 管，不用记；输出进系统日志，`journalctl -t tromox` 能查。容器里的 `NOTIFIERS` 等配置来自 compose 的 `env_file`（`../deploy/.env`），不用再传一遍；`--db` 不给就取 `DATABASE_PATH`，窗口不给就是「上一整周」，所以周一早上这一条命令就够了；同一行也写在 `../deploy/cron.example` 里。
 
 怎么看结果：
 
