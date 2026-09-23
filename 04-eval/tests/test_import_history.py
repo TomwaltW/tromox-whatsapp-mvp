@@ -10,6 +10,7 @@ import openpyxl
 import pytest
 
 from eval.import_history import (
+    EXIT_ERROR,
     EXIT_NO_TEXT_COLUMN,
     EXIT_OK,
     ColumnMap,
@@ -177,3 +178,64 @@ def test_check_only_validates_template_header(tmp_path, capsys):
     assert main(["--input", str(CN_CSV), "--out", str(out), "--check"]) == EXIT_OK
     assert "header=OK" in capsys.readouterr().out
     assert not out.exists()
+
+
+# --- column ranking: time / id columns are not the message, phone beats "number" -------------------
+
+@pytest.mark.parametrize("header, expected", [
+    (["咨询时间", "客户电话", "咨询内容"], ColumnMap(text="咨询内容", phone="客户电话", date="咨询时间", channel=None)),
+    (["Message ID", "Message", "Phone"], ColumnMap(text="Message", phone="Phone", date=None, channel=None)),
+    (["Conversation ID", "message_id", "Customer Message", "Timestamp"],
+     ColumnMap(text="Customer Message", phone=None, date="Timestamp", channel=None)),
+    (["Ticket Number", "Phone", "Message"], ColumnMap(text="Message", phone="Phone", date=None, channel=None)),
+    (["Status", "Awaiting reply", "Message", "wa_id"], ColumnMap(text="Message", phone="wa_id", date=None, channel=None)),
+    (["Number", "Message"], ColumnMap(text="Message", phone="Number", date=None, channel=None)),   # "number" alone still works
+    (["咨询时间", "客户电话"], ColumnMap(text="咨询时间", phone="客户电话", date=None, channel=None)),  # no other choice
+])
+def test_autodetect_ranks_candidates_instead_of_taking_the_first_hit(header, expected):
+    assert detect_columns(header) == expected
+
+
+def test_chinese_crm_export_uses_the_content_column_and_reports_the_choice(tmp_path, capsys):
+    src = tmp_path / "crm.csv"
+    src.write_text("咨询时间,客户电话,咨询内容\n2026-09-01 10:00,+4917612345678,你好，我们想做经销商，请问价格\n",
+                   encoding="utf-8")
+    out = tmp_path / "batch.csv"
+    assert main(["--input", str(src), "--out", str(out)]) == EXIT_OK
+    _, rows = read_out(out)
+    assert rows[0]["conversation_text"] == "你好，我们想做经销商，请问价格" and rows[0]["phone"] == "+4917612345678"
+    assert rows[0]["label_notes"] == "日期:2026-09-01 10:00"
+    assert "columns: text=咨询内容 phone=客户电话 date=咨询时间 channel=-" in capsys.readouterr().err.splitlines()
+
+
+# --- reading: records not lines, UTF-8 only, Excel-mangled numbers ----------------------------------
+
+@pytest.mark.parametrize("sep", ["\u2028", "\x0c"])
+def test_line_separator_inside_an_unquoted_cell_keeps_the_record_whole(tmp_path, capsys, sep):
+    src = tmp_path / "export.csv"
+    src.write_text(f"Phone,Message\n+4917612345678,first part{sep}second part\n+34612345678,Hola\n", encoding="utf-8")
+    out = tmp_path / "batch.csv"
+    assert main(["--input", str(src), "--out", str(out)]) == EXIT_OK
+    _, rows = read_out(out)
+    assert [r["conversation_text"] for r in rows] == ["first part second part", "Hola"]
+    assert summary_of(capsys.readouterr().out)["rows_in"] == "2"
+
+
+def test_non_utf8_export_exits_1_with_the_fix_on_stderr(tmp_path, capsys):
+    src = tmp_path / "gbk.csv"
+    src.write_bytes("咨询时间,客户电话,咨询内容\n2026-09-01 10:00,+4917612345678,你好我想做经销商\n".encode("gbk"))
+    out = tmp_path / "batch.csv"
+    assert main(["--input", str(src), "--out", str(out)]) == EXIT_ERROR
+    err = capsys.readouterr().err
+    assert "不是 UTF-8 编码" in err and "CSV UTF-8" in err and not out.exists()
+
+
+def test_excel_mangled_numbers_are_left_blank_and_counted(tmp_path, capsys):
+    src = tmp_path / "export.csv"
+    src.write_text("Phone,Message\n4.91761E+12,Hallo\n4917612345678.0,Guten Tag\n+34612345678,Hola\n", encoding="utf-8")
+    out = tmp_path / "batch.csv"
+    assert main(["--input", str(src), "--out", str(out)]) == EXIT_OK
+    _, rows = read_out(out)
+    assert [r["phone"] for r in rows] == ["", "", "+34612345678"]
+    summary = summary_of(capsys.readouterr().out)
+    assert summary["phone_excel_mangled"] == "2" and summary["countries"] == "unknown:2,ES:1"

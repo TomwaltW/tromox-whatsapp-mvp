@@ -113,3 +113,13 @@ def test_cohen_kappa_edge_cases() -> None:
     # textbook example: po = 0.7, pe = 0.5 -> kappa 0.4
     pairs = [("x", "x")] * 35 + [("y", "y")] * 35 + [("x", "y")] * 15 + [("y", "x")] * 15
     assert cohen_kappa(pairs) == pytest.approx(0.4)
+
+
+def test_non_utf8_file_exit_2_without_traceback(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    rows = [dict(r, conversation_text="你好，我们想做经销商") for r in read(FILE_A) if r["data_origin"] == "real"]
+    utf8 = write(tmp_path / "utf8.csv", rows)
+    gbk = tmp_path / "gbk.csv"
+    gbk.write_bytes(utf8.read_text(encoding="utf-8").encode("gbk", errors="replace"))
+    assert main(["--a", str(gbk), "--b", str(FILE_B)]) == EXIT_INPUT_ERROR
+    err = capsys.readouterr().err
+    assert "不是 UTF-8 编码" in err and "CSV UTF-8" in err

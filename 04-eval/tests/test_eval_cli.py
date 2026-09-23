@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import io
 import json
 import subprocess
 import sys
@@ -110,3 +111,20 @@ def test_module_entry_point(tmp_path):
                             cwd=ROOT, capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert out.exists() and "RESULT:" in result.stdout
+
+
+def test_non_utf8_input_is_a_data_error_not_a_threshold_failure(tmp_path, capsys):
+    with (ROOT / "synthetic-samples.csv").open(encoding="utf-8", newline="") as fh:
+        rows = list(csv.reader(fh))[:3]
+    text_col = rows[0].index("conversation_text")
+    for row in rows[1:]:
+        row[text_col] = "你好，我们想做经销商，请问价格"
+    buf = io.StringIO()
+    csv.writer(buf).writerows(rows)
+    gbk = tmp_path / "gbk.csv"
+    gbk.write_bytes(buf.getvalue().encode("gbk", errors="replace"))
+    out = tmp_path / "r.md"
+    assert main(["--input", str(gbk), "--prompt", "prompts/classify-v1.md", "--model", "mock", "--out", str(out),
+                 "--fail-under"]) == EXIT_DATA                        # 2, not the threshold exit code 1
+    err = capsys.readouterr().err
+    assert "不是 UTF-8 编码" in err and "CSV UTF-8" in err and not out.exists()
