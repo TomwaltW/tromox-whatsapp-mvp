@@ -1,32 +1,32 @@
 """Botmaker webhook payload models (format v1.1).
 
 【待核实】 The structure follows the example in Botmaker's help centre (SOURCES S-B6) and has
-NOT been confirmed against a real callback yet. The models are therefore deliberately
-tolerant: every field is optional, unknown keys are ignored, dates stay strings and are
-parsed later. Capture a real sample during the trial (KEEP_RAW_PAYLOADS=true) and update
-`fixtures/` plus this module if anything differs.
-"""
+NOT been confirmed against a real callback yet (how to capture one: README section 9), so type drift is absorbed:
+fields are optional, unknown keys ignored, a number sent for a text field becomes a string, `messages[].date` may be
+ISO or epoch s / ms (`normalize.parse_ts`), `clientPayload` any JSON value, `null` for a list / object field = empty.
+A different shape (`messages` not a list, `variables` not an object) still fails: `Pipeline.handle` then keeps the
+raw callback unprocessed ("validation: <field paths>" in raw_events.error, health alert degraded) for `app.replay`."""
 from __future__ import annotations
 
-from typing import Any, Literal
+from typing import Annotated, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, ValidationInfo, field_validator
 
 PayloadKind = Literal["message", "event", "status", "unknown"]
 
 
 class _Tolerant(BaseModel):
-    model_config = ConfigDict(extra="ignore", populate_by_name=True)
+    model_config = ConfigDict(extra="ignore", populate_by_name=True, coerce_numbers_to_str=True)
 
 
 class BotmakerMessage(_Tolerant):
     id: str | None = Field(default=None, alias="_id_")
-    date: str | None = None
+    date: str | int | float | None = None                           # ISO 8601, or epoch seconds / milliseconds
     sender: str | None = Field(default=None, alias="from")        # bot | user | agent
     from_name: str | None = Field(default=None, alias="fromName")
     message: str | None = None
     operator_id: str | None = Field(default=None, alias="operatorId")
-    client_payload: str | None = Field(default=None, alias="clientPayload")
+    client_payload: Any = Field(default=None, alias="clientPayload")    # button payload: text or an object
     referral: dict[str, Any] | None = None                          # 【待核实】 CTWA passthrough
 
 
@@ -37,7 +37,7 @@ class BotmakerEventInfo(_Tolerant):
 
 class BotmakerEvent(_Tolerant):
     name: str | None = None
-    info: list[BotmakerEventInfo] = Field(default_factory=list)
+    info: Annotated[list[BotmakerEventInfo], BeforeValidator(lambda v: [] if v is None else v)] = Field(default_factory=list)
 
     def info_value(self, *names: str) -> str | None:
         wanted = {n.lower() for n in names}
@@ -69,6 +69,14 @@ class BotmakerWebhook(_Tolerant):
     status_change_time: str | None = Field(default=None, alias="statusChangeTime")
     message_id: str | None = Field(default=None, alias="messageId")
     error: list[dict[str, Any]] = Field(default_factory=list)
+
+    @field_validator("variables", "messages", "events", "error", mode="before")
+    @classmethod
+    def _null_means_empty(cls, value: Any, info: ValidationInfo) -> Any:
+        """A list / object field sent as `null` means "none", exactly as if the key were missing."""
+        if value is None:
+            return {} if info.field_name == "variables" else []
+        return value
 
     @property
     def kind(self) -> PayloadKind:
