@@ -1,11 +1,14 @@
-"""05-integration/deploy/backup.sh、restore.sh：往返一致、过期清理、-wal / -shm 清除、拒绝坏文件。"""
+"""05-integration/deploy/backup.sh、restore.sh：往返一致、过期清理、-wal / -shm 清除、拒绝坏文件；
+备份失败不留文件、备份 0600；恢复拒 0 字节 / 无 leads 表的文件、没有 sqlite3 不恢复、留底连同 -wal。"""
 from __future__ import annotations
 
 import os
 import re
 import shutil
 import sqlite3
+import stat
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -154,3 +157,159 @@ def test_backup_fails_when_the_data_dir_has_no_leads_db(tmp_path):
     assert result.returncode == 1
     assert "找不到" in result.stderr
     assert not backup.exists(), "源库都没有，别顺手建备份目录"
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root 不受文件权限限制，复现不了 deploy 用户读不了库的情形")
+def test_backup_fails_without_leaving_a_file_when_it_cannot_open_the_db(tmp_path):
+    # 部署时数据目录属容器用户 uid 10001、0755：别的用户对库和目录都只有读权限
+    data = tmp_path / "data"
+    data.mkdir()
+    backup = tmp_path / "backup"
+    backup.mkdir()
+    make_wal_db(data / "leads.db").close()
+    # 服务空闲：最后一个连接关闭时 checkpoint 并删掉 -wal / -shm，.backup 得自己建 -shm
+    assert not (data / "leads.db-shm").exists()
+    os.chmod(data / "leads.db", 0o444)
+    os.chmod(data, 0o555)
+    try:
+        result = run_script("backup.sh", str(data), str(backup), "30")
+    finally:
+        # 改回来，否则 tmp_path 删不掉
+        os.chmod(data, 0o755)
+        os.chmod(data / "leads.db", 0o644)
+
+    assert result.returncode != 0
+    assert result.stderr.strip()
+    assert "root" in result.stderr, "要提示以 root 运行"
+    assert not list(backup.glob("leads-*.db")), "失败那天不能留下 0 字节的 leads-<今天>.db"
+    assert not list(backup.iterdir()), "临时文件也要删掉"
+
+
+def test_backup_file_is_readable_only_by_its_owner(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    backup = tmp_path / "backup"  # 由 backup.sh 新建
+    make_wal_db(data / "leads.db").close()
+
+    result = run_script("backup.sh", str(data), str(backup), "30")
+
+    assert result.returncode == 0, result.stderr
+    out = backup_path(result)
+    # 备份里有号码与姓名
+    assert stat.S_IMODE(out.stat().st_mode) == 0o600
+    assert stat.S_IMODE(backup.stat().st_mode) == 0o700
+    assert [p.name for p in backup.iterdir()] == [out.name], "不留临时文件"
+    assert count_rows(out) == 3
+
+
+def test_restore_refuses_an_empty_file(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    make_wal_db(data / "leads.db").close()
+    before = (data / "leads.db").read_bytes()
+    # 旧版 backup.sh 失败那天留下的就是这种文件，而且日期最新；integrity_check 对它回 ok
+    empty = tmp_path / "leads-2026-09-23.db"
+    empty.write_bytes(b"")
+
+    result = run_script("restore.sh", str(empty), str(data))
+
+    assert result.returncode != 0
+    assert "0 字节" in result.stderr
+    assert (data / "leads.db").read_bytes() == before
+    assert not list(data.glob("leads.db.pre-restore-*")), "拒绝发生在留底之前"
+
+
+def test_restore_refuses_a_sqlite_file_without_the_leads_table(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    make_wal_db(data / "leads.db").close()
+    before = (data / "leads.db").read_bytes()
+    other = tmp_path / "other.db"
+    conn = sqlite3.connect(other)
+    conn.execute("create table something_else(id integer primary key)")
+    conn.execute("insert into something_else default values")
+    conn.commit()
+    conn.close()
+
+    result = run_script("restore.sh", str(other), str(data))
+
+    assert result.returncode != 0
+    assert "没有 leads 表" in result.stderr
+    assert (data / "leads.db").read_bytes() == before
+    assert not list(data.glob("leads.db.pre-restore-*")), "拒绝发生在留底之前"
+
+
+def test_restore_refuses_to_run_without_sqlite3(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    make_wal_db(data / "leads.db").close()
+    before = (data / "leads.db").read_bytes()
+    backup = tmp_path / "backup"
+    out = backup_path(run_script("backup.sh", str(data), str(backup), "30"))
+    empty_bin = tmp_path / "bin"  # PATH 里只有空目录：找不到 sqlite3，也就确认不了备份可用
+    empty_bin.mkdir()
+
+    result = subprocess.run(
+        [shutil.which("bash"), str(DEPLOY / "restore.sh"), str(out), str(data)],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        timeout=60,
+        env={"PATH": str(empty_bin), "LANG": "C.UTF-8"},
+    )
+
+    assert result.returncode != 0
+    assert "sqlite3" in result.stderr
+    assert (data / "leads.db").read_bytes() == before
+    assert not list(data.glob("leads.db.pre-restore-*"))
+
+
+def test_restore_moves_the_uncheckpointed_wal_next_to_the_pre_restore_copy(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    backup = tmp_path / "backup"
+    make_wal_db(data / "leads.db").close()
+    out = backup_path(run_script("backup.sh", str(data), str(backup), "30"))  # 3 行
+    # 模拟 docker kill：子进程提交两行后不关连接直接退出，这两行只在 -wal 里、没 checkpoint 回主文件
+    writer = (
+        "import os, sqlite3, sys; c = sqlite3.connect(sys.argv[1]); c.execute('pragma wal_autocheckpoint=0'); "
+        "c.executemany('insert into leads(company) values (?)', [('D',), ('E',)]); c.commit(); os._exit(0)"
+    )
+    subprocess.run([sys.executable, "-c", writer, str(data / "leads.db")], check=True, timeout=30)
+    assert (data / "leads.db-wal").stat().st_size > 0
+
+    result = run_script("restore.sh", str(out), str(data))
+
+    assert result.returncode == 0, result.stderr
+    # 先断言数据目录里没有 -wal / -shm：打开恢复后的库会把它们重新造出来
+    assert not (data / "leads.db-wal").exists()
+    assert not (data / "leads.db-shm").exists()
+    keeps = [p for p in data.glob("leads.db.pre-restore-*") if not p.name.endswith(("-wal", "-shm"))]
+    assert len(keeps) == 1
+    keep = keeps[0]
+    assert Path(f"{keep}-wal").is_file(), "-wal 要移到留底文件旁边，不是删掉"
+    # SQLite 打开留底文件时读到旁边的 <keep>-wal：WAL 里那两行也在
+    assert count_rows(keep) == 5
+    assert count_rows(data / "leads.db") == 3
+    assert "备份里的线索条数：3" in result.stdout
+    assert "恢复前线索条数：5" in result.stdout
+
+
+def test_restore_reports_row_counts_when_the_old_db_has_no_wal(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    make_wal_db(data / "leads.db").close()  # 3 行，服务空闲：-wal / -shm 已删
+    assert not (data / "leads.db-wal").exists()
+    bk = tmp_path / "leads-2026-09-22.db"
+    make_wal_db(bk, ("X", "Y")).close()
+
+    result = run_script("restore.sh", str(bk), str(data))
+
+    assert result.returncode == 0, result.stderr
+    # 没有 -wal 时只读打开 WAL 库会失败（unable to open database file），脚本得换个办法数
+    assert "恢复前线索条数：3" in result.stdout
+    assert "备份里的线索条数：2" in result.stdout
+    keeps = list(data.glob("leads.db.pre-restore-*"))
+    assert len(keeps) == 1, "数条数不能在留底旁边造出 -wal / -shm"
+    assert count_rows(keeps[0]) == 3
+    assert count_rows(data / "leads.db") == 2

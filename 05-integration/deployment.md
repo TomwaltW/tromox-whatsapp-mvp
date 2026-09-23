@@ -89,15 +89,15 @@ webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置�
 
 ## 5. 定时任务
 
-三条任务写在 `deploy/cron.example`，贴进 deploy 用户的 `crontab -e` 后改路径、域名与告警地址：每 5 分钟 `app.replay`（重放未处理事件、重试失败通知）；每日 03:15 `deploy/backup.sh`（备份并清理 30 天前的备份）；每 5 分钟 `deploy/healthcheck-alert.sh`（查 `/health`，不健康就 POST 到运维群机器人并写系统日志）。
+定时任务写在 `deploy/cron.example`，分两处装。四条贴进 deploy 用户的 `crontab -e` 后改路径、域名与告警地址：每 5 分钟 `app.replay`（重放未处理事件、重试失败通知）；每 5 分钟 `deploy/healthcheck-alert.sh`（查 `/health`，不健康就 POST 到运维群机器人并写系统日志）；每月 1 日 `app.retention --yes`（按保留期清理）；每周一 09:00 `app.report --post`（推送周报摘要）。备份一条由 root 跑，写在 `/etc/cron.d/tromox-backup`：每日 03:15 `deploy/backup.sh`（备份并清理 30 天前的备份）。为什么是 root：数据目录属容器用户 uid 10001，deploy 用户在里面建不了 SQLite 读库要用的 `-shm`，备份会失败。
 
 健康检查失败要能通知到人：`healthcheck-alert.sh` 的第二个参数就是运维群机器人（或任何接收 JSON POST）的地址，不填则只写本机系统日志。理由：Botmaker 的 webhook 在 10 分钟内失败超过 100 次会熔断，接下来 10 分钟停发，这段时间的消息丢失；单条失败是否重试也还不知道（SOURCES S-B5）。这些回调没有落盘，`app.replay` 补不回，只能按 `botmaker-api-notes.md` 第 7 节对账。所以服务停摆要在几分钟内发现，处理路径也保持"先落盘、尽快应答、通知放到响应之后"。`/health` 只查数据库：Token 未配置、Token 与 Botmaker 侧不一致或 `ALLOWED_IPS` 过期时它照样返回 200，回调却全被拒（503 / 401 / 403），同样收不到、同样没落盘；所以每次改配置或更新后，还要看一眼 Botmaker 后台 webhook 的错误与被拒计数（`botmaker-api-notes.md` 第 4 节）。
 
 ## 6. 备份与恢复
 
-1. `deploy/backup.sh <数据目录> <备份目录> [保留天数]` 用 `sqlite3 ... ".backup"` 做在线一致性备份（库开了 WAL，不要直接拷贝正在写的文件），并删除过期备份；cron 每日调用。
+1. `deploy/backup.sh <数据目录> <备份目录> [保留天数]` 用 `sqlite3 ... ".backup"` 做在线一致性备份（库开了 WAL，不要直接拷贝正在写的文件），先写临时文件、`integrity_check` 通过且有 `leads` 表才落盘（备份文件 0600），失败时不留文件、退出非 0，成功后再删除过期备份。要以 root 运行（root 的 `/etc/cron.d/tromox-backup` 每日调用，手工跑用 `sudo`）：数据目录属容器用户 uid 10001。
 2. 每天把最新备份同步到机器之外（客户的对象存储或第二台机器）；备份里有客户号码与姓名，存放位置的访问权限与主库一致。
-3. 恢复：停容器（`docker compose stop webhook`），`deploy/restore.sh <备份文件> <数据目录>` 用备份覆盖 `leads.db` 并删除同目录下的 `leads.db-wal` 与 `leads.db-shm`（现有库会留底一份），然后按脚本打印的提示启动容器、执行一次 `app.replay --export` 重建 CSV。
+3. 恢复：停容器（`docker compose stop webhook`），`sudo deploy/restore.sh <备份文件> <数据目录>` 用备份覆盖 `leads.db`；现有库留底一份，同目录的 `leads.db-wal` 与 `leads.db-shm` 一起移到留底文件旁边（非正常停机后还在 WAL 里的已提交事务不丢）。0 字节、没有 `leads` 表或不完好的备份文件一律拒绝，不留底、不碰现有库。然后按脚本打印的提示启动容器、执行一次 `app.replay --export` 重建 CSV。
 4. 上线前做一次恢复演练，写进上线检查清单。
 
 ## 7. 更新
