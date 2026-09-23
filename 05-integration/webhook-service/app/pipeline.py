@@ -71,19 +71,39 @@ class Pipeline:
         self._clock = clock
 
     # ------------------------------------------------------------------ inbound
-    def handle(self, payload: dict[str, Any]) -> HandleResult:
+    def handle(self, payload: dict[str, Any], event_key: str | None = None) -> HandleResult:
+        """`event_key`: the key the raw event is already stored under (`app.replay` passes it). It is used as
+        given, not recomputed: a callback that failed validation was stored under its content hash, and once the
+        model is fixed the recomputed key would be `msg:…`, so the stored row would never be marked processed.
+
+        A payload that does not fit `BotmakerWebhook` is a processing failure, not an outcome: it stays in
+        `raw_events` unprocessed (counted in `/metrics` raw_events_unprocessed) until the model is fixed and
+        `app.replay` picks it up; the answer is still 200, the data is safe here."""
         try:
             parsed: BotmakerWebhook | None = BotmakerWebhook.model_validate(payload)
-        except ValidationError:
-            parsed = None
+            invalid = ""
+        except ValidationError as exc:
+            # field paths and error types only, never the input values (a phone number, chat text)
+            parsed, errors = None, exc.errors()
+            invalid = "; ".join(f"{'.'.join(map(str, e['loc'])) or '(root)'} ({e['type']})" for e in errors[:10])
+            if len(errors) > 10:
+                invalid += f"; +{len(errors) - 10} more"
         kind = parsed.kind if parsed else "unknown"
-        event_key = compute_event_key(payload, parsed)
+        fresh_key = compute_event_key(payload, parsed)
+        event_key = event_key or fresh_key
 
         raw_json = json.dumps(payload, ensure_ascii=False, default=str)
         state = self.store.record_raw_event(event_key, kind, raw_json)  # durable BEFORE any processing
         if state is RawEventState.DUPLICATE_PROCESSED:
             log.info("duplicate callback ignored", extra={"event_key": event_key, "kind": kind, "outcome": "duplicate"})
             return HandleResult("duplicate", kind, event_key)
+
+        if parsed is None:  # kept for replay; a redelivery lands in DUPLICATE_UNPROCESSED and is tried again
+            self.store.mark_failed(event_key, f"validation: {invalid}")
+            log.warning("callback does not fit the payload model; event kept for replay",
+                        extra={"event_key": event_key, "kind": kind, "outcome": "stored_unprocessed",
+                               "error_type": "ValidationError", "reason": invalid})
+            return HandleResult("stored_unprocessed", kind, event_key)
 
         try:
             result = self._process(payload, parsed, kind, event_key)
@@ -95,13 +115,15 @@ class Pipeline:
             return HandleResult("stored_unprocessed", kind, event_key)
 
         self.store.mark_processed(event_key, result.outcome, keep_payload=self.settings.keep_raw_payloads)
+        if fresh_key != event_key:  # replayed under its stored key: record the fresh one too, so that Botmaker
+            # redelivering the same message later is recognised as a duplicate
+            self.store.mark_processed(fresh_key, result.outcome, keep_payload=self.settings.keep_raw_payloads)
         log.info("callback processed", extra={"event_key": event_key, "kind": kind, "outcome": result.outcome,
                                               "lead_id": result.lead_id, "notification_id": result.notification_id})
         return result
 
-    def _process(self, payload: dict[str, Any], parsed: BotmakerWebhook | None, kind: str, event_key: str) -> HandleResult:
-        if parsed is None:
-            return HandleResult("invalid_payload", kind, event_key)
+    def _process(self, payload: dict[str, Any], parsed: BotmakerWebhook, kind: str, event_key: str) -> HandleResult:
+        # only ever called with a parsed payload: handle() keeps one that fails validation as stored_unprocessed
         if kind == "status":
             if parsed.error:
                 log.warning("message status reported an error",
