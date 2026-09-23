@@ -73,9 +73,10 @@ URL_ALLOW_PREFIXES = (
     "https://open.feishu.cn/open-apis/bot/v2/hook", "https://qyapi.weixin.qq.com/cgi-bin/webhook/send",
     "https://api.anthropic.com", "https://api.openai.com", "https://wa.me/", "https://json-schema.org/",
     "https://go.botmaker.com/", "https://api.botmaker.com/v2.0", "https://docs.astral.sh/uv", "https://github.com/astral-sh/uv",
+    # Feishu / Lark open-platform API origins, same kind as api.botmaker.com above: the two values of FEISHU_BASE_URL
+    # that the docs must spell out in full (the service refuses to start without https://).
+    "https://open.feishu.cn", "https://open.larksuite.com",
 )
-# Exact values, not prefixes: the two FEISHU_BASE_URL settings (API roots, not sources to cite).
-URL_ALLOW_EXACT = {"https://open.feishu.cn", "https://open.larksuite.com"}
 
 # Deploy docs must match what docker-compose.yml actually runs (compose names the container tromox-webhook-1,
 # and `${VAR:-*}` also falls back to * when the variable is set to empty).
@@ -236,8 +237,7 @@ def check_urls() -> None:
                 url = url.rstrip(".,;")
                 if re.search(r"[<{]|%7B", url):  # placeholder such as https://<your-domain>/... or {whatsapp_number}
                     continue
-                if url in allowed or url in URL_ALLOW_EXACT or url.startswith(URL_ALLOW_PREFIXES) \
-                        or any(url.startswith(a) for a in allowed):
+                if url in allowed or url.startswith(URL_ALLOW_PREFIXES) or any(url.startswith(a) for a in allowed):
                     continue
                 problems.append(f"{name}:{number} {url}")
     report("6. only URLs confirmed in SOURCES.md (plus local / API endpoints) are used", problems)
