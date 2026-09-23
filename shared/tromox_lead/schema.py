@@ -6,9 +6,11 @@ Agent (route A), the external classify call (route B) and the offline eval tool.
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any
 
+import phonenumbers
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from .enums import B2BType, B2CIntent, EscalationReason, LeadStatus, Segment, SourceChannel
@@ -24,12 +26,28 @@ def _clean_optional_str(value: Any) -> str | None:
     return None if text.lower() in _NULLISH else text
 
 
+# Common non-ISO answers the model gives for a country / market.
+_COUNTRY_ALIASES = {"UK": "GB"}
+_LANGUAGE_RE = re.compile(r"[a-z]{2}")
+
+
 def _clean_country(value: Any) -> str | None:
+    """ISO 3166-1 alpha-2 of a stated country, or None.
+
+    `UK` is mapped to `GB` (the ISO code, and what `country_from_phone` yields for +44), so a
+    lead cannot end up with `country_uk` next to `country_gb`. Anything else must be a region
+    phonenumbers knows (`phonenumbers.SUPPORTED_REGIONS`); `EU`, `XX` and similar are dropped.
+
+    Trade-off: `NA` stays an empty value (it is in `_NULLISH`) although it is also Namibia's
+    code - a model writing `n/a` / `NA` for "not stated" is far more likely than a Namibian
+    market; a Namibian lead still gets its country from the phone prefix.
+    """
     text = _clean_optional_str(value)
     if text is None:
         return None
     text = text.upper()
-    return text if len(text) == 2 and text.isalpha() else None
+    text = _COUNTRY_ALIASES.get(text, text)
+    return text if text in phonenumbers.SUPPORTED_REGIONS else None
 
 
 def _clean_enum(value: Any) -> Any:
@@ -78,8 +96,16 @@ class AIExtraction(BaseModel):
     @field_validator("language", mode="before")
     @classmethod
     def _v_language(cls, v: Any) -> str:
+        """ISO 639-1 primary subtag, or "und".
+
+        `en-US` -> `en`, `pt_BR` -> `pt`; `und`, full names (`German`), single letters and
+        empty values -> `und`. Never truncate: `"und"[:2]` would store `un`.
+        """
         text = _clean_optional_str(v)
-        return text.lower()[:2] if text else "und"
+        if not text:
+            return "und"
+        primary = text.lower().replace("_", "-").split("-", 1)[0]
+        return primary if _LANGUAGE_RE.fullmatch(primary) else "und"
 
     @field_validator("segment", mode="before")
     @classmethod

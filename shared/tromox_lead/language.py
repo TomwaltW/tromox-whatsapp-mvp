@@ -3,6 +3,11 @@
 Primary source of `language` is the AI extraction; this rule-based detector covers the
 webhook normaliser when the variable is missing, and keeps tests deterministic.
 Returns ISO 639-1 codes, or "und" when undetermined.
+
+Greetings and the brand name are ignored when scoring (01-design/routing-rules.md section 2):
+the wa.me prefill "Hi Tromox! [IG-2609]" and a bare "Hello" / "Hola" say nothing about the
+customer's language, so they yield "und" and the fallback runs again on the next message the
+customer writes themselves.
 """
 from __future__ import annotations
 
@@ -16,6 +21,10 @@ _STOPWORDS: dict[str, frozenset[str]] = {
     "pt": frozenset("o a os as de que e em um uma por para com tem quero gostaria olá ola obrigado obrigada preço quanto onde posso somos sou meu minha não você".split()),
     "it": frozenset("il lo la gli le di che e in un una per con come quale dove posso avete vorrei ciao buongiorno grazie prezzo rivenditore sono siamo mio non è".split()),
 }
+# Not scored: greetings (the prefill is English whatever the customer speaks) and the brand.
+_IGNORED_WORDS: frozenset[str] = frozenset(
+    "hi hello hey hola hallo bonjour olá ola ciao buongiorno tromox".split()
+)
 _TOKEN_RE = re.compile(r"[a-zA-ZÀ-ÿ']+")
 _CJK_RE = re.compile(r"[一-鿿]")
 _HINT_CHARS: dict[str, str] = {"de": "äöüß", "es": "ñ¿¡", "fr": "çœêèàù", "pt": "ãõç", "it": "ìò"}
@@ -27,8 +36,8 @@ def detect_language(text: str | None) -> str:
     if len(_CJK_RE.findall(text)) >= 2:
         return "zh"
     lowered = text.lower()
-    tokens = _TOKEN_RE.findall(lowered)
-    if not tokens:
+    tokens = [t for t in _TOKEN_RE.findall(lowered) if t not in _IGNORED_WORDS]
+    if not tokens:  # nothing but greetings / the brand name
         return "und"
     scores: dict[str, float] = {}
     for lang, words in _STOPWORDS.items():
