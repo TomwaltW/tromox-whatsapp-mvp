@@ -53,12 +53,37 @@ def test_first_message_short_code_country_language_and_fallback_name():
     lead = _message("message_user_first.json")
     assert lead.phone == DE_PHONE and lead.country_by_phone == "DE" and lead.country_stated is None
     assert (lead.source_code, lead.source_channel) == ("IG-2609", SourceChannel.INSTAGRAM)
-    assert lead.language == "en"                       # rule-based fallback: no `language` variable yet
+    assert lead.language == "und"                      # the English prefill says nothing about the customer's language
     assert lead.profile_name == "Jonas K" and lead.contact_name is None   # profile name is display-only, not a contact
     assert lead.segment is Segment.UNKNOWN and lead.status is LeadStatus.NEW
     assert lead.escalation_flag is False and lead.escalation_reason is None
     assert lead.first_message_ts == lead.last_message_ts == datetime(2026, 11, 4, 19, 12, 3, 120000, tzinfo=timezone.utc)
-    assert {"country_de", "seg_unknown", "src_instagram", "lang_en", "stage_new"} <= set(lead.tags)
+    assert {"country_de", "seg_unknown", "src_instagram", "stage_new"} <= set(lead.tags)
+    assert not [tag for tag in lead.tags if tag.startswith("lang_")]
+
+
+def test_fallback_detection_waits_for_the_customers_own_words():
+    first = _message("message_user_first.json")
+    assert first.language == "und"
+    own = _merge(_payload({}, text="Hallo, ich möchte Händler werden, bitte schicken Sie mir die Preise",
+                          msg_id="X2", date="2026-11-04T19:13:00.000Z"), existing=first)
+    assert own.lead_id == first.lead_id and own.language == "de" and "lang_de" in own.tags
+
+
+def test_legacy_mexican_whatsapp_number_keeps_phone_and_country():
+    payload = load_fixture("message_with_variables_b2b.json")
+    payload.update(contactId="5215512345678", customerId="MX0001")
+    payload.pop("whatsappNumber", None)
+    lead = _merge(BotmakerWebhook.model_validate(payload))
+    assert lead.phone == "+525512345678" and lead.country_by_phone == "MX"
+    assert "country_de" in lead.tags  # the stated market (DE) still wins for the tag
+
+
+def test_short_message_without_language_variable_stays_und_not_un():
+    lead = _merge(_payload({}, text="ok"))
+    assert lead.language == "und"
+    later = _merge(_payload({"segment": "B2C"}, text="ok", msg_id="X2"), existing=lead)
+    assert later.language == "und" and not [tag for tag in later.tags if tag.startswith("lang_")]
 
 
 def test_qualified_b2b_merges_into_the_same_lead():

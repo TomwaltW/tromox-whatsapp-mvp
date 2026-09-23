@@ -92,7 +92,7 @@ def test_language_fallback_is_deterministic():
         "Hallo, ich möchte Händler werden": "de",
         "Hola, quiero ser distribuidor en México": "es",
         "Bonjour, quel est le prix du MC10 ?": "fr",
-        "Olá, vocês têm revendedor em Lisboa?": "pt",
+        "Olá, vocês têm um revendedor em Lisboa?": "pt",  # "Olá" alone is not scored (a greeting)
         "Ciao, vorrei un test ride": "it",
         "Hi, I want to become a dealer": "en",
         "ok": "und",
@@ -100,6 +100,55 @@ def test_language_fallback_is_deterministic():
     for text, expected in samples.items():
         assert t.detect_language(text) == expected
         assert t.detect_language(text) == t.detect_language(text)
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("und", "und"), ("UND", "und"), ("German", "und"), ("Spanish", "und"), ("e", "und"),
+    ("", "und"), ("null", "und"), ("en-US", "en"), ("pt_BR", "pt"),
+])
+def test_extraction_language_is_iso_primary_subtag_or_und(raw, expected):
+    # never a truncation: "und"[:2] used to be stored as "un", "German" as "ge"
+    assert t.AIExtraction.model_validate({"language": raw}).language == expected
+
+
+def test_und_extraction_never_writes_a_language_onto_the_lead():
+    lead = t.Lead(lead_id="L-x", language="und")
+    lead.apply_extraction(t.AIExtraction.model_validate({"language": "und", "segment": "unknown"}))
+    assert lead.language == "und" and not any(tag.startswith("lang_") for tag in t.build_tags(lead))
+    lead.language = "de"
+    lead.apply_extraction(t.AIExtraction.model_validate({"language": "UND"}))
+    assert lead.language == "de"
+    lead.apply_extraction(t.AIExtraction.model_validate({"language": "es"}))
+    assert lead.language == "es"  # a new definite value from the AI is the latest value
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("UK", "GB"), ("EU", None), ("XX", None), ("DE", "DE"), ("gb", "GB"),
+    ("NA", None),  # kept as an empty value: "n/a" from a model, not Namibia
+])
+def test_country_stated_must_be_an_iso_region(raw, expected):
+    assert t.AIExtraction.model_validate({"country_stated": raw}).country_stated == expected
+
+
+@pytest.mark.parametrize("raw", ["5215512345678", "+5215512345678", "+52 1 55 1234 5678"])
+def test_legacy_mexican_whatsapp_mobile_is_rewritten(raw):
+    assert t.normalize_e164(raw) == "+525512345678"
+    assert t.country_from_phone(t.normalize_e164(raw)) == "MX"
+
+
+@pytest.mark.parametrize("raw", ["+525512345678", "+4917612345678"])
+def test_other_numbers_are_not_rewritten(raw):
+    assert t.normalize_e164(raw) == raw
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("Hi Tromox!", "und"),                      # the wa.me prefill, short code already stripped
+    ("Hello", "und"),
+    ("Hi, I want to become a dealer", "en"),    # want / to / a still score
+    ("Hola, quiero ser distribuidor", "es"),
+])
+def test_greetings_and_brand_do_not_decide_the_language(text, expected):
+    assert t.detect_language(text) == expected
 
 
 def test_extraction_cleaning_and_consistency():

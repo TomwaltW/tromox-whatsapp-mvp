@@ -4,6 +4,8 @@ See 01-design/routing-rules.md section 1. Uses Google's libphonenumber port.
 """
 from __future__ import annotations
 
+import re
+
 import phonenumbers
 from phonenumbers.phonenumberutil import NumberParseException
 
@@ -11,17 +13,39 @@ from phonenumbers.phonenumberutil import NumberParseException
 # bot should confirm the market with B2B leads (country_stated).
 AMBIGUOUS_CALLING_CODES: frozenset[int] = frozenset({1, 7, 44, 47, 61, 212, 262, 358, 590, 599})
 
+_SPACES_DASHES_RE = re.compile(r"[\s-]+")
+_LEGACY_MX_MOBILE_RE = re.compile(r"\+?521\d{10}")
+
+
+def _rewrite_legacy_mexican_mobile(text: str) -> str:
+    """'+521' + 10 digits (with or without '+', spaces / dashes allowed) -> '+52' + 10 digits.
+
+    WhatsApp ids (wa_id) of Mexican mobiles still carry the old mobile '1' after +52 (Meta
+    documents this), e.g. 5215512345678; libphonenumber rejects that as TOO_LONG, so the lead
+    would lose its number and country. Mexico's current numbering plan has no mobile '1', so
+    '+52' + 10 digits is the E.164 form. Only this one shape is rewritten; '+52' + 10 digits
+    and every other country are left alone.
+    Whether Botmaker's `contactId` for a Mexican customer is exactly this wa_id is 【待核实】.
+    """
+    compact = _SPACES_DASHES_RE.sub("", text)
+    if _LEGACY_MX_MOBILE_RE.fullmatch(compact):
+        return "+52" + compact[-10:]
+    return text
+
 
 def normalize_e164(raw: str | None, default_region: str | None = None) -> str | None:
     """Return the number in E.164 (+4915112345678) or None when it cannot be parsed.
 
-    WhatsApp / Botmaker deliver numbers without '+', e.g. "551150392540".
+    WhatsApp / Botmaker deliver numbers without '+', e.g. "551150392540". A Mexican mobile
+    in the old WhatsApp form (5215512345678) becomes +525512345678, see
+    `_rewrite_legacy_mexican_mobile`.
     """
     if not raw:
         return None
     text = str(raw).strip()
     if not text:
         return None
+    text = _rewrite_legacy_mexican_mobile(text)
     digits = "".join(ch for ch in text if ch.isdigit())
     if not digits:
         return None
