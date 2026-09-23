@@ -190,7 +190,7 @@ cd 05-integration/webhook-service
 ../../.venv/bin/python -m pytest -q tests/test_uat_replay.py -k U17   # 只跑一条
 ```
 
-怎么拿到真实样本：试用期把 `KEEP_RAW_PAYLOADS=true` 打开（默认是关的，回调处理完就把 `raw_events.payload_json` 清空），按本节的 U01–U20（`../../02-botmaker/trial-test-plan.md` 第 4 节的 20 条样例）走几遍真实会话，再用 `app/samples.py` 把原文导出来看。它只读打开线索库（`mode=ro`），不经过服务、不改库；默认脱敏：号码只留尾号 4 位，`firstName` / `lastName` / `fromName` / `name` / `contactName` / `profileName` 的值换成 `<redacted>`，邮箱换成 `<email>`，消息正文保留（结构对照要看正文落在哪个字段，正文里的号码与邮箱同样打码）。`events[].name` 与 `events[].info[].name` 也在打码之列，要看事件名与结束分类的原文就在本机加 `--no-redact` 重导一次——那份是原始个人数据，只留在本机，别提交。
+怎么拿到真实样本：试用期把 `KEEP_RAW_PAYLOADS=true` 打开（默认是关的，回调处理完就把 `raw_events.payload_json` 清空），按本节的 U01–U20（`../../02-botmaker/trial-test-plan.md` 第 4 节的 20 条样例）走几遍真实会话，再用 `app/samples.py` 把原文导出来看。它只读打开线索库（`mode=ro`），不经过服务、不改库；默认脱敏：号码只留尾号 4 位；键名去掉下划线、不分大小写后是 `firstName` / `lastName` / `fromName` / `contactName` / `profileName` 的值换成 `<redacted>`（所以 Botmaker 变量的 `contact_name`、`profile_name` 也算）；`events[].info[]` 里 `name` 是 `agentName` / `operatorName` 或上述名字类键的条目，`value`（客服或联系人姓名）也换成 `<redacted>`；邮箱换成 `<email>`。事件名与结束分类不打码：`events[].name`、`events[].info[].name` 是事件类型，不是个人数据，脱敏导出里就是原文，不用为它另导一份。消息正文与 `ai_summary` 这类自由文本保留（结构对照要看正文落在哪个字段），里面的号码与邮箱同样打码，但提到的人名不会被换掉，所以脱敏导出也只留在本机、别提交。`--no-redact` 导出的是原始个人数据，只在本机比对时用，别提交。
 
 ```bash
 cd 05-integration/webhook-service
@@ -227,9 +227,9 @@ cd 05-integration/webhook-service
 | 3 转人工 | `escalation` | `rate = flagged / total`；`by_reason` 各值之和等于 `flagged` | 对照 `../../06-acceptance/thresholds.json` 的 `escalation_rate_max`；`b2b_qualified` 是设计上必转的，误判看 `low_confidence` 与 `not_understood_twice` |
 | 4 通知 | `notifications` | 五种状态各计一次（含义见第 7 节）；时延 = `sent_at − created_at`（秒，只算有 `sent_at` 的行）；`over_threshold` 是超过 `--latency-threshold`（默认 60，与 `thresholds.json` 的 `notify_latency_max_seconds` 一致）的条数 | `failed` / `pending` 非 0 或 `over_threshold` 非 0，先查通知渠道与 `app.replay` |
 | 5 状态漏斗 | `status_funnel` | 八个状态各一格，合计等于 `leads.total` | `handed_off` 之后靠销售回写；长期停在 `qualified` 是回写没跟上 |
-| 6 复盘清单 | （只在 Markdown） | 窗口内 `low_confidence` / `not_understood_twice` 的线索：`lead_id`、原因、尾号 4 位、`ai_summary` | 本周逐条人工复看，判断是 prompt、知识库还是流程的问题 |
+| 6 复盘清单 | （只在 Markdown） | 窗口内 `low_confidence` / `not_understood_twice` 的线索：`lead_id`、原因、`ai_summary` | 本周逐条人工复看，判断是 prompt、知识库还是流程的问题 |
 
-隐私：报告会贴到群里，所以号码只出尾号 4 位，摘要里像号码的数字串也一并打码；`lead_id` 是哈希，可拿去 `data/leads.csv` 或 Botmaker 后台对账。
+隐私：报告里不出现号码，也不出现尾号，`ai_summary` 里像号码的数字串整串打码。但 `lead_id` 由号码推出（`'L-' + sha1(E.164)[:12]`，不加盐），拿到它的人可以算回号码，所以含 `lead_id` 的报告（`report.md`）只在有线索库权限的人之间传，不要贴到客户或外部群；`lead_id` 用来拿去 `data/leads.csv` 或 Botmaker 后台对账。要发到群里，用 `--post` 推的摘要，它不含 `lead_id`。
 
 周复盘怎么用（W5–W8）：每周一跑一次，`report.md` 整份贴进当周复盘记录；先看第 6 节逐条定性（AI 判错 / 客户表达含糊 / 流程漏洞），再看第 3 节升级率和第 4 节时延有没有越线，最后把第 1、2 节的数按周排成一列看趋势。要看四周的变化，把每周的 `report.json` 留下来即可，键名固定。
 
