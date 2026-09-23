@@ -2,7 +2,9 @@
 
 Tolerates what models really do (markdown fences, a sentence before or after the JSON,
 "null" written as a string) and rejects what production cannot use (no JSON object,
-truncated JSON, enum values outside the schema).
+truncated JSON, b2b_type / b2c_intent / escalation_reason values outside their enums).
+A `segment` value other than B2B / B2C is not rejected: the shared model maps it to unknown,
+exactly as production does, so it counts as parsed (and a gold-B2B sample still counts as a miss).
 """
 from __future__ import annotations
 

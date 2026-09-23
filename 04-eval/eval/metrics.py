@@ -131,8 +131,10 @@ class EvalResult:
         return 2 * p * r / (p + r)
 
     @property
-    def parse_success(self) -> float | None:
-        return ratio(self.parse_ok, self.n_total)
+    def parse_success(self) -> float | None:  # A6：parse_ok / (n_total - self.client_failures)
+        """调用失败（重试后仍 429 / 5xx / 断连）没有模型输出，不进分母；这些样本仍按兜底计入召回与转人工。
+        全部调用都失败时分母为 0，返回 None，check_thresholds 判"无可统计样本"。"""
+        return ratio(self.parse_ok, self.n_total - self.client_failures)
 
     @property
     def country_accuracy(self) -> float | None:

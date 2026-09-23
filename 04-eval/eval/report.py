@@ -163,9 +163,11 @@ def render_report(dataset: Dataset, prompt: PromptSpec, result: EvalResult,
     ]
 
     out += ["## 9. 解析失败与调用失败", "",
-            f"JSON 解析成功率 {pct(result.parse_success)}（{result.parse_ok} / {result.n_total}）；"
-            f"调用失败 {result.client_failures} 条；输出缺键但仍可用 {result.missing_key_outputs} 条。"
-            "解析或调用失败的样本按生产兜底处理：`segment=unknown` 且转人工。", ""]
+            f"JSON 解析成功率 {pct(result.parse_success)}（{result.parse_ok} / ({result.n_total} - {result.client_failures})，"
+            "即解析成功 / (样本数 - 调用失败)）；"
+            f"调用失败 {result.client_failures} 条（没有模型输出，不计入解析成功率的分母）；"
+            f"输出缺键但仍可用 {result.missing_key_outputs} 条。"
+            "解析或调用失败的样本按生产兜底处理：`segment=unknown` 且转人工，照常计入召回率与升级率。", ""]
     if result.parse_failures:
         out += ["| 样本 | 原因 |", "|---|---|"]
         for o in result.parse_failures:
