@@ -74,6 +74,16 @@ URL_ALLOW_PREFIXES = (
     "https://api.anthropic.com", "https://api.openai.com", "https://wa.me/", "https://json-schema.org/",
     "https://go.botmaker.com/", "https://api.botmaker.com/v2.0", "https://docs.astral.sh/uv", "https://github.com/astral-sh/uv",
 )
+# Exact values, not prefixes: the two FEISHU_BASE_URL settings (API roots, not sources to cite).
+URL_ALLOW_EXACT = {"https://open.feishu.cn", "https://open.larksuite.com"}
+
+# Deploy docs must match what docker-compose.yml actually runs (compose names the container tromox-webhook-1,
+# and `${VAR:-*}` also falls back to * when the variable is set to empty).
+DEPLOY_DIR = "05-integration"
+DEPLOY_SUFFIXES = {".md", ".example", ".sh", ".yml"}
+STALE_CONTAINER = "docker exec tromox-webhook"
+COMPOSE_FILE = "05-integration/deploy/docker-compose.yml"
+COLON_DASH_PROXY = "${TROMOX_FORWARDED_ALLOW_IPS:-"
 
 failures: list[str] = []
 
@@ -226,10 +236,33 @@ def check_urls() -> None:
                 url = url.rstrip(".,;")
                 if re.search(r"[<{]|%7B", url):  # placeholder such as https://<your-domain>/... or {whatsapp_number}
                     continue
-                if url in allowed or url.startswith(URL_ALLOW_PREFIXES) or any(url.startswith(a) for a in allowed):
+                if url in allowed or url in URL_ALLOW_EXACT or url.startswith(URL_ALLOW_PREFIXES) \
+                        or any(url.startswith(a) for a in allowed):
                     continue
                 problems.append(f"{name}:{number} {url}")
     report("6. only URLs confirmed in SOURCES.md (plus local / API endpoints) are used", problems)
+
+
+def check_deploy_docs() -> None:
+    problems: list[str] = []
+    for path in iter_files(DEPLOY_SUFFIXES):
+        name = rel(path)
+        if not name.startswith(DEPLOY_DIR + "/"):
+            continue
+        for number, line in enumerate(read(path).splitlines(), start=1):
+            if STALE_CONTAINER in line:
+                problems.append(f"{name}:{number} uses `{STALE_CONTAINER}`: compose (name: tromox, service webhook) "
+                                "names the container tromox-webhook-1, so this fails with 'No such container'; "
+                                "write `cd <deploy dir> && docker compose exec -T webhook ...` instead")
+    compose = ROOT / COMPOSE_FILE
+    if compose.exists():
+        for number, line in enumerate(read(compose).splitlines(), start=1):
+            if COLON_DASH_PROXY in line:
+                problems.append(f"{COMPOSE_FILE}:{number} uses `{COLON_DASH_PROXY}*}}`: with ':-' an empty "
+                                "TROMOX_FORWARDED_ALLOW_IPS still becomes *, so 'leave it empty = trust no proxy' "
+                                "does not work; write `${TROMOX_FORWARDED_ALLOW_IPS-*}` (no colon)")
+    report("6. deploy docs match docker-compose.yml (compose exec, not docker exec tromox-webhook; "
+           "TROMOX_FORWARDED_ALLOW_IPS without ':-')", problems)
 
 
 def check_timeline() -> None:
@@ -251,7 +284,7 @@ def check_no_emoji() -> None:
 def main() -> int:
     for check in (check_required_files, check_client_docs, check_banned_terms, check_tier_table,
                   check_cost_numbers, check_thresholds, check_kim_questions, check_zhang_items,
-                  check_purpose_line, check_urls, check_timeline, check_no_emoji):
+                  check_purpose_line, check_urls, check_deploy_docs, check_timeline, check_no_emoji):
         check()
     print(f"\n{len(failures)} check(s) failed" if failures else "\nall static checks passed")
     return 1 if failures else 0
