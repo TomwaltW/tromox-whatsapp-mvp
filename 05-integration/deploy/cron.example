@@ -1,15 +1,19 @@
-# deploy 用户的 crontab（crontab -e 后把下面几行贴进去、改路径与域名）。
+# 定时任务分两处装：第一段是 deploy 用户的 crontab（四条），第二段是 root 的 /etc/cron.d/tromox-backup（备份一条）。
 # 假设：仓库克隆在 /opt/tromox/app，compose 目录 /opt/tromox/app/05-integration/deploy，
-#       数据目录 /opt/tromox/data，备份目录 /opt/tromox/backup，deploy 用户在 docker 组。
-# 为什么这几条、为什么健康检查要通知到人：deployment.md 第 5 节。
+#       数据目录 /opt/tromox/data（属容器用户 uid 10001），备份目录 /opt/tromox/backup，deploy 用户在 docker 组。
+# 为什么这几条、为什么健康检查要通知到人、为什么备份要 root 跑：deployment.md 第 5 节。
+
+# ===== 第一段：deploy 用户的 crontab（crontab -e 后只贴本段、改路径与域名） =====
 PATH=/usr/local/bin:/usr/bin:/bin
 
 # 每 5 分钟重放未处理事件、重试失败通知（幂等；-T 因为 cron 没有终端）
 */5 * * * * cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.replay >/dev/null 2>&1
 
-# 每日 03:15 在线一致性备份到 /opt/tromox/backup/leads-YYYY-MM-DD.db，并删除 30 天前的备份
-# （原来"备份"与"find ... -delete 清理"两条 cron 现在都由 backup.sh 做）
-15 3 * * * /opt/tromox/app/05-integration/deploy/backup.sh /opt/tromox/data /opt/tromox/backup 30 >/dev/null 2>&1 || logger -t tromox "backup failed"
+# 每 5 分钟检查 /health（走公网域名，顺带验证反向代理与证书）；不健康时 POST 到运维群机器人并写系统日志。
+# 第二个参数可以是接收 {"text": "..."} 的通用 webhook，也可以直接填飞书 / Lark 或企业微信群机器人地址——
+# 脚本按域名换成它们要的消息格式、并检查返回体里的 code / errcode；飞书机器人开了签名校验时再设环境变量
+# TROMOX_ALERT_SIGNING_SECRET。只想写系统日志就不填。
+*/5 * * * * /opt/tromox/app/05-integration/deploy/healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址> 2>&1 | logger -t tromox
 
 # 每月 1 日 04:00 按保留期清理：线索默认 730 天（最后一次联系后 24 个月）、已处理的原始回调事件默认 90 天，
 # 顺带删孤儿通知并重写一次 CSV 镜像（口径见 webhook-service/README.md 第 12 节；天数改这行的参数，
@@ -18,6 +22,18 @@ PATH=/usr/local/bin:/usr/bin:/bin
 # sink 删除失败时（退出码 1）那条 error 日志是唯一的线索，丢了就查不出是哪个镜像没删掉。
 0 4 1 * * cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.retention --yes 2>&1 | logger -t tromox
 
-# 每 5 分钟检查 /health（走公网域名，顺带验证反向代理与证书）；不健康时 POST 到运维群机器人并写系统日志。
-# 第二个参数是接收 {"text": "..."} 的通用 webhook 地址；只想写系统日志就不填。
-*/5 * * * * /opt/tromox/app/05-integration/deploy/healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址> 2>&1 | logger -t tromox
+# 每周一 09:00（服务器时区）出调优期周报：推送六项指标摘要到 NOTIFIERS 里的渠道，任一渠道推送失败退出 1；
+# 失败原因只在 error 日志里，所以输出同样走 logger（口径见 webhook-service/README.md 第 10 节）。
+0 9 * * 1 cd /opt/tromox/app/05-integration/deploy && docker compose exec -T webhook python -m app.report --post 2>&1 | logger -t tromox
+
+# ===== 第二段：root 的 /etc/cron.d/tromox-backup（本段不带 # 的两行就是该文件的全部内容，别贴进上面的 crontab） =====
+# 为什么是 root：数据目录属 uid 10001、0755，服务空闲时 SQLite 会删掉 -wal / -shm，
+# deploy 用户跑 sqlite3 .backup 时建不了 -shm，备份失败（备份目录里不留文件，只有一条 "backup failed" 系统日志）。
+# root 建的 -wal / -shm 会被 SQLite 交还给库文件的属主，不影响容器写库。cron.d 格式比 crontab 多一列：第 6 列是运行用户。
+# 装法（文件须属 root、0644，文件名不带点，末行要有换行，否则 cron 不读）：
+#   sudo tee /etc/cron.d/tromox-backup >/dev/null      # 贴入本段不带 # 的两行（按需改路径），Ctrl-D 结束
+#   sudo chown root:root /etc/cron.d/tromox-backup && sudo chmod 0644 /etc/cron.d/tromox-backup
+# 或者先在别处写好这个文件，再 sudo cp 到 /etc/cron.d/tromox-backup，同样 chown / chmod。
+# 每日 03:15 在线一致性备份到 /opt/tromox/backup/leads-YYYY-MM-DD.db（0600），并删除 30 天前的备份
+PATH=/usr/local/bin:/usr/bin:/bin
+15 3 * * * root /opt/tromox/app/05-integration/deploy/backup.sh /opt/tromox/data /opt/tromox/backup 30 >/dev/null 2>&1 || logger -t tromox "backup failed"
