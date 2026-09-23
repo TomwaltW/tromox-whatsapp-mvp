@@ -21,8 +21,8 @@ flowchart LR
 | 步骤 | 说明 |
 |---|---|
 | 鉴权 | 请求头 `auth-bm-token` 必须等于环境变量 `BOTMAKER_WEBHOOK_TOKEN`，常量时间比较；不符返回 401；未配置密钥时一律返回 503 并记错误日志。可选 `ALLOWED_IPS` 白名单（Botmaker 出口 IP，SOURCES S-B11）。 |
-| 先落盘 | 回调原文先写入 `raw_events` 再处理；处理中途出错不丢数据，用 `python -m app.replay` 重放。处理成功后默认清空原文，不在线索库里留聊天内容。Botmaker 的 webhook 10 分钟内失败超过 100 次会熔断 10 分钟，这段时间的回调丢失（SOURCES S-B5），所以请求路径里只有落盘、归一化、入库这类本地操作，尽快应答。 |
-| 幂等 | 消息回调按 `messages[]._id_` 识别重复，其余按内容哈希；同一回调重发返回 `duplicate`，不会产生第二条线索或第二次通知。 |
+| 先落盘 | 回调原文先写入 `raw_events` 再处理；处理中途出错不丢数据，用 `python -m app.replay` 重放。回调形态和 `app/models.py` 对不上也算处理出错，不是一种结局：常见的类型差异模型直接接住（数字写在文本字段里，如 `contactId`、`operatorId`，转成字符串；`messages[].date` 可以是秒 / 毫秒时间戳；`clientPayload` 可以是对象；列表 / 对象字段给 `null` 当空），接不住的形态（如 `messages` 不是列表、`variables` 不是对象）照样返回 200 与 `stored_unprocessed`，那一行保持未处理、保留原文，`error` 记 `validation: <字段路径 (错误类型)>`（只有路径，不含字段值），日志一条 WARNING；它计入 `/metrics` 的 `raw_events_unprocessed`，健康告警转 degraded，按字段路径改好模型后用 `app.replay` 重放。处理成功后默认清空原文，不在线索库里留聊天内容。Botmaker 的 webhook 10 分钟内失败超过 100 次会熔断 10 分钟，这段时间的回调丢失（SOURCES S-B5），所以请求路径里只有落盘、归一化、入库这类本地操作，尽快应答。 |
+| 幂等 | 消息回调按 `messages[]._id_` 识别重复，其余按内容哈希；同一回调重发返回 `duplicate`，不会产生第二条线索或第二次通知。只认处理完的：落盘了但没处理完（含形态接不住）的回调重发时会再处理一次。重放沿用落盘时的事件键（形态接不住的回调落盘时只能按内容哈希，模型修好后重算会变成按 `_id_`），成功后两个键都记为已处理，之后同一条消息再投仍返回 `duplicate`。 |
 | 归一化 | 全部规则来自共享包 `tromox_lead`：号码转 E.164、国家取号码国家码、首条消息解析来源短码、`language` 变量缺失时用确定性语言检测兜底、会话变量转线索字段（下划线与驼峰写法都认）、路由规则、按 `TAG_TIER` 生成标签。 |
 | 合并 | 一个号码一条线索；空值不覆盖已有值，`unknown` 不覆盖已知的 B2B / B2C；来源短码取首次触达；`first_message_ts` / `last_message_ts` 只看客户消息。读改写在 `BEGIN IMMEDIATE` 事务内完成，同号码并发回调不丢更新。CSV 镜像写后合并：单条回调立即写，一阵回调在 `CSV_EXPORT_MIN_INTERVAL_S`（默认 5 秒）内只写一次，服务退出前补写。 |
 | 镜像 | 远程 sink（飞书多维表格）不在请求路径里调用：入库后只往 `mirror_outbox` 表登记一行待发（同一线索同一 sink 只留一行），HTTP 响应发出之后由后台任务按指数退避重试 3 次发送，发的是发送时刻账本里的最新状态；失败留给 `python -m app.replay` 继续重试，计数见 `/metrics` 的 `mirror_outbox_pending` 与 `mirror_outbox_failed_24h`。发送期间同一线索又来回调不会丢最新状态：行带一个版本号（`updated_at`），发完只在版本没变的前提下才算数，变了就说明期间来过新回调，这一遍不作数、行留着 `pending`，随后按最新状态再发一遍。连失败 10 次的行不再自动重试，要人工排查后用 `--reset-mirrors` 重置（见第 7 节），计数见 `/metrics` 的 `mirror_outbox_exhausted`。本地 sink（CSV 镜像）是写本机文件，照旧在请求路径里同步写。理由同"先落盘"一行：飞书一次上传是令牌 + 查找 + 创建三次 HTTP、每次超时 10 秒，放在请求路径里会把对 Botmaker 的应答拖到几十秒。 |
@@ -147,7 +147,7 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 ../../.venv/bin/python -m app.replay --reset-mirrors   # 先给卡住的镜像行重置重试预算，再补发
 ```
 
-- 重放与重试都是幂等的，可以放进 cron（建议每 5 分钟一次）。
+- 重放与重试都是幂等的，可以放进 cron（建议每 5 分钟一次）。重放按每行落盘时的事件键处理，不重新算键。`raw_events.error` 以 `validation:` 开头的行是回调形态和模型对不上：先按其中的字段路径改 `app/models.py`（及 fixture），再重放；不改就重放只会原样再失败，行继续留着、告警不消。
 - 镜像重试：`mirror_outbox` 里还是 `pending` 的行按线索逐条补发（飞书挂掉那段时间的镜像就靠这一步补回来）；`attempts` 累计到 `--max-attempts`（默认 10）之后不再自动重试，要人工看 `last_error`。线索本身又变了（来了新回调）会重新入队，`attempts` 一并归零 —— 那是一份新的活，重试预算重新给满。
 - 卡住的镜像行：`/metrics` 的 `mirror_outbox_exhausted` 就是这些用满重试预算、已不再自动重试的行，按 `last_error` 排查。**原因排除之后**再跑 `--reset-mirrors`：它把这些行的 `attempts` 归零、`last_error` 清空，然后照常补发，跑完在日志的 `mirrors_reset` 里看重置了几行。原因没排除就重置，只会再白烧一轮重试预算，所以它不是默认行为，也不要放进 cron。
 - `/health` 要接告警（做法见 `../deployment.md` 第 5 节）：熔断期间的回调、单条失败后没重发的回调都没落盘，`app.replay` 补不回，只能按 `../botmaker-api-notes.md` 第 7 节对账。
@@ -179,6 +179,7 @@ Docker 只读取构建上下文根目录（即仓库根目录）下的 `.dockeri
 9. `contactId` 是否永远是号码：Botmaker 的公开接口描述里已出现 BSUID（WhatsApp 的商家范围用户标识）相关字段与事件。若部分客户只给出标识而不给号码，"按号码判国家、按号码去重"对这部分客户不成立。服务的处理：WhatsApp 渠道的回调只要带 `customerId`，线索照常入库并照常通知销售，去重键改用 `bm:<customerId>`，`phone` 与 `country_by_phone` 留空（绝不从标识里猜号码），通知卡片提示"国家需向客户确认"；之后若同一客户的号码出现，会补写到同一条线索上。既无号码也无 `customerId`、或来自其他渠道的回调才跳过（结果 `skipped_no_contact`）。真实回调里 BSUID 的形态【待核实】。
 10. 已知限制：所有接管原因都通知到同一组渠道；如需把投诉、质保类单独发给售后群，需要按 `escalation_reason` 分流通知（二期）。
 11. 飞书多维表格镜像（`feishu_bitable`）的接口形态（租户令牌、`records/search` 按 `lead_id` 过滤、创建 / 更新记录、各列类型接受的值）按飞书开放平台公开文档整理，未用真实租户核实；拿到客户租户后按 `05-integration/feishu-bitable-setup.md` 第 6 节验一遍。镜像已改为响应后异步（见第 1 节"镜像"一行），所以这里验不通也只会让 `mirror_outbox` 堆积，不会拖慢或拖垮回调应答。【待核实】
+12. 字段类型：核对第 1 条时一并看类型。数字与字符串互换、毫秒时间戳、`null` 这类差异服务已接住（第 1 节"先落盘"一行）；更大的形态差异不会静默丢线索，回调停在 `raw_events` 等重放，`/metrics` 的 `raw_events_unprocessed` 不为 0、健康告警转 degraded。试用账号接通后头几条回调就看这个数，不为 0 就按 `raw_events.error` 里的字段路径改 `app/models.py` 与 fixture，再跑 `app.replay`。
 
 ## 9. UAT 回放
 
