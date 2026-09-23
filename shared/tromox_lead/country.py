@@ -24,7 +24,8 @@ def _rewrite_legacy_mexican_mobile(text: str) -> str:
     documents this), e.g. 5215512345678; libphonenumber rejects that as TOO_LONG, so the lead
     would lose its number and country. Mexico's current numbering plan has no mobile '1', so
     '+52' + 10 digits is the E.164 form. Only this one shape is rewritten; '+52' + 10 digits
-    and every other country are left alone. Whether Botmaker's `contactId` is exactly the wa_id is 【待核实】.
+    and every other country are left alone.
+    Whether Botmaker's `contactId` for a Mexican customer is exactly this wa_id is 【待核实】.
     """
     compact = _SPACES_DASHES_RE.sub("", text)
     if _LEGACY_MX_MOBILE_RE.fullmatch(compact):
