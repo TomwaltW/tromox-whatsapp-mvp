@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 
 import pytest
+from eval_testkit import make_row
 
+from eval.data import Sample
+from eval.metrics import evaluate, make_outcome
 from eval.parse import extract_json_object, parse_extraction
 from tromox_lead import AI_EXTRACTION_FIELDS, B2BType, EscalationReason, Segment
 
@@ -71,3 +74,12 @@ def test_missing_and_extra_keys_are_recorded_but_usable():
 def test_unusable_outputs_are_parse_failures(text, fragment):
     result = parse_extraction(text)
     assert not result.ok and fragment in result.error
+
+
+def test_out_of_enum_segment_is_unknown_counts_as_parsed_and_still_misses_b2b():
+    """Production behaviour, measured as such: the shared model maps a segment other than B2B / B2C to unknown."""
+    result = parse_extraction(json.dumps(dict(FULL, segment="business"), ensure_ascii=False))
+    assert result.ok and result.error is None and result.extraction.segment is Segment.UNKNOWN
+    r = evaluate([make_outcome(Sample.model_validate(make_row()), None, result)])   # gold: B2B dealer
+    assert r.parse_ok == 1 and r.parse_success == 1.0
+    assert (r.b2b_tp, r.b2b_fn) == (0, 1)

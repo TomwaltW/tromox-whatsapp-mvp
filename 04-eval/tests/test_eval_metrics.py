@@ -134,3 +134,22 @@ def test_repo_thresholds_file_is_readable():
     thresholds = load_thresholds()
     assert thresholds["b2b_recall_min"] == 0.90 and thresholds["offline_min_samples"] == 150
     assert "_comment" not in thresholds
+
+
+def test_failed_calls_are_left_out_of_the_parse_success_denominator(outcomes):
+    failed = make_outcome(_sample(sample_id="S7"), None, ParseResult(None, error="request failed"),
+                          client_error="HTTP 429 after retries")
+    r = evaluate([*outcomes, failed])
+    assert (r.n_total, r.parse_ok, r.client_failures) == (7, 5, 1)
+    assert r.parse_success == pytest.approx(r.parse_ok / (r.n_total - 1)) == pytest.approx(5 / 6)
+    # still the production fallback for recall and hand-over: gold B2B dealer -> miss, escalated
+    assert r.b2b_fn == 2 and r.b2b_misses[-1].sample.sample_id == "S7"
+    assert r.escalation_pred == 5 and [o.sample.sample_id for o in r.parse_failures] == ["S5", "S7"]
+
+
+def test_all_calls_failed_leaves_parse_success_undefined_and_failing():
+    failed = make_outcome(_sample(), None, ParseResult(None, error="request failed"), client_error="connection reset")
+    r = evaluate([failed])
+    check = check_thresholds(r, {"json_parse_success_min": 0.95})[0]
+    assert r.client_failures == 1 and r.parse_success is None
+    assert not check.passed and "无可统计样本" in check.note

@@ -10,6 +10,7 @@ import argparse
 import csv
 import datetime
 import hashlib
+import io
 import re
 import sys
 from collections import Counter
@@ -19,6 +20,8 @@ from typing import Iterable, Sequence
 
 from tromox_lead import LABEL_COLUMNS, country_from_phone, detect_language, normalize_e164
 
+from .data import looks_excel_mangled
+
 EXIT_OK, EXIT_ERROR, EXIT_NO_TEXT_COLUMN = 0, 1, 2
 
 # 与 04-eval/eval/report.py 第 11–12 行的 _EMAIL_RE / _DIGITS_RE 相同（抄一份，不 import 私有名）。
@@ -26,12 +29,20 @@ _EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 _DIGITS_RE = re.compile(r"\+?\d[\d\s().-]{6,}\d")
 
 # 列自动识别：大小写不敏感、按"包含"匹配，按 text → phone → date → channel 的顺序认领，已认领的列不再参与。
+# 同一角色有几列命中时取档位靠前的（_rank 数字小），同档取最左边的：
+#   正文：同时命中日期提示或编号提示的表头（咨询时间、Message ID、Conversation ID）排在后面，别无选择才用；
+#   号码：命中 phone / 号码 / 电话 / mobile / whatsapp / 整词 wa 的排在只命中 number 的（Ticket Number）前面。
 COLUMN_HINTS: dict[str, tuple[str, ...]] = {
     "text": ("message", "text", "content", "内容", "消息", "咨询", "conversation", "正文"),
-    "phone": ("phone", "number", "mobile", "号码", "电话", "whatsapp", "wa"),
+    "phone": ("phone", "number", "mobile", "号码", "电话", "whatsapp"),
     "date": ("date", "time", "时间", "日期"),
     "channel": ("channel", "source", "platform", "来源", "渠道", "平台"),
 }
+PHONE_WORD_HINTS: tuple[str, ...] = ("wa",)          # 两个字母，只按整词匹配（WA Number、wa_id），不命中 Awaiting reply
+WEAK_PHONE_HINTS: tuple[str, ...] = ("number",)      # Ticket Number、Order Number 也会命中
+ID_HINTS: tuple[str, ...] = ("编号", "序号", "number")
+ID_WORD_HINTS: tuple[str, ...] = ("id",)            # 整词：Message ID、message_id、消息ID；不命中 video、paid
+_WORD_SPLIT_RE = re.compile(r"[^0-9a-z]+")
 
 
 class ImportError_(Exception):
@@ -45,6 +56,11 @@ class ColumnMap:
     date: str | None
     channel: str | None
 
+    def describe(self) -> str:
+        """The stderr line that says which columns were picked, e.g. columns: text=咨询内容 phone=客户电话 ..."""
+        return (f"columns: text={self.text} phone={self.phone or '-'} date={self.date or '-'} "
+                f"channel={self.channel or '-'}")
+
 
 @dataclass
 class Summary:
@@ -52,6 +68,7 @@ class Summary:
     rows_out: int = 0
     dropped_empty: int = 0
     dropped_duplicate: int = 0
+    phone_excel_mangled: int = 0
     languages: Counter = field(default_factory=Counter)
     countries: Counter = field(default_factory=Counter)
 
@@ -63,6 +80,7 @@ class Summary:
             f"rows_out={self.rows_out}",
             f"dropped_empty={self.dropped_empty}",
             f"dropped_duplicate={self.dropped_duplicate}",
+            f"phone_excel_mangled={self.phone_excel_mangled}",
             f"languages={fmt(self.languages)}",
             f"countries={fmt(self.countries)}",
         ]
@@ -95,8 +113,13 @@ def read_rows(path: Path, sheet: str | None = None) -> tuple[list[str], list[dic
 
 
 def _read_csv(path: Path) -> tuple[list[str], list[dict[str, str]]]:
-    text = path.read_bytes().decode("utf-8-sig")
-    reader = csv.reader(text.splitlines(keepends=True))
+    try:
+        text = path.read_bytes().decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ImportError_(f"{path}: 不是 UTF-8 编码（第 {exc.start + 1} 个字节起无法解码）；"
+                           "Excel 请另存为『CSV UTF-8（逗号分隔）』，或直接交 .xlsx") from None
+    # 按记录读：splitlines() 会在 U+2028 / U+0085 / \x0c 等处断行，把未加引号的单元格切成两条记录。
+    reader = csv.reader(io.StringIO(text, newline=""))
     try:
         header = [_cell(h) for h in next(reader)]
     except StopIteration:
@@ -145,14 +168,35 @@ def _read_xlsx(path: Path, sheet: str | None) -> tuple[list[str], list[dict[str,
 
 # ---------------------------------------------------------------- column detection
 
-def _find(header: Sequence[str], hints: Iterable[str], taken: set[str]) -> str | None:
+def _hits(lowered: str, hints: Iterable[str] = (), words: Iterable[str] = ()) -> bool:
+    tokens = set(_WORD_SPLIT_RE.split(lowered))
+    return any(hint in lowered for hint in hints) or any(word in tokens for word in words)
+
+
+def _rank(role: str, column: str) -> int | None:
+    """0 = best match for the role, 1 = fallback, None = not a candidate."""
+    lowered = column.lower()
+    if role == "text":
+        if not _hits(lowered, COLUMN_HINTS["text"]):
+            return None
+        return 1 if _hits(lowered, COLUMN_HINTS["date"]) or _hits(lowered, ID_HINTS, ID_WORD_HINTS) else 0
+    if role == "phone":
+        strong = tuple(h for h in COLUMN_HINTS["phone"] if h not in WEAK_PHONE_HINTS)
+        if _hits(lowered, strong, PHONE_WORD_HINTS):
+            return 0
+        return 1 if _hits(lowered, WEAK_PHONE_HINTS) else None
+    return 0 if _hits(lowered, COLUMN_HINTS[role]) else None
+
+
+def _find(header: Sequence[str], role: str, taken: set[str]) -> str | None:
+    best: tuple[int, str] | None = None
     for column in header:
         if column in taken or not column:
             continue
-        lowered = column.lower()
-        if any(hint in lowered for hint in hints):
-            return column
-    return None
+        rank = _rank(role, column)
+        if rank is not None and (best is None or rank < best[0]):
+            best = (rank, column)
+    return best[1] if best else None
 
 
 def detect_columns(header: Sequence[str], *, text: str | None = None, phone: str | None = None,
@@ -168,7 +212,7 @@ def detect_columns(header: Sequence[str], *, text: str | None = None, phone: str
         if explicit[role] is not None:
             chosen[role] = explicit[role]
             continue
-        found = _find(header, COLUMN_HINTS[role], taken)
+        found = _find(header, role, taken)
         chosen[role] = found
         if found:
             taken.add(found)
@@ -193,7 +237,7 @@ def sample_id(phone: str, scrubbed_text: str) -> str:
 def convert(rows: list[dict[str, str]], columns: ColumnMap, *, data_origin: str = "real",
             limit: int | None = None) -> tuple[list[dict[str, str]], Summary]:
     summary = Summary(rows_in=len(rows))
-    out: list[dict[str, str]] = []
+    kept: list[tuple[dict[str, str], bool]] = []
     seen: set[tuple[str, str]] = set()
     for row in rows:
         scrubbed = scrub_text(row.get(columns.text, ""))
@@ -201,7 +245,8 @@ def convert(rows: list[dict[str, str]], columns: ColumnMap, *, data_origin: str 
             summary.dropped_empty += 1
             continue
         raw_phone = row.get(columns.phone, "") if columns.phone else ""
-        phone = normalize_e164(raw_phone) or ""  # 归一化失败留空，不打码
+        mangled = looks_excel_mangled(raw_phone)   # 4.91761E+12 / …678.0：不去猜，留空并计数
+        phone = "" if mangled else (normalize_e164(raw_phone) or "")  # 归一化失败留空，不打码
         key = (phone, scrubbed)
         if key in seen:
             summary.dropped_duplicate += 1
@@ -221,10 +266,12 @@ def convert(rows: list[dict[str, str]], columns: ColumnMap, *, data_origin: str 
             "language": detect_language(scrubbed),
             "label_notes": ";".join(notes),
         })
-        out.append(record)
+        kept.append((record, mangled))
     if limit is not None:
-        out = out[:limit]
+        kept = kept[:limit]
+    out = [record for record, _ in kept]
     summary.rows_out = len(out)
+    summary.phone_excel_mangled = sum(mangled for _, mangled in kept)
     for record in out:
         summary.languages[record["language"]] += 1
         summary.countries[country_from_phone(record["phone"] or None) or "unknown"] += 1
@@ -283,8 +330,13 @@ def main(argv: list[str] | None = None) -> int:
     except ImportError_ as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_NO_TEXT_COLUMN if "text column" in str(exc) else EXIT_ERROR
+    print(columns.describe(), file=sys.stderr)
     records, summary = convert(rows, columns, data_origin=args.data_origin, limit=args.limit)
     write_batch(Path(args.out), records)
+    und = summary.languages.get("und", 0)
+    if summary.rows_out and und * 2 > summary.rows_out:
+        print(f"warning: {und} of {summary.rows_out} rows have language=und - check that text={columns.text} "
+              "is the customers' message column (--text-col)", file=sys.stderr)
     print("\n".join(summary.lines()))
     return EXIT_OK
 

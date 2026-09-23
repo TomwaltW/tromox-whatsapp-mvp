@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import csv
 import hashlib
+import io
 import re
 from pathlib import Path
 from typing import Any, Literal
@@ -11,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError, field_validator, mo
 
 from tromox_lead import (
     LABEL_COLUMNS,
+    PRODUCT_CATALOG,
     B2BType,
     B2CIntent,
     EscalationReason,
@@ -19,10 +21,54 @@ from tromox_lead import (
     normalize_e164,
     normalize_product,
 )
+# 别名表与清洗规则只读引用 shared 的原件（不抄一份，免得与产品目录脱节）：normalize_product 只回代码、
+# 不说命中了哪个别名，金标要核对"最长别名之后还剩什么"，只能看表。
+from tromox_lead.products import _ALIASES as _PRODUCT_ALIASES
+from tromox_lead.products import _CLEAN_RE as _PRODUCT_CLEAN_RE
 
 _TRUE = {"true", "1", "yes", "y", "是"}
 _FALSE = {"false", "0", "no", "n", "否", ""}
-_PRODUCT_SPLIT_RE = re.compile(r"[;,]+")
+# 半角 / 全角分号与逗号、顿号、斜杠、竖线都算分隔；不按空格切（别名里有空格：Ukko S+、mc10 trail x）。
+_PRODUCT_SPLIT_RE = re.compile(r"[;,/|；，、]+")
+# 最长别名之后允许剩下的：去掉标点后只剩年份 / 纯数字（UKKO S+ 2026、UKKO S+ (2026)）。
+_PUNCT_RE = re.compile(r"[\W_]+")
+_DIGITS_ONLY_RE = re.compile(r"[0-9]*")
+# Excel 把号码列当成数字后的两种形态（整格匹配）：科学计数法 4.91761E+12（精度已丢），
+# 以及另存时带出的小数尾巴 4917612345678.0。点号分段的正常写法（+1.202.555.0143）不在此列。
+EXCEL_MANGLED_PHONE_RE = re.compile(r"\+?\d+(?:[.,]\d+)?[eE][+-]?\d+|\+?\d+\.\d+")
+EXCEL_PHONE_HINT = "号码列被 Excel 当成数字改坏了；从导入批次恢复该列并设为文本格式"
+
+
+def looks_excel_mangled(raw: str | None) -> bool:
+    """True for phone cells Excel turned into a number: 4.91761E+12, 4917612345678.0."""
+    return bool(raw) and EXCEL_MANGLED_PHONE_RE.fullmatch(str(raw).strip()) is not None
+
+
+def product_code(token: str) -> str:
+    """One gold product token -> catalogue code. Rejects two codes in one token and off-catalogue text.
+
+    normalize_product() matches the longest alias prefix and ignores what follows, which is right for
+    free text from a model but hides typos in gold labels: "MC10 UKKO" would read as MC10 alone and
+    "MC10 Vespa" as MC10.
+    """
+    code = normalize_product(token)
+    if code is None:
+        raise ValueError(f"unknown product code {token!r} (see shared/tromox_lead/products.py)")
+    key = _PRODUCT_CLEAN_RE.sub("", token.strip().lower())
+    if key in _PRODUCT_ALIASES:
+        return code
+    alias = next(a for a in sorted(_PRODUCT_ALIASES, key=len, reverse=True) if key.startswith(a))
+    rest = key[len(alias):]
+    others = sorted({other for a, other in _PRODUCT_ALIASES.items() if a in rest and other != code})
+    if others:
+        raise ValueError(f"ambiguous product token {token!r} names {code} and {', '.join(others)}: "
+                         "separate codes with ';'")
+    for same in sorted((a for a, c in _PRODUCT_ALIASES.items() if c == code), key=len, reverse=True):
+        rest = rest.replace(same, "")        # "Trail X MC10" is still one product
+    if not _DIGITS_ONLY_RE.fullmatch(_PUNCT_RE.sub("", rest)):
+        raise ValueError(f"product token {token!r} has text outside the catalogue ({rest!r}); gold labels take "
+                         f"catalogue codes only ({', '.join(PRODUCT_CATALOG)}), several separated with ';'")
+    return code
 
 
 class DataError(ValueError):
@@ -75,6 +121,8 @@ class Sample(BaseModel):
         raw = _blank_to_none(v)
         if raw is None:
             return None
+        if looks_excel_mangled(raw):
+            raise ValueError(f"{raw!r}: {EXCEL_PHONE_HINT}")
         e164 = normalize_e164(raw)
         if e164 is None:
             raise ValueError(f"not a possible E.164 number: {raw!r}")
@@ -127,10 +175,7 @@ class Sample(BaseModel):
             token = str(token).strip()
             if not token:
                 continue
-            code = normalize_product(token)
-            if code is None:
-                raise ValueError(f"unknown product code {token!r} (see shared/tromox_lead/products.py)")
-            codes.add(code)
+            codes.add(product_code(token))
         return tuple(sorted(codes))
 
     @field_validator("escalation_flag", mode="before")
@@ -209,8 +254,13 @@ def load_dataset(path: str | Path, *, include_examples: bool = False) -> Dataset
     """Read a labelled CSV. Rows with data_origin=example are template rows and are skipped."""
     csv_path = Path(path)
     raw = csv_path.read_bytes()
-    text = raw.decode("utf-8-sig")
-    reader = csv.DictReader(text.splitlines(keepends=True))
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise DataError([f"{csv_path}: 不是 UTF-8 编码（第 {exc.start + 1} 个字节起无法解码）；"
+                         "Excel 请另存为『CSV UTF-8（逗号分隔）』"]) from None
+    # 按记录读：splitlines() 会在 U+2028 / U+0085 / \x0c 等处断行，把未加引号的单元格切成两条记录。
+    reader = csv.DictReader(io.StringIO(text, newline=""))
     header = tuple(reader.fieldnames or ())
     problems: list[str] = []
     missing = [c for c in LABEL_COLUMNS if c not in header]
@@ -222,7 +272,8 @@ def load_dataset(path: str | Path, *, include_examples: bool = False) -> Dataset
     samples: list[Sample] = []
     seen: dict[str, int] = {}
     skipped = 0
-    for line_no, row in enumerate(reader, start=2):
+    for row in reader:
+        line_no = reader.line_num   # 物理行号（记录跨行时是最后一行）
         if not any((value or "").strip() for value in row.values()):
             continue
         try:

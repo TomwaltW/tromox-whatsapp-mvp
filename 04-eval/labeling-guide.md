@@ -42,14 +42,14 @@
 |---|---|---|
 | `sample_id` | 唯一编号，建议 `R-001` 起 | 运营 |
 | `data_origin` | `real` | 运营 |
-| `phone` | 客户 WhatsApp 号码，带国家码；`+4917612345678` 或 `4917612345678` 均可；确实没有就留空 | 运营 |
+| `phone` | 客户 WhatsApp 号码，带国家码；`+4917612345678` 或 `4917612345678` 均可；确实没有就留空。用 Excel 编辑时，保存前先把这一列设成**文本格式**，否则长号码会被改成 `4.91761E+12` 之类，工具会报错 | 运营 |
 | `conversation_text` | 见第 2 节 | 运营 |
 | `language` | 客户首条消息的语言，ISO 639-1 小写：`en`、`es`、`de`、`fr`、`pt`、`it` 等；只有表情或无法判断填 `und` | 运营 |
 | `segment` | `B2B` / `B2C` / `unknown`，见 5.1 | 销售复核 |
 | `b2b_type` | 仅 B2B 填：`dealer` / `distributor` / `fleet` / `importer` / `other`，见 5.2 | 销售复核 |
 | `b2c_intent` | 仅 B2C 填：`buy` / `support` / `parts` / `warranty` / `test_ride` / `other`，见 5.3 | 运营 |
 | `country_gold` | 客户真实所在国家或目标市场，ISO 3166-1 两位大写，见 5.4 | 运营 |
-| `product_interest` | 客户点名的车型，用产品代码、分号分隔：`MC10;UKKO`；代码目录 `MC10`、`UKKO`、`M05`、`MINO`、`M03`、`PESGO`【待客户确认】；没点名留空 | 运营 |
+| `product_interest` | 客户点名的车型，用产品代码、分号分隔：`MC10;UKKO`，全角分号 `MC10；UKKO` 也可以（逗号、顿号同样认）；不要只用空格隔开；代码目录 `MC10`、`UKKO`、`M05`、`MINO`、`M03`、`PESGO`【待客户确认】，目录外的写法会报错；没点名留空 | 运营 |
 | `escalation_flag` | 这条咨询是否应当转人工：`true` / `false`，见 5.5 | 销售复核 |
 | `escalation_reason` | `escalation_flag=true` 时必填，六选一，见 5.5；否则留空 | 销售复核 |
 | `is_valid_lead` | 按第 7 节的标准，销售判断是否有效线索：`yes` / `no` / 留空（拿不准） | 销售 |
@@ -57,6 +57,8 @@
 | `label_notes` | 难判的理由、两人分歧的结论、被遮蔽的关键信息 | 各自 |
 
 工具会校验：B2B 行必须有 `b2b_type`；B2C 行必须有 `b2c_intent`；两者不能同时填；`escalation_flag` 与 `escalation_reason` 必须成对；产品代码必须在目录内；号码必须是合法格式。
+
+用 Excel 保存时选"CSV UTF-8（逗号分隔）"，不要选"CSV（逗号分隔）"：后者在中文 Windows 上是 GBK 编码，工具会报"不是 UTF-8 编码"。
 
 ## 5. 判定细则
 

@@ -3,13 +3,14 @@
 双人标注一致性（labeling-guide.md 第 8 节）：两份 labeling-template.csv 格式的文件按 sample_id 取交集，
 逐列算一致率与 Cohen's κ，列出分歧清单；segment / escalation_flag 任一列低于门槛时退出码 3。
 
-退出码：0 通过；2 输入问题（表头不等于 LABEL_COLUMNS、交集为空、--columns 含未知列）；3 门槛不过。
+退出码：0 通过；2 输入问题（表头不等于 LABEL_COLUMNS、交集为空、--columns 含未知列、文件不是 UTF-8）；3 门槛不过。
 只按表头用 csv.DictReader 读，不走 eval.data 的完整校验：第二人可能只标子集、标注列可能未填全。
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import io
 import json
 import re
 import sys
@@ -87,28 +88,33 @@ class AgreementResult:
 def read_labels(path: Path) -> tuple[dict[str, dict[str, str]], int]:
     """sample_id -> row. Header must equal LABEL_COLUMNS verbatim. Template example rows are skipped,
     duplicated sample_ids keep the first occurrence (warning on stderr)."""
-    with path.open(encoding="utf-8-sig", newline="") as fh:
-        reader = csv.DictReader(fh)
-        header = list(reader.fieldnames or [])
-        if header != list(LABEL_COLUMNS):
-            raise AgreementError(
-                f"{path}: header does not equal tromox_lead.LABEL_COLUMNS\n"
-                f"  expected: {','.join(LABEL_COLUMNS)}\n  actual:   {','.join(header)}"
-            )
-        rows: dict[str, dict[str, str]] = {}
-        skipped = 0
-        for number, row in enumerate(reader, start=2):
-            if (row.get("data_origin") or "").strip().lower() == "example":
-                skipped += 1
-                continue
-            sample_id = (row.get("sample_id") or "").strip()
-            if not sample_id:
-                print(f"warning: {path}:{number}: empty sample_id, row ignored", file=sys.stderr)
-                continue
-            if sample_id in rows:
-                print(f"warning: {path}:{number}: duplicate sample_id {sample_id}, first occurrence kept", file=sys.stderr)
-                continue
-            rows[sample_id] = {k: (v or "") for k, v in row.items() if k is not None}
+    try:
+        text = path.read_bytes().decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise AgreementError(f"{path}: 不是 UTF-8 编码（第 {exc.start + 1} 个字节起无法解码）；"
+                             "Excel 请另存为『CSV UTF-8（逗号分隔）』") from None
+    reader = csv.DictReader(io.StringIO(text, newline=""))
+    header = list(reader.fieldnames or [])
+    if header != list(LABEL_COLUMNS):
+        raise AgreementError(
+            f"{path}: header does not equal tromox_lead.LABEL_COLUMNS\n"
+            f"  expected: {','.join(LABEL_COLUMNS)}\n  actual:   {','.join(header)}"
+        )
+    rows: dict[str, dict[str, str]] = {}
+    skipped = 0
+    for row in reader:
+        number = reader.line_num
+        if (row.get("data_origin") or "").strip().lower() == "example":
+            skipped += 1
+            continue
+        sample_id = (row.get("sample_id") or "").strip()
+        if not sample_id:
+            print(f"warning: {path}:{number}: empty sample_id, row ignored", file=sys.stderr)
+            continue
+        if sample_id in rows:
+            print(f"warning: {path}:{number}: duplicate sample_id {sample_id}, first occurrence kept", file=sys.stderr)
+            continue
+        rows[sample_id] = {k: (v or "") for k, v in row.items() if k is not None}
     return rows, skipped
 
 
