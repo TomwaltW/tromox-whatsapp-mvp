@@ -45,22 +45,40 @@ backup_rows=$(sqlite3 "$backup_file" 'select count(*) from leads;' 2>/dev/null) 
 
 target="$data_dir/leads.db"
 keep=""
+moved=0
 if [ -f "$target" ]; then
   keep="$data_dir/leads.db.pre-restore-$(date +%Y%m%d-%H%M%S)"
+  # 留底名精确到秒：同一秒里连跑两次会覆盖上一份留底，此时什么都还没动，直接退出
+  if [ -e "$keep" ] || [ -e "$keep-wal" ] || [ -e "$keep-shm" ]; then
+    echo "restore.sh: 留底文件 $keep 已存在，没有做任何改动；过一秒再跑" >&2
+    exit 1
+  fi
   cp -p "$target" "$keep"
   # -wal 里可能还有已提交、没 checkpoint 回主文件的事务（docker kill、库打不开之后的恢复正是这种情形）：
   # 移到留底文件旁边（SQLite 打开留底文件时会读到 <keep>-wal / <keep>-shm），不删
   for ext in wal shm; do
     if [ -e "$target-$ext" ]; then
       mv -f "$target-$ext" "$keep-$ext"
+      moved=1
     fi
   done
-  echo "现有库已留底：${keep}（连同 -wal / -shm；确认恢复无误后可一并删除）"
-  # 只读打开，不 checkpoint、不改留底；读不了（库已损坏）就不打条数
-  if before_rows=$(sqlite3 -readonly "$keep" 'select count(*) from leads;' 2>/dev/null) && [ -n "$before_rows" ]; then
+  if [ "$moved" = 1 ]; then
+    echo "现有库已留底：${keep}（连同原有的 -wal / -shm；确认恢复无误后可一并删除）"
+  else
+    echo "现有库已留底：${keep}（确认恢复无误后可删除）"
+  fi
+  # 数恢复前的条数，不改留底：有 -wal 时只读打开（读得到 WAL 里的行、不 checkpoint）；
+  # 没有 -wal 时只读打开 WAL 库会报 unable to open database file，改用 immutable=1（此时库里就是全部内容，也不新建文件）
+  if [ -e "$keep-wal" ]; then
+    count_db=("$keep")
+  else
+    uri=${keep//%/%25}; uri=${uri//\?/%3f}; uri=${uri//#/%23}
+    count_db=("file:${uri}?immutable=1")
+  fi
+  if before_rows=$(sqlite3 -readonly "${count_db[@]}" 'select count(*) from leads;' 2>/dev/null) && [ -n "$before_rows" ]; then
     echo "恢复前线索条数：${before_rows}"
   else
-    echo "恢复前线索条数：读不了现有库（可能已损坏），留底照样保留"
+    echo "恢复前线索条数：读不出来（现有库可能已损坏），留底照样保留"
   fi
 else
   rm -f "$target-wal" "$target-shm"
@@ -71,8 +89,10 @@ cp "$backup_file" "$target"
 chown 10001 "$target" 2>/dev/null || true
 
 # 变量名后紧跟全角标点时一律写 ${var}：UTF-8 locale 下 bash 会把全角字符的首字节当成变量名的一部分
-if [ -n "$keep" ]; then
+if [ "$moved" = 1 ]; then
   sidecars="原有 -wal / -shm 已随留底移走"
+elif [ -n "$keep" ]; then
+  sidecars="原本没有 -wal / -shm"
 else
   sidecars="-wal / -shm 已删除"
 fi

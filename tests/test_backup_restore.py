@@ -293,3 +293,23 @@ def test_restore_moves_the_uncheckpointed_wal_next_to_the_pre_restore_copy(tmp_p
     assert count_rows(data / "leads.db") == 3
     assert "备份里的线索条数：3" in result.stdout
     assert "恢复前线索条数：5" in result.stdout
+
+
+def test_restore_reports_row_counts_when_the_old_db_has_no_wal(tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    make_wal_db(data / "leads.db").close()  # 3 行，服务空闲：-wal / -shm 已删
+    assert not (data / "leads.db-wal").exists()
+    bk = tmp_path / "leads-2026-09-22.db"
+    make_wal_db(bk, ("X", "Y")).close()
+
+    result = run_script("restore.sh", str(bk), str(data))
+
+    assert result.returncode == 0, result.stderr
+    # 没有 -wal 时只读打开 WAL 库会失败（unable to open database file），脚本得换个办法数
+    assert "恢复前线索条数：3" in result.stdout
+    assert "备份里的线索条数：2" in result.stdout
+    keeps = list(data.glob("leads.db.pre-restore-*"))
+    assert len(keeps) == 1, "数条数不能在留底旁边造出 -wal / -shm"
+    assert count_rows(keeps[0]) == 3
+    assert count_rows(data / "leads.db") == 2
