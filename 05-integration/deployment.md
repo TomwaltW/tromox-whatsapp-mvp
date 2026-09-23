@@ -91,7 +91,7 @@ webhook 是 Botmaker 的额外计费功能，默认不开，先在账户设置�
 
 定时任务写在 `deploy/cron.example`，分两处装。四条贴进 deploy 用户的 `crontab -e` 后改路径、域名与告警地址：每 5 分钟 `app.replay`（重放未处理事件、重试失败通知）；每 5 分钟 `deploy/healthcheck-alert.sh`（查 `/health`，不健康就 POST 到运维群机器人并写系统日志）；每月 1 日 `app.retention --yes`（按保留期清理）；每周一 09:00 `app.report --post`（推送周报摘要）。备份一条由 root 跑，写在 `/etc/cron.d/tromox-backup`：每日 03:15 `deploy/backup.sh`（备份并清理 30 天前的备份）。为什么是 root：数据目录属容器用户 uid 10001，deploy 用户在里面建不了 SQLite 读库要用的 `-shm`，备份会失败。
 
-健康检查失败要能通知到人：`healthcheck-alert.sh` 的第二个参数就是运维群机器人（或任何接收 JSON POST）的地址，不填则只写本机系统日志。理由：Botmaker 的 webhook 在 10 分钟内失败超过 100 次会熔断，接下来 10 分钟停发，这段时间的消息丢失；单条失败是否重试也还不知道（SOURCES S-B5）。这些回调没有落盘，`app.replay` 补不回，只能按 `botmaker-api-notes.md` 第 7 节对账。所以服务停摆要在几分钟内发现，处理路径也保持"先落盘、尽快应答、通知放到响应之后"。`/health` 只查数据库：Token 未配置、Token 与 Botmaker 侧不一致或 `ALLOWED_IPS` 过期时它照样返回 200，回调却全被拒（503 / 401 / 403），同样收不到、同样没落盘；所以每次改配置或更新后，还要看一眼 Botmaker 后台 webhook 的错误与被拒计数（`botmaker-api-notes.md` 第 4 节）。
+健康检查失败要能通知到人：`healthcheck-alert.sh` 的第二个参数可以直接填运维群的飞书或企业微信群机器人地址——脚本按域名（`open.feishu.cn` / `open.larksuite.com` / `qyapi.weixin.qq.com`）换成各自的消息格式，并检查返回的 `code` / `errcode`（两家对格式或签名不对的请求也回 HTTP 200），没送达就在日志里多打一行「告警也没发出去」；飞书机器人开了签名校验再设 `TROMOX_ALERT_SIGNING_SECRET`。也可以填任何接收 `{"text": ...}` 的通用 webhook。不填则只写本机系统日志。细节见 `deploy/README.md` 第 3 节。理由：Botmaker 的 webhook 在 10 分钟内失败超过 100 次会熔断，接下来 10 分钟停发，这段时间的消息丢失；单条失败是否重试也还不知道（SOURCES S-B5）。这些回调没有落盘，`app.replay` 补不回，只能按 `botmaker-api-notes.md` 第 7 节对账。所以服务停摆要在几分钟内发现，处理路径也保持"先落盘、尽快应答、通知放到响应之后"。`/health` 只查数据库：Token 未配置、Token 与 Botmaker 侧不一致或 `ALLOWED_IPS` 过期时它照样返回 200，回调却全被拒（503 / 401 / 403），同样收不到、同样没落盘；所以每次改配置或更新后，还要看一眼 Botmaker 后台 webhook 的错误与被拒计数（`botmaker-api-notes.md` 第 4 节）。
 
 ## 6. 备份与恢复
 
@@ -129,7 +129,7 @@ cd 05-integration/deploy
 ./rehearsal.sh https://wa-hook.<客户域名> <BOTMAKER_WEBHOOK_TOKEN 的值> --compose-dir .; echo "exit=$?"
 ```
 
-不带 `--compose-dir` 时第 5、8 项记 SKIP（脚本不碰容器，只把该跑的删除命令打出来）。用法与输出怎么读在 `deploy/README.md` 第 3 节。
+演练可以反复跑：`app.forget` 按设计不清已处理事件的记录，同一份样例原样再发必判 `duplicate`，所以脚本每次先把样例的 `messages[]._id_` 改写成本次独有的值再发。4.6 用默认样例验证过、按第 8 节删掉测试线索之后直接跑，第 3 项也不会因为样例重复而 FAIL。第 5 项会先确认 compose 找得到在跑的 webhook 容器、restart 前后容器确实重启了（项目名对不上时记 FAIL，不再假 PASS）：部署是用 `docker compose -p <名字>` 或 `COMPOSE_PROJECT_NAME` 起的，演练前先 `export COMPOSE_PROJECT_NAME=<同一个名字>`。不带 `--compose-dir` 时第 5、8 项记 SKIP（脚本不碰容器，只把该跑的删除命令打出来）。用法与输出怎么读在 `deploy/README.md` 第 3 节。
 
 | # | 检查项 | 通过标准 |
 |---|---|---|

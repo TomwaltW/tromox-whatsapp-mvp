@@ -12,8 +12,8 @@
 | `backup.sh` | `backup.sh <data_dir> <backup_dir> [keep_days=30]`，以 root 运行（`/etc/cron.d/tromox-backup` 或 `sudo`）：`sqlite3 .backup` 在线一致性备份，先写临时文件、`integrity_check` 通过且有 `leads` 表才落盘，备份 0600；失败不留文件、退出非 0；删过期备份，打印备份文件路径 |
 | `restore.sh` | `sudo ./restore.sh <backup_file> <data_dir>`：拒 0 字节 / 无 `leads` 表 / 不完好的文件（不留底、不碰 `leads.db`）；留底现有库连同 `-wal` / `-shm`（移到留底文件旁）、覆盖 `leads.db`、打印恢复前后的线索条数；不停起容器，只提示下一步 |
 | `update.sh` | `update.sh [compose_dir]`：`git pull --ff-only` → 重建镜像 → 重建容器 → 等 `/health` 200（最多 60 秒） |
-| `healthcheck-alert.sh` | `healthcheck-alert.sh <health_url> [alert_webhook_url]`：健康则安静退出 0；否则 stderr 报 `tromox webhook down`，POST `{"text": "..."}` 到告警地址，退出 1。设了环境变量 `TROMOX_METRICS_TOKEN` 再查 `/metrics`，回调堆积、通知失败或镜像卡住（用满重试预算）时报 `tromox webhook degraded`（第 3 节） |
-| `rehearsal.sh` | `rehearsal.sh <base_url> <token> [--compose-dir DIR] [--fixture PATH] [--no-cleanup]`：上线演练，把 `../deployment.md` 第 9 节里能自动做的项跑一遍，标准输出打一张 Markdown 结果表，有 FAIL 退出 1（第 3 节） |
+| `healthcheck-alert.sh` | `healthcheck-alert.sh <health_url> [alert_webhook_url]`：健康则安静退出 0；否则 stderr 报 `tromox webhook down`，POST 告警到告警地址，退出 1。告警地址可以直接填飞书 / 企业微信群机器人（按主机名换成各自格式、检查返回的 `code` / `errcode`，飞书加签设 `TROMOX_ALERT_SIGNING_SECRET`），其他地址发通用 `{"text": "..."}`。设了环境变量 `TROMOX_METRICS_TOKEN` 再查 `/metrics`，回调堆积、通知失败或镜像卡住（用满重试预算）时报 `tromox webhook degraded`（第 3 节） |
+| `rehearsal.sh` | `rehearsal.sh <base_url> <token> [--compose-dir DIR] [--fixture PATH] [--no-cleanup]`：上线演练，把 `../deployment.md` 第 9 节里能自动做的项跑一遍，标准输出打一张 Markdown 结果表，有 FAIL 退出 1。样例 id 每次自动改写，可以反复跑；compose 用 `-p` / `COMPOSE_PROJECT_NAME` 起的部署要先 export 同一个项目名（第 3 节） |
 | `cron.example` | deploy 用户 crontab 四条（每 5 分钟 `app.replay`、每 5 分钟健康检查、每月保留期清理、每周一周报）+ root 的 `/etc/cron.d/tromox-backup` 一条（每日备份） |
 | `.gitignore` | 本目录的 `.env`、`Caddyfile`、`data/` 不进仓库 |
 
@@ -53,8 +53,8 @@ cd /opt/tromox/app/05-integration/deploy
 - **备份**：`sudo ./backup.sh /opt/tromox/data /opt/tromox/backup 30`，产出 `/opt/tromox/backup/leads-YYYY-MM-DD.db`（0600；备份目录由脚本新建时是 0700，已有的目录不改权限，需要时 `sudo chmod 700` 一次）。先写临时文件、校验通过才改名，失败时退出非 0、stderr 说明原因，备份目录里不留 0 字节或半截文件。每天把最新备份同步到机器之外（`../deployment.md` 第 6 节）。
 - **恢复**：`docker compose stop webhook` → `sudo ./restore.sh /opt/tromox/backup/leads-YYYY-MM-DD.db /opt/tromox/data` → 按脚本打印的提示 `docker compose up -d webhook`、重放并重写 CSV。0 字节、没有 `leads` 表或不完好的备份文件会被拒绝（退出非 0，不留底、不碰 `leads.db`），换前一天的备份再试。现有库留底为 `leads.db.pre-restore-<时间>`，原有的 `-wal` / `-shm` 一起移到留底文件旁边（非正常停机后还在 WAL 里的已提交事务不丢），确认恢复无误后一并删除。上线前演练一次。
 - **更新**：`./update.sh`（等价于 `git pull --ff-only`、`docker compose build webhook`、`docker compose up -d webhook`、等 `/health`）。放在咨询低谷做；跑完看一眼 `docker compose logs --tail 50 webhook`。旧镜像会积累，隔一阵 `docker image prune -f`。
-- **告警去哪**：`healthcheck-alert.sh` 的第二个参数是任意接收 `{"text": "..."}` JSON POST 的地址（通用 webhook）；飞书 / 企业微信群机器人要的字段不同，接它们时在中间放一个转换端点，或改脚本里 `payload` 那一行。
-- **不只看进程活着**：`/health` 只查数据库能不能 ping，Token 配错、通知全失败、原始回调堆着没处理它照样 200。给 `healthcheck-alert.sh` 设环境变量 `TROMOX_METRICS_TOKEN`（值 = `.env` 里的 `BOTMAKER_WEBHOOK_TOKEN`），它在 `/health` 正常之后再带 `auth-bm-token` 头 `GET <health_url 去掉 /health>/metrics`（所以第一个参数必须以 `/health` 结尾），`raw_events_unprocessed > 0`、`notifications.failed_24h > 0` 或 `mirror_outbox_exhausted > 0`（镜像行用满重试预算卡住）就 stderr 报 `tromox webhook degraded: unprocessed=<n> failed_24h=<n> mirror_exhausted=<n>`、POST 告警、退出 1；`/metrics` 本身非 200 也算 degraded。`mirror_outbox_pending` 与 `mirror_outbox_failed_24h` 不报警：飞书故障期间积压是正常的，由每 5 分钟的 `app.replay` 消化，不是人工项。变量不设，行为与只查 `/health` 完全一样。指标口径见 `../webhook-service/README.md` 第 1 节"指标"一行。上面这些行为由 `tests/test_healthcheck_alert.py` 固定。手工跑与 cron 写法：
+- **告警去哪**：`healthcheck-alert.sh` 的第二个参数直接填运维群的机器人地址就行，不需要中间转换端点。脚本按地址的主机名选请求体格式：飞书（Lark）群机器人 `https://open.feishu.cn/open-apis/bot/v2/hook/…`（Lark 租户是 `open.larksuite.com`）发 `{"msg_type":"text","content":{"text":…}}`；企业微信群机器人 `https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=…` 发 `{"msgtype":"text","text":{"content":…}}`；其他地址按通用 webhook 发 `{"text": "..."}`。经转换端点转发、主机名判断不出来时，用环境变量 `TROMOX_ALERT_FORMAT=feishu|wecom|generic` 强制指定。飞书机器人开了「签名校验」就再设 `TROMOX_ALERT_SIGNING_SECRET=<机器人的签名密钥>`，请求体顶层带上 `timestamp` 与 `sign`（算法同服务里的飞书通知）。发出后脚本看返回：HTTP 非 2xx、飞书返回 `code` 非 0、企业微信返回 `errcode` 非 0（这两家对格式不对、签名不对的请求也回 HTTP 200），stderr 都会多打一行 `告警也没发出去：<主机名>（<格式> 格式）返回 HTTP <码>，code=<n>（<原因>）`——只打主机名，不打地址里的 key / token；通用格式只看 HTTP 状态。日志里见到这行说明告警通道本身坏了（地址或签名密钥填错、机器人被删），先修它：这是服务停摆几分钟内有人知道的唯一一道防线。
+- **不只看进程活着**：`/health` 只查数据库能不能 ping，Token 配错、通知全失败、原始回调堆着没处理它照样 200。给 `healthcheck-alert.sh` 设环境变量 `TROMOX_METRICS_TOKEN`（值 = `.env` 里的 `BOTMAKER_WEBHOOK_TOKEN`），它在 `/health` 正常之后再带 `auth-bm-token` 头 `GET <health_url 去掉 /health>/metrics`（所以第一个参数必须以 `/health` 结尾），`raw_events_unprocessed > 0`、`notifications.failed_24h > 0` 或 `mirror_outbox_exhausted > 0`（镜像行用满重试预算卡住）就 stderr 报 `tromox webhook degraded: unprocessed=<n> failed_24h=<n> mirror_exhausted=<n>`、POST 告警、退出 1；`/metrics` 本身非 200 也算 degraded。反向代理偶尔回一次 502 这类抖动由 curl 重试两次吸收：响应先落临时文件（重试时截断重写）再解析，不会把 502 的正文和随后 200 的 JSON 拼在一起误报 `bad json`。`mirror_outbox_pending` 与 `mirror_outbox_failed_24h` 不报警：飞书故障期间积压是正常的，由每 5 分钟的 `app.replay` 消化，不是人工项。变量不设，行为与只查 `/health` 完全一样。指标口径见 `../webhook-service/README.md` 第 1 节"指标"一行。上面这些行为由 `tests/test_healthcheck_alert.py` 固定。手工跑与 cron 写法：
 
   ```bash
   TROMOX_METRICS_TOKEN=<BOTMAKER_WEBHOOK_TOKEN 的值> ./healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址>; echo "exit=$?"
@@ -62,22 +62,29 @@ cd /opt/tromox/app/05-integration/deploy
 
   ```
   # crontab：把 cron.example 里的健康检查那行换成这条（Token 别写进 cron.example 这类会进仓库的文件）
+  # 告警地址填飞书 / 企业微信群机器人即可；飞书机器人开了签名校验，行首再加 TROMOX_ALERT_SIGNING_SECRET=<签名密钥>
   */5 * * * * TROMOX_METRICS_TOKEN=<BOTMAKER_WEBHOOK_TOKEN 的值> /opt/tromox/app/05-integration/deploy/healthcheck-alert.sh https://wa-hook.<客户域名>/health <运维群 webhook 地址> 2>&1 | logger -t tromox
   ```
 
   收到 degraded 后怎么办：`unprocessed` 大于 0 说明重放没跟上或某条一直处理失败，`docker compose exec -T webhook python -m app.replay` 跑一遍再看日志里的 `error`；`failed_24h` 大于 0 说明群机器人地址或网络出了问题，看 `docker compose logs --tail 200 webhook | grep 'notification failed'`；`mirror_exhausted` 大于 0 说明有镜像行用满 10 次重试预算、不再自动重试，`docker compose logs --tail 200 webhook | grep 'mirror failed'` 看 `last_error`（或直接看 `/metrics`）判断是配置错了还是接口变了，**排除原因之后**再 `docker compose exec -T webhook python -m app.replay --reset-mirrors` 重置重试预算——这条不进 cron，原因没排除就重置只是再烧一轮预算。
 
-- **上线演练**：`../deployment.md` 第 9 节那张「上线前检查」是九项人工表，其中 1–5 与 8 用 `rehearsal.sh` 自动跑。它只要 `curl` 与 `python3`（不吃仓库的 `.venv`），对着一个**正在跑**的部署发真请求：
+- **上线演练**：`../deployment.md` 第 9 节那张「上线前检查」是九项人工表，其中 1–5 与 8 用 `rehearsal.sh` 自动跑。它只要 `curl` 与 `python3`（不吃仓库的 `.venv`），对着一个**正在跑**的部署发真请求，可以反复跑：
 
   ```bash
+  # 部署是用 docker compose -p <名字> 或 COMPOSE_PROJECT_NAME 起的，先 export 同一个名字；按第 2 节默认起的不用管
+  # export COMPOSE_PROJECT_NAME=<部署时的项目名>
   ./rehearsal.sh https://wa-hook.<客户域名> <BOTMAKER_WEBHOOK_TOKEN 的值> --compose-dir .; echo "exit=$?"
   ```
 
-  逐项做的事：1 查 `/health`（200、`webhook_token_configured` 为 true、`database` 为 ok，并把 `notifiers` 列进说明）；2 不带密钥 POST 空 body，要 401；3 带密钥 POST 一条样例回调（默认 `../webhook-service/fixtures/message_with_variables_b2b.json`，`--fixture` 可换），要 200 且 `lead_upserted`，记下 `lead_id`；4 把同一条再发一次，要 200 且 `duplicate`；5 `docker compose restart webhook` 后等 `/health` 200（最多 60 秒），再把样例发一次、仍判 `duplicate` 才算数据还在；8 进容器 `python -m app.forget --lead-id <上一步的 id> --yes` 删掉演练线索。
+  逐项做的事：1 查 `/health`（200、`webhook_token_configured` 为 true、`database` 为 ok，并把 `notifiers` 列进说明）；2 不带密钥 POST 空 body，要 401；3 带密钥 POST 一条样例回调（默认 `../webhook-service/fixtures/message_with_variables_b2b.json`，`--fixture` 可换），要 200 且 `lead_upserted`，记下 `lead_id`；4 把同一条再发一次，要 200 且 `duplicate`；5 先 `docker compose ps -q webhook` 找到在跑的容器、记下它的 `StartedAt`，`docker compose restart webhook` 后再取一次，**确认容器真的重启了**，再等 `/health` 200（最多 60 秒）、把样例发一次、仍判 `duplicate` 才算数据还在；8 进容器 `python -m app.forget --lead-id <上一步的 id> --yes` 删掉演练线索。
+
+  **为什么能反复跑**：`app.forget` 按设计保留已处理事件的记录（事件键 = `msg:` + 各条 `messages[]._id_`），删了线索、同一份样例原样再发照样判 `duplicate`。所以脚本在第 3 项之前把样例复制到临时文件，每条 `messages[]._id_` 改写成 `<原值>-rh<本次运行标识>`（标识 = 时间戳 + 进程号；没有 `_id_` 的事件类样例在顶层加 `"_rehearsal_run"`），第 3、4、5 项都发这份，退出时删掉，原文件不动。4.6 用默认样例验证过、按第 8 节删了测试线索之后直接跑，或者同一天跑好几次，第 3 项都不会因为样例重复而 FAIL；真出现 `duplicate`，说明 `--fixture` 给的文件里的 id 被别的方式重复用了。
+
+  **项目名要一致**：`docker compose` 按项目名找容器。项目名对不上时（起部署用了 `-p`，或 `COMPOSE_PROJECT_NAME` 不同），`restart webhook` 对一个不存在的服务照样返回成功，`/health` 又由正在跑的那个容器回 200——以前第 5 项会因此假 PASS、第 8 项才报 `service "webhook" is not running`。现在第 5 项先 `ps -q` 找容器：找不到就记 FAIL（说明里提示项目名，**不做 restart**）；restart 前后 `StartedAt` 没变也记 FAIL（restart 返回了成功但容器没真的重启）。
 
   **输出怎么读**：过程日志走标准错误，标准输出只有一张 `| # | 检查项 | 结果 | 说明 |` 的表，行号就是第 9 节的 1–9，可以直接贴进验收记录。`PASS` / `FAIL` / `SKIP` 三种结果，只要有一个 `FAIL` 就退出 1，别上线；全是 `PASS` / `SKIP` 退出 0。脚本不打印 Token，说明里的长数字（号码）会被遮掉。
 
-  **仍然是人工的**：第 3 项只验证了线索入库，**卡片是否 60 秒内到了销售群要自己看一眼**；第 6（备份恢复演练）、7（权限）、9（Botmaker 后台）脚本一律记 `SKIP`，照本节上面几条和 `../deployment.md` 第 6 节手动走。不给 `--compose-dir` 时（本机、或部署不是 compose 起的）第 5、8 项也记 `SKIP`，第 8 项会把该跑的删除命令连 `lead_id` 一起打出来，自己补一条；`--no-cleanup` 则是给了 compose 也不删，留着线索人工看卡片。
+  **仍然是人工的**：第 3 项只验证了线索入库，**卡片是否 60 秒内到了销售群要自己看一眼**；第 6（备份恢复演练）、7（权限）、9（Botmaker 后台）脚本一律记 `SKIP`，照本节上面几条和 `../deployment.md` 第 6 节手动走（第 6 项：`backup.sh` / `restore.sh` 本身的往返、清理、拒坏文件由 `tests/test_backup_restore.py` 固定，要人工做的是在服务器上用前一日备份真恢复一次）。不给 `--compose-dir` 时（本机、或部署不是 compose 起的）第 5、8 项也记 `SKIP`，第 8 项会把该跑的删除命令连 `lead_id` 一起打出来，自己补一条；`--no-cleanup` 则是给了 compose 也不删，留着线索人工看卡片。连跑两次都过、第 5 项三种情形（找不到容器 / `StartedAt` 没变 / 真重启了）由根目录 `tests/test_rehearsal.py` 固定（真起服务、假 `docker`，全量 `scripts/check_all.sh` 会跑，`--fast` 跳过）。
 
 ## 4. 安全基线
 
